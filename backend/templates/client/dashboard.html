@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Client Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Welcome back, {{ user.full_name if user.full_name else user.username }} 👋</h3>
+    <small class="text-muted">Member #{{ user.member_number if user.member_number else 'N/A' }}</small>
+  </div>
+  <div class="text-end">
+    <a href="/client/savings" class="btn btn-outline-primary me-2">My Savings</a>
+    <a href="/client/loans" class="btn btn-outline-secondary">My Loans</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <div class="card p-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <small class="text-muted">Current Balance</small>
+          <div class="h3 mb-0">{{ '%.2f'|format(balance) if balance is defined else '0.00' }}</div>
+        </div>
+        <div>
+          <a href="/client/savings" class="btn btn-sm btn-success">Deposit</a>
+          <a href="/client/savings" class="btn btn-sm btn-outline-danger">Withdraw</a>
+        </div>
+      </div>
+      <p class="small text-muted mt-2 mb-0">Available funds for withdrawals and loan collateral calculations.</p>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card p-3">
+      <small class="text-muted">Active Loans</small>
+      <div class="h4 mb-1">{% set approved = loans|selectattr('status','equalto','approved')|list %}{{ approved|length if loans is defined else 0 }}</div>
+      <p class="small text-muted mb-0">Approved loans count</p>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card p-3">
+      <small class="text-muted">Pending Requests</small>
+      <div class="h4 mb-1">{% set pending = loans|selectattr('status','equalto','pending')|list %}{{ pending|length if loans is defined else 0 }}</div>
+      <p class="small text-muted mb-0">Loans awaiting admin review</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="card-title mb-0">Recent Transactions</h5>
+          <a href="/client/savings" class="btn btn-sm btn-link">View all</a>
+        </div>
+
+        {% if transactions and transactions|length > 0 %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr><th>Date</th><th>Type</th><th class="text-end">Amount</th></tr>
+            </thead>
+            <tbody>
+              {% for t in transactions[:8] %}
+              <tr>
+                <td class="small text-muted">{{ t.timestamp }}</td>
+                <td>
+                  {% if t.type == 'deposit' %}<span class="badge bg-success">Deposit</span>
+                  {% elif t.type == 'withdraw' %}<span class="badge bg-warning text-dark">Withdraw</span>
+                  {% else %}<span class="badge bg-secondary">{{ t.type }}</span>{% endif %}
+                </td>
+                <td class="text-end">{{ '%.2f'|format(t.amount) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <p class="text-muted small">No transactions yet. Use the deposit button to add funds.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Quick Actions</h5>
+        <div class="d-grid gap-2">
+          <a class="btn btn-primary" href="/client/savings">Make a Deposit / Withdraw</a>
+          <a class="btn btn-outline-secondary" href="/client/loan/request">Request a Loan</a>
+          <a class="btn btn-outline-info" href="/client/loans">View My Loans</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h6 class="card-title">Loan Requests</h6>
+        {% if loans and loans|length > 0 %}
+          <ul class="list-group list-group-flush">
+            {% for l in loans[:6] %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-semibold">{{ '%.2f'|format(l.amount) }}</div>
+                  <small class="text-muted">{{ l.timestamp }} • {{ l.term }} months</small>
+                </div>
+                <div>
+                  {% if l.status == 'approved' %}
+                    <span class="badge bg-success">Approved</span>
+                  {% elif l.status == 'rejected' %}
+                    <span class="badge bg-danger">Rejected</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                  {% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted small mb-0">You have no loan requests. Submit a request to get started.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

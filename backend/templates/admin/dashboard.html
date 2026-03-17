@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Admin Console</h3>
+    <small class="text-muted">Overview & management</small>
+  </div>
+  <div>
+    <a href="/admin/users" class="btn btn-outline-primary me-2">Manage Users</a>
+    <a href="/admin/loans" class="btn btn-outline-secondary me-2">Loan Requests</a>
+    <a href="/admin/reports" class="btn btn-primary">Reports</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card p-3">
+      <small class="text-muted">Net Savings</small>
+      <div class="h4 mt-1">{{ '%.2f'|format(net_savings) if net_savings is defined else '0.00' }}</div>
+      <p class="small text-muted mb-0">Total deposits minus withdrawals</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3">
+      <small class="text-muted">Total Loans (All)</small>
+      <div class="h4 mt-1">{{ '%.2f'|format(total_loans) if total_loans is defined else '0.00' }}</div>
+      <p class="small text-muted mb-0">Sum of loan amounts</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3">
+      <small class="text-muted">Outstanding Loans</small>
+      <div class="h4 mt-1">{{ '%.2f'|format(report.outstanding_loans) if report is defined and report.outstanding_loans is defined else (outstanding_loans if outstanding_loans is defined else '0.00') }}</div>
+      <p class="small text-muted mb-0">Approved and unpaid</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3">
+      <small class="text-muted">Members</small>
+      <div class="h4 mt-1">{{ users|length if users is defined else '—' }}</div>
+      <p class="small text-muted mb-0">Registered users</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="card-title mb-0">Recent Activity</h5>
+          <a href="/admin/logs" class="btn btn-sm btn-link">View all</a>
+        </div>
+        {% if logs and logs|length > 0 %}
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr><th>Date</th><th>User</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                {% for l in logs[:10] %}
+                <tr>
+                  <td class="small text-muted">{{ l.timestamp }}</td>
+                  <td>{{ l.username }}</td>
+                  <td class="small text-muted">{{ l.action }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted small">No recent logs available.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Loan Pipeline</h5>
+        {% if loans and loans|length > 0 %}
+          <ul class="list-group list-group-flush">
+            {% for loan in loans[:8] %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-semibold">{{ '%.2f'|format(loan.amount) }}</div>
+                  <small class="text-muted">{{ loan.username if loan.username is defined else '' }} • {{ loan.timestamp }}</small>
+                </div>
+                <div>
+                  {% if loan.status == 'pending' %}
+                    <a class="btn btn-sm btn-success" href="#">Approve</a>
+                    <a class="btn btn-sm btn-danger" href="#">Reject</a>
+                  {% elif loan.status == 'approved' %}
+                    <span class="badge bg-success">Approved</span>
+                  {% else %}
+                    <span class="badge bg-secondary">{{ loan.status }}</span>
+                  {% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted small mb-0">No loan requests found.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <h6 class="card-title">Quick Admin Actions</h6>
+        <div class="d-grid gap-2">
+          <a class="btn btn-primary" href="/admin/users">Manage Members</a>
+          <a class="btn btn-outline-secondary" href="/admin/loans">Review Loans</a>
+          <a class="btn btn-outline-info" href="/admin/reports">View Reports</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

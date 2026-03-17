@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Create account{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height:60vh;">
+  <div class="card p-4 shadow-sm" style="width:420px;">
+    <div class="text-center mb-3">
+      <h4 class="mb-0">Create your SACCO account</h4>
+      <p class="small text-muted">Securely create a member account</p>
+    </div>
+
+    <form method="post" novalidate>
+      <div class="mb-3">
+        <label for="username" class="form-label small">Username</label>
+        <input id="username" type="text" class="form-control" name="username" placeholder="Choose a username" required>
+      </div>
+
+        <div class="mb-3">
+          <label for="password" class="form-label small">Password</label>
+          <input id="password" type="password" class="form-control" name="password" placeholder="Create a strong password" required>
+          <div class="mt-2">
+            <div class="progress" style="height:8px;">
+              <div id="pwdStrength" class="progress-bar" role="progressbar" style="width:0%"></div>
+            </div>
+            <small id="strengthText" class="form-text text-muted">Password strength: <span id="strengthLabel">—</span></small>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="password_confirm" class="form-label small">Confirm password</label>
+          <input id="password_confirm" type="password" class="form-control" name="password_confirm" placeholder="Repeat your password" required>
+          <small id="matchText" class="form-text mt-1"></small>
+        </div>
+
+        <hr />
+
+        <div class="mb-3">
+          <label for="full_name" class="form-label small">Full name</label>
+          <input id="full_name" type="text" class="form-control" name="full_name" placeholder="e.g. Jane Doe">
+        </div>
+
+        <div class="mb-3">
+          <label for="phone" class="form-label small">Phone number</label>
+          <input id="phone" type="tel" class="form-control" name="phone" placeholder="+2567xxxxxxxx">
+        </div>
+
+        <div class="d-grid">
+          <button id="registerBtn" type="submit" class="btn btn-success btn-lg">Create account</button>
+        </div>
+
+        {% if error %}
+          <div class="alert alert-danger mt-3">{{ error }}</div>
+        {% endif %}
+      </form>
+
+      <div class="text-center mt-3">
+        <small class="text-muted">Already have an account? <a href="/login">Sign in</a></small>
+      </div>
+
+      <div class="mt-4">
+        <h6>After you register</h6>
+        <ul class="small text-muted">
+          <li>Make savings deposits and withdraw funds from your wallet.</li>
+          <li>Request loans and track their approval status.</li>
+          <li>View your transaction history and download statements.</li>
+          <li>Manage your profile and contact details.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <script>
+  // Password strength and confirmation checks
+  function scorePassword(p){
+    let score = 0;
+    if(!p) return 0;
+    if(p.length >= 8) score++;
+    if(/[A-Z]/.test(p)) score++;
+    if(/[a-z]/.test(p)) score++;
+    if(/[0-9]/.test(p)) score++;
+    if(/[^A-Za-z0-9]/.test(p)) score++;
+    return score; // 0-5
+  }
+
+  function updateStrength(){
+    const p = document.getElementById('password').value;
+    const s = scorePassword(p);
+    const bar = document.getElementById('pwdStrength');
+    const label = document.getElementById('strengthLabel');
+    const percent = Math.round((s/5)*100);
+    bar.style.width = percent + '%';
+    bar.className = 'progress-bar';
+    if(s <= 1){ bar.classList.add('bg-danger'); label.textContent = 'Very weak'; }
+    else if(s == 2){ bar.classList.add('bg-warning'); label.textContent = 'Weak'; }
+    else if(s == 3){ bar.classList.add('bg-info'); label.textContent = 'Okay'; }
+    else if(s == 4){ bar.classList.add('bg-primary'); label.textContent = 'Strong'; }
+    else { bar.classList.add('bg-success'); label.textContent = 'Very strong'; }
+  }
+
+  function updateMatch(){
+    const p = document.getElementById('password').value;
+    const q = document.getElementById('password_confirm').value;
+    const matchText = document.getElementById('matchText');
+    const btn = document.getElementById('registerBtn');
+    if(!q){ matchText.textContent = ''; btn.disabled = false; return; }
+    if(p === q){ matchText.textContent = 'Passwords match'; matchText.className = 'text-success'; btn.disabled = false; }
+    else { matchText.textContent = 'Passwords do not match'; matchText.className = 'text-danger'; btn.disabled = true; }
+  }
+
+  document.getElementById('password').addEventListener('input', function(){ updateStrength(); updateMatch(); });
+  document.getElementById('password_confirm').addEventListener('input', updateMatch);
+  </script>
+{% endblock %}

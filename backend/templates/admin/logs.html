@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Activity Logs{% endblock %}
+{% block content %}
+  <h2>Activity Logs</h2>
+  <ul class="list-group">
+    {% for log in logs %}
+      <li class="list-group-item">
+        {{ log["timestamp"] }} — <strong>{{ log["username"] }}</strong> performed <em>{{ log["action"] }}</em> action.
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

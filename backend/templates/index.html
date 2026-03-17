@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}SACCO Dashboard{% endblock %}
+{% block content %}
+<div class="py-5 text-center">
+	<h1 class="display-4">Welcome to SACCO Management Platform</h1>
+	<p class="lead text-muted">Manage members, savings, loans and financial reports — all in one place.</p>
+
+	<div class="d-flex justify-content-center gap-2 mt-4">
+		{% if user %}
+			{% if user.is_admin %}
+				<a class="btn btn-lg btn-primary" href="/admin/dashboard">Go to Admin Dashboard</a>
+			{% else %}
+				<a class="btn btn-lg btn-primary" href="/client/dashboard">Go to Your Dashboard</a>
+			{% endif %}
+			<a class="btn btn-lg btn-outline-secondary" href="/logout">Logout</a>
+		{% else %}
+			<a class="btn btn-lg btn-primary" href="/register">Create an account</a>
+			<a class="btn btn-lg btn-outline-secondary" href="/login">Sign in</a>
+		{% endif %}
+	</div>
+</div>
+
+<div class="row g-4">
+	<div class="col-md-4">
+		<div class="card h-100">
+			<div class="card-body">
+				<h5 class="card-title">Members</h5>
+				<p class="card-text">Register new members, manage profiles, and control member roles and access.</p>
+				<p class="text-muted small">Admins can add or remove members and assign roles.</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-4">
+		<div class="card h-100">
+			<div class="card-body">
+				<h5 class="card-title">Savings</h5>
+				<p class="card-text">Members can deposit and withdraw savings. Track transactions and balances in real time.</p>
+				<p class="text-muted small">Accurate transaction history and balance computation per member.</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-md-4">
+		<div class="card h-100">
+			<div class="card-body">
+				<h5 class="card-title">Loans</h5>
+				<p class="card-text">Members request loans; admins review, approve or reject. Track terms and statuses.</p>
+				<p class="text-muted small">Loan pipeline and approval workflow for easy management.</p>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="row mt-4">
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-body">
+				<h5 class="card-title">Financial Reports</h5>
+				<p class="card-text">Get consolidated reports on net savings, total loans and outstanding liabilities.</p>
+				<a href="/admin/reports" class="btn btn-sm btn-outline-primary">View reports (admins)</a>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="card">
+			<div class="card-body">
+				<h5 class="card-title">Activity Logs</h5>
+				<p class="card-text">Audit important actions performed by users — logins, deposits, withdrawals and loan decisions.</p>
+				<a href="/admin/logs" class="btn btn-sm btn-outline-secondary">View logs (admins)</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% endblock %}

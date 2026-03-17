@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height:60vh;">
+  <div class="card p-4 shadow-sm" style="width:380px;">
+    <div class="text-center mb-3">
+      <h4 class="mb-0">Sign in to your account</h4>
+      <p class="small text-muted">Enter your credentials to continue</p>
+    </div>
+
+    <form method="post" novalidate>
+      <div class="mb-3">
+        <label for="username" class="form-label small">Username</label>
+        <input id="username" type="text" class="form-control" name="username" placeholder="e.g. jane.doe" required autofocus>
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label small">Password</label>
+        <input id="password" type="password" class="form-control" name="password" placeholder="Your password" required>
+      </div>
+
+      <div class="d-grid">
+        <button type="submit" class="btn btn-primary btn-lg">Sign In</button>
+      </div>
+
+      {% if error %}
+        <div class="alert alert-danger mt-3">{{ error }}</div>
+      {% endif %}
+    </form>
+
+    <div class="text-center mt-3">
+      <small class="text-muted">Don't have an account? <a href="/register">Create one</a></small>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+/* Modern SACCO theme overrides */
+:root{
+  --primary: #0052cc; /* deep blue */
+  --accent: #00b894; /* green accent */
+  --muted: #6c757d;
+  --card-bg: #ffffff;
+  --surface: #f8fafc;
+  --glass: rgba(255,255,255,0.6);
+}
+
+html,body{
+  height:100%;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, #f6f8fb 0%, #ffffff 100%);
+  color: #263238;
+}
+
+.container{ max-width:1100px; }
+
+/* Navbar tweaks */
+nav{
+  display:flex;
+  gap: .5rem;
+  align-items:center;
+}
+nav a.btn{ border-radius: 999px; }
+
+/* Hero */
+.py-5.text-center{
+  padding-top:3.5rem!important;
+  padding-bottom:3.5rem!important;
+}
+.display-4{ font-weight:700; color:var(--primary); }
+.lead{ color:var(--muted); }
+
+/* Cards */
+.card{
+  border:0;
+  border-radius:12px;
+  box-shadow: 0 6px 18px rgba(20,30,45,0.06);
+}
+.card .card-body h5{ font-weight:600; }
+
+/* Buttons */
+.btn-primary{
+  background: linear-gradient(180deg,var(--primary),#003c99);
+  border: none;
+  box-shadow: 0 6px 16px rgba(0,82,204,0.12);
+}
+.btn-outline-secondary{
+  border-radius:999px;
+}
+.btn-link{ color:var(--primary); }
+
+/* Tables */
+.table{ background:transparent; }
+.table thead th{ border-bottom:2px solid rgba(0,0,0,0.05); font-weight:600; }
+.table-striped>tbody>tr:nth-of-type(odd){ background: rgba(0,0,0,0.01); }
+
+/* Transaction rows small text */
+.table-sm td{ vertical-align:middle; }
+
+/* Footer */
+footer{ color:var(--muted); margin-top:2.5rem; }
+
+/* Admin badges */
+.badge-admin{ background: linear-gradient(90deg,#ffd166,#ef476f); color:#fff; border-radius:999px; padding: .35rem .6rem; font-weight:600; }
+
+/* Responsive tweaks */
+@media (max-width: 768px){
+  .display-4{ font-size:1.75rem; }
+  nav{ gap:.25rem; }
+}
+
+/* Utility: subtle input focus */
+input.form-control:focus{ box-shadow: 0 6px 18px rgba(0,82,204,0.12); border-color: rgba(0,82,204,0.7); }
+
+/* Tables in admin loans */
+.table-responsive{ overflow:auto; }
+
+/* small helpers */
+.text-muted.small{ font-size:0.85rem; }
+
+/* subtle link hover */
+a.btn-link:hover{ text-decoration: none; opacity:0.9; }

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block content %}
+<h2>All Users</h2>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Username</th>
+      <th>Role</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <td>{{ user["id"] }}</td>
+      <td>{{ user["username"] }}</td>
+      <td>{{ "Admin" if user["is_admin"] else "Client" }}</td>
+      <td>
+        <!-- Edit Role -->
+        <form action="/admin/toggle-role" method="post" class="d-inline">
+          <input type="hidden" name="user_id" value="{{ user['id'] }}">
+          <button type="submit" class="btn btn-sm btn-warning">
+            Make {{ "Client" if user["is_admin"] else "Admin" }}
+          </button>
+        </form>
+
+        <!-- Delete -->
+        <form action="/admin/delete-user" method="post" class="d-inline" onsubmit="return confirm('Delete this user?');">
+          <input type="hidden" name="user_id" value="{{ user['id'] }}">
+          <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
