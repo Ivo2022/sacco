@@ -5,7 +5,7 @@
   <ul class="list-group">
     {% for log in logs %}
       <li class="list-group-item">
-        {{ log["timestamp"] }} — <strong>{{ log["username"] }}</strong> performed <em>{{ log["action"] }}</em> action.
+        {{ log.timestamp }} — <strong>{{ (log.user.full_name if log.user and log.user.full_name else (log.user.email if log.user else 'System')) }}</strong> performed <em>{{ log.action }}</em>.
       </li>
     {% endfor %}
   </ul>

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Management - Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">Staff Management</h4>
+            <small class="text-muted">Manage Accountants and Credit Officers</small>
+        </div>
+        <div>
+            <a href="/manager/dashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Create Staff Form -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-white py-2">
+            <h6 class="mb-0"><i class="bi bi-person-plus"></i> Create New Staff Account</h6>
+        </div>
+        <div class="card-body">
+            <form action="/manager/staff/create" method="post" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small">Role</label>
+                    <select name="role" class="form-select form-select-sm" required>
+                        <option value="">Select Role</option>
+                        <option value="ACCOUNTANT">Accountant</option>
+                        <option value="CREDIT_OFFICER">Credit Officer</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Full Name</label>
+                    <input type="text" name="full_name" class="form-control form-control-sm" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Email Address</label>
+                    <input type="email" name="email" class="form-control form-control-sm" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Password</label>
+                    <input type="text" name="password" class="form-control form-control-sm" value="Staff@123" required>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-check"></i> Create
+                    </button>
+                </div>
+            </form>
+            <small class="text-muted mt-2 d-block">
+                <i class="bi bi-info-circle"></i> Staff will automatically get linked member accounts for personal savings and loans.
+            </small>
+        </div>
+    </div>
+
+    <!-- Staff List -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-people"></i> Staff Members</h6>
+            <span class="badge bg-primary">{{ staff|length }} Staff</span>
+        </div>
+        <div class="card-body p-0">
+            {% if staff %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Staff ID</th>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Joined</th>
+                            <th>Status</th>
+                            <th class="pe-3">Linked Member</th>
+                        </thead>
+                        <tbody>
+                            {% for staff_member in staff %}
+                            <tr>
+                                <td class="ps-3">#{{ staff_member.id }}</td>
+                                <td>
+                                    <div class="fw-semibold">{{ staff_member.full_name or staff_member.email }}</div>
+                                    <small class="text-muted">Username: {{ staff_member.username }}</small>
+                                </td>
+                                <td>
+                                    {% if staff_member.role.value == 'ACCOUNTANT' %}
+                                    <span class="badge bg-info">Accountant</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Credit Officer</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ staff_member.email }}</td>
+                                <td>{{ staff_member.phone or '-' }}</td>
+                                <td><small>{{ local_time(staff_member.created_at) }}</small></td>
+                                <td>
+                                    {% if staff_member.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="pe-3">
+                                    {% if staff_member.linked_member_account_id %}
+                                    <a href="/accountant/member/{{ staff_member.linked_member_account_id }}" 
+                                       class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="bi bi-person"></i> View Member
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">Not linked</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-people fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No staff members created yet</p>
+                    <small class="text-muted">Use the form above to create Accountants and Credit Officers</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Roles Description -->
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-person-badge"></i> Accountant Role</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li>Approve member deposits</li>
+                        <li>View and manage all transactions</li>
+                        <li>Generate financial reports</li>
+                        <li>Manage member savings accounts</li>
+                        <li>Track cash flow and collections</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-shield-check"></i> Credit Officer Role</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li>Monitor active loans</li>
+                        <li>Send payment reminders</li>
+                        <li>Track overdue loans</li>
+                        <li>Record loan payments</li>
+                        <li>Generate loan performance reports</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

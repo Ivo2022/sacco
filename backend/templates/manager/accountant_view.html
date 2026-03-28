@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Accountant Dashboard - Manager View{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-0">Accountant Dashboard <span class="badge bg-info ms-2">Manager View</span></h4>
+            <small class="text-muted">Read-only view of financial operations</small>
+        </div>
+        <div>
+            <a href="/manager/dashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Total Savings</small>
+                            <h3 class="mb-0 fw-bold">{{ money(total_savings|default(0)) }}</h3>
+                        </div>
+                        <i class="bi bi-piggy-bank fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Today's Collections</small>
+                            <h3 class="mb-0 fw-bold">{{ money(today_collections|default(0)) }}</h3>
+                        </div>
+                        <i class="bi bi-calendar-day fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Pending Approvals</small>
+                            <h3 class="mb-0 fw-bold">{{ pending_count|default(0) }}</h3>
+                        </div>
+                        <i class="bi bi-clock-history fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Pending Deposits Section -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white rounded-top-4 border-0 pt-4 px-4">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-clock-history me-2 text-warning"></i>Pending Deposits
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if pending_deposits %}
+                    <div class="list-group list-group-flush">
+                        {% for deposit in pending_deposits[:10] %}
+                        <div class="list-group-item border-0 py-3 px-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">{{ deposit.user.full_name or deposit.user.email }}</div>
+                                    <small class="text-muted">{{ deposit.payment_method|replace('_', ' ') }} • {{ local_time(deposit.timestamp) }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-primary">{{ money(deposit.amount) }}</div>
+                                    <small class="text-muted">{{ deposit.reference_number or 'No ref' }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if pending_count > 10 %}
+                    <div class="card-footer bg-transparent text-center py-2">
+                        <small class="text-muted">{{ pending_count - 10 }} more pending deposits...</small>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-check-circle fs-1 text-success"></i>
+                        <p class="text-muted mt-2 mb-0">No pending deposits</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions Section -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white rounded-top-4 border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-list-ul me-2 text-info"></i>Recent Transactions
+                    </h5>
+                    <a href="/manager/all-transactions" class="btn btn-sm btn-link text-decoration-none">View All →</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if recent_transactions %}
+                    <div class="list-group list-group-flush">
+                        {% for tx in recent_transactions[:10] %}
+                        <div class="list-group-item border-0 py-3 px-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar-circle bg-{% if tx.type == 'deposit' %}success{% else %}warning{% endif %} bg-opacity-10 rounded-circle p-2">
+                                        <i class="bi bi-{% if tx.type == 'deposit' %}arrow-down{% else %}arrow-up{% endif %} text-{% if tx.type == 'deposit' %}success{% else %}warning{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ tx.member.full_name or tx.member.email|truncate(30) }}</div>
+                                        <small class="text-muted">{{ local_time(tx.timestamp) }}</small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold {% if tx.type == 'deposit' %}text-success{% else %}text-danger{% endif %}">
+                                        {{ money(tx.amount) }}
+                                    </div>
+                                    <small class="text-muted">{{ tx.payment_method|replace('_', ' ') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                        <p class="text-muted mt-2 mb-0">No transactions yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 rounded-4 bg-light">
+                <div class="card-body py-3">
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        <a href="/manager/all-transactions" class="btn btn-outline-primary btn-sm rounded-pill">
+                            <i class="bi bi-list-ul me-1"></i> View All Transactions
+                        </a>
+                        <a href="/manager/reports" class="btn btn-outline-success btn-sm rounded-pill">
+                            <i class="bi bi-file-text me-1"></i> Financial Reports
+                        </a>
+                        <a href="/manager/members" class="btn btn-outline-info btn-sm rounded-pill">
+                            <i class="bi bi-people me-1"></i> Member Savings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.bg-success.bg-opacity-10 {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+}
+.bg-warning.bg-opacity-10 {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}

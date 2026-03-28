@@ -1,76 +1,220 @@
 {% extends "base.html" %}
-{% block title %}SACCO Dashboard{% endblock %}
+
+{% block title %}SACCO Management System{% endblock %}
+
 {% block content %}
-<div class="py-5 text-center">
-	<h1 class="display-4">Welcome to SACCO Management Platform</h1>
-	<p class="lead text-muted">Manage members, savings, loans and financial reports — all in one place.</p>
-
-	<div class="d-flex justify-content-center gap-2 mt-4">
-		{% if user %}
-			{% if user.is_admin %}
-				<a class="btn btn-lg btn-primary" href="/admin/dashboard">Go to Admin Dashboard</a>
-			{% else %}
-				<a class="btn btn-lg btn-primary" href="/client/dashboard">Go to Your Dashboard</a>
-			{% endif %}
-			<a class="btn btn-lg btn-outline-secondary" href="/logout">Logout</a>
-		{% else %}
-			<a class="btn btn-lg btn-primary" href="/register">Create an account</a>
-			<a class="btn btn-lg btn-outline-secondary" href="/login">Sign in</a>
-		{% endif %}
-	</div>
+<!-- Hero Section -->
+<div class="hero-section py-5 mb-5 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 0 0 30px 30px;">
+    <div class="container">
+        <h1 class="display-4 fw-bold text-white mb-3">Welcome to CheonTec SACCO Management Platform</h1>
+        <p class="lead text-white-50 mb-4">Streamline your SACCO operations with our comprehensive management system. Manage members, savings, loans, and financial reports all in one place.</p>
+        
+        <div class="d-flex justify-content-center gap-3 mt-4">
+            {% if user %}
+                {% if user.role.value == 'SUPER_ADMIN' %}
+                    <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/superadmin/dashboard">
+                        <i class="bi bi-speedometer2 me-2"></i>Go to Super Admin Dashboard
+                    </a>
+                {% elif user.role.value == 'MANAGER' %}
+                    <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/manager/dashboard">
+                        <i class="bi bi-speedometer2 me-2"></i>Go to Manager Dashboard
+                    </a>
+                {% elif user.role.value == 'ACCOUNTANT' %}
+                    <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/accountant/dashboard">
+                        <i class="bi bi-calculator-fill me-2"></i>Go to Accountant Dashboard
+                    </a>
+                {% elif user.role.value == 'CREDIT_OFFICER' %}
+                    <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/credit-officer/dashboard">
+                        <i class="bi bi-shield-check me-2"></i>Go to Credit Officer Dashboard
+                    </a>
+                {% else %}
+                    <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/member/dashboard">
+                        <i class="bi bi-person-circle me-2"></i>Go to Your Dashboard
+                    </a>
+                {% endif %}
+                <a class="btn btn-outline-light btn-lg px-4 rounded-pill" href="/auth/logout">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                </a>
+            {% else %}
+                <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/auth/register">
+                    <i class="bi bi-person-plus me-2"></i>Create an account
+                </a>
+                <a class="btn btn-outline-light btn-lg px-4 rounded-pill" href="/auth/login">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign in
+                </a>
+            {% endif %}
+        </div>
+    </div>
 </div>
 
-<div class="row g-4">
-	<div class="col-md-4">
-		<div class="card h-100">
-			<div class="card-body">
-				<h5 class="card-title">Members</h5>
-				<p class="card-text">Register new members, manage profiles, and control member roles and access.</p>
-				<p class="text-muted small">Admins can add or remove members and assign roles.</p>
-			</div>
-		</div>
-	</div>
-
-	<div class="col-md-4">
-		<div class="card h-100">
-			<div class="card-body">
-				<h5 class="card-title">Savings</h5>
-				<p class="card-text">Members can deposit and withdraw savings. Track transactions and balances in real time.</p>
-				<p class="text-muted small">Accurate transaction history and balance computation per member.</p>
-			</div>
-		</div>
-	</div>
-
-	<div class="col-md-4">
-		<div class="card h-100">
-			<div class="card-body">
-				<h5 class="card-title">Loans</h5>
-				<p class="card-text">Members request loans; admins review, approve or reject. Track terms and statuses.</p>
-				<p class="text-muted small">Loan pipeline and approval workflow for easy management.</p>
-			</div>
-		</div>
-	</div>
+<div class="container">
+    <!-- Features Section -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-lift rounded-4">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-primary bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                        <i class="bi bi-people-fill fs-1 text-primary"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Member Management</h5>
+                    <p class="card-text text-muted">Register new members, manage profiles, and control member roles and access rights.</p>
+                    <div class="mt-3">
+                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">Admins only</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-lift rounded-4">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-success bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                        <i class="bi bi-piggy-bank-fill fs-1 text-success"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Savings Management</h5>
+                    <p class="card-text text-muted">Members can deposit and withdraw savings. Track transactions and balances in real time.</p>
+                    <div class="mt-3">
+                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">All members</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm hover-lift rounded-4">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-warning bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px;">
+                        <i class="bi bi-cash-stack fs-1 text-warning"></i>
+                    </div>
+                    <h5 class="card-title fw-bold">Loan Management</h5>
+                    <p class="card-text text-muted">Members request loans; managers and credit officers review, approve or reject applications.</p>
+                    <div class="mt-3">
+                        <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">Staff approval</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Role-Based Access Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h3 class="fw-bold text-center mb-0">Role-Based Access Control</h3>
+                    <p class="text-muted text-center mt-2">Different roles with specific permissions for efficient management</p>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded-4 h-100">
+                                <i class="bi bi-shield-check fs-1 text-danger"></i>
+                                <h6 class="fw-bold mt-2 mb-1">Manager</h6>
+                                <small class="text-muted">Overall management of staff, sacco operations and loan approvals</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded-4 h-100">
+                                <i class="bi bi-calculator-fill fs-1 text-success"></i>
+                                <h6 class="fw-bold mt-2 mb-1">Accountant</h6>
+                                <small class="text-muted">Approve deposits, manage savings, financial reports</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded-4 h-100">
+                                <i class="bi bi-shield-check fs-1 text-warning"></i>
+                                <h6 class="fw-bold mt-2 mb-1">Credit Officer</h6>
+                                <small class="text-muted">Monitor loans, send reminders, track repayments</small>
+                            </div>
+                        </div>
+	                    <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded-4 h-100">
+                                <i class="bi bi-person-badge fs-1 text-primary"></i>
+                                <h6 class="fw-bold mt-2 mb-1">Member</h6>
+                                <small class="text-muted">View account balance, make deposits, request for loans</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reports and Activity Section -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                            <i class="bi bi-file-text-fill fs-4 text-info"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-0">Financial Reports</h5>
+                    </div>
+                    <p class="card-text text-muted">Get consolidated reports on net savings, total loans, outstanding liabilities, and member activity.</p>
+                    {% if user %}
+                        <a href="/manager/reports" class="btn btn-outline-info btn-sm rounded-pill mt-2">
+                            <i class="bi bi-graph-up me-1"></i> View Reports
+                        </a>
+                    {% else %}
+                        <small class="text-muted d-block mt-2">Available for logged-in users</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon bg-secondary bg-opacity-10 rounded-circle p-2 me-3">
+                            <i class="bi bi-clock-history fs-4 text-secondary"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-0">Activity Logs</h5>
+                    </div>
+                    <p class="card-text text-muted">Audit important actions performed by users — logins, deposits, withdrawals, and loan decisions.</p>
+                    {% if user %}
+                        <a href="/superadmin/logs" class="btn btn-outline-secondary btn-sm rounded-pill mt-2">
+                            <i class="bi bi-list-ul me-1"></i> View Logs
+                        </a>
+                    {% else %}
+                        <small class="text-muted d-block mt-2">Available for logged-in users</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Call to Action -->
+    {% if not user %}
+    <div class="cta-section text-center py-5 px-4 rounded-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h3 class="text-white fw-bold mb-3">Ready to get started?</h3>
+        <p class="text-white-50 mb-4">Join our platform today and streamline your SACCO operations.</p>
+        <a href="/auth/register" class="btn btn-light btn-lg rounded-pill px-5 shadow-sm">
+            <i class="bi bi-person-plus me-2"></i>Create Free Account
+        </a>
+    </div>
+    {% endif %}
 </div>
 
-<div class="row mt-4">
-	<div class="col-md-6">
-		<div class="card">
-			<div class="card-body">
-				<h5 class="card-title">Financial Reports</h5>
-				<p class="card-text">Get consolidated reports on net savings, total loans and outstanding liabilities.</p>
-				<a href="/admin/reports" class="btn btn-sm btn-outline-primary">View reports (admins)</a>
-			</div>
-		</div>
-	</div>
-	<div class="col-md-6">
-		<div class="card">
-			<div class="card-body">
-				<h5 class="card-title">Activity Logs</h5>
-				<p class="card-text">Audit important actions performed by users — logins, deposits, withdrawals and loan decisions.</p>
-				<a href="/admin/logs" class="btn btn-sm btn-outline-secondary">View logs (admins)</a>
-			</div>
-		</div>
-	</div>
-</div>
-
+<style>
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+}
+.feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.hero-section {
+    margin-top: -1rem;
+}
+.cta-section {
+    margin-bottom: 2rem;
+}
+</style>
 {% endblock %}

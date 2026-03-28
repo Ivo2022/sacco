@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Member Savings - Accountant{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">Member Savings</h4>
+            <small class="text-muted">View and manage member savings accounts</small>
+        </div>
+        <div>
+            <a href="/accountant/dashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Member List Sidebar -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-people"></i> Members</h6>
+                </div>
+                <div class="card-body p-0" style="max-height: 600px; overflow-y: auto;">
+                    {% if member_summary %}
+                    <div class="list-group list-group-flush">
+                        {% for item in member_summary %}
+                        <a href="/accountant/savings?member_id={{ item.member.id }}" 
+                           class="list-group-item list-group-item-action {% if selected_member == item.member.id %}active{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-semibold">{{ item.member.full_name or item.member.email }}</div>
+                                    <small class="text-muted">{{ item.member.phone or 'No phone' }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-primary">{{ money(item.balance) }}</div>
+                                    <small>Balance</small>
+                                </div>
+                            </div>
+                            <div class="mt-1">
+                                <div class="progress" style="height: 3px;">
+                                    {% set percentage = (item.balance / (member_summary[0].balance if member_summary else 1) * 100) if item.balance > 0 else 0 %}
+                                    <div class="progress-bar bg-success" style="width: {{ percentage }}%"></div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted small mb-0">No members found</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Area -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-list-ul"></i> 
+                        {% if selected_member %}
+                            Transactions for {{ member_summary|selectattr('member.id', 'equalto', selected_member)|first|attr('member.full_name')|default('Member') }}
+                        {% else %}
+                            Recent Transactions
+                        {% endif %}
+                    </h6>
+                    {% if selected_member %}
+                    <a href="/accountant/member/{{ selected_member }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> View Details
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if transactions %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Date</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Reference</th>
+                                    <th class="pe-3">Approved By</th>
+                                </thead>
+                                <tbody>
+                                    {% for tx in transactions %}
+                                    <tr>
+                                        <td class="ps-3"><small>{{ local_time(tx.timestamp) }}</small></td>
+                                        <td>
+                                            {% if tx.type == 'deposit' %}
+                                            <span class="badge bg-success">Deposit</span>
+                                            {% else %}
+                                            <span class="badge bg-warning">Withdrawal</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold {% if tx.type == 'deposit' %}text-success{% else %}text-danger{% endif %}">
+                                            {{ money(tx.amount) }}
+                                        </td>
+                                        <td><small>{{ tx.payment_method|replace('_', ' ') }}</small></td>
+                                        <td><small class="text-muted">{{ tx.reference_number or '-' }}</small></td>
+                                        <td class="pe-3"><small>{{ tx.approver.email if tx.approver else '-' }}</small></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if total_pages > 1 %}
+                        <div class="card-footer bg-white">
+                            <nav>
+                                <ul class="pagination pagination-sm justify-content-center mb-0">
+                                    {% if page > 1 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page-1 }}{% if selected_member %}&member_id={{ selected_member }}{% endif %}">Previous</a>
+                                    </li>
+                                    {% endif %}
+                                    <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                                    {% if page < total_pages %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page+1 }}{% if selected_member %}&member_id={{ selected_member }}{% endif %}">Next</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 text-muted"></i>
+                            <p class="text-muted mt-2">No transactions found</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions - Accountant{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">Transaction History</h4>
+            <small class="text-muted">View and filter all savings transactions</small>
+        </div>
+        <div>
+            <a href="/accountant/dashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-4">
+            <div class="card bg-success text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small>Total Deposits</small>
+                            <h5 class="mb-0">{{ money(total_deposits) }}</h5>
+                        </div>
+                        <i class="bi bi-arrow-down-up fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small>Total Withdrawals</small>
+                            <h5 class="mb-0">{{ money(total_withdrawals) }}</h5>
+                        </div>
+                        <i class="bi bi-arrow-up-short fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-primary text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small>Net Flow</small>
+                            <h5 class="mb-0">{{ money(total_deposits - total_withdrawals) }}</h5>
+                        </div>
+                        <i class="bi bi-graph-up fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-white py-2">
+            <h6 class="mb-0"><i class="bi bi-funnel"></i> Filters</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label small">Transaction Type</label>
+                    <select name="transaction_type" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        <option value="deposit" {% if transaction_type == 'deposit' %}selected{% endif %}>Deposits</option>
+                        <option value="withdrawal" {% if transaction_type == 'withdrawal' %}selected{% endif %}>Withdrawals</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Start Date</label>
+                    <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">End Date</label>
+                    <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-search"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-list-ul"></i> Transactions ({{ total }} records)</h6>
+            <button class="btn btn-sm btn-success" onclick="exportToExcel()">
+                <i class="bi bi-file-excel"></i> Export
+            </button>
+        </div>
+        <div class="card-body p-0">
+            {% if transactions %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0" id="transactionsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Date</th>
+                            <th>Member</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                            <th>Reference</th>
+                            <th class="pe-3">Approved By</th>
+                        </thead>
+                        <tbody>
+                            {% for tx in transactions %}
+                            <tr>
+                                <td class="ps-3"><small>{{ local_time(tx.timestamp) }}</small></td>
+                                <td>
+                                    <div class="fw-semibold small">{{ tx.member.full_name or tx.member.email }}</div>
+                                    <small class="text-muted">{{ tx.member.phone or '' }}</small>
+                                </td>
+                                <td>
+                                    {% if tx.type == 'deposit' %}
+                                    <span class="badge bg-success">Deposit</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Withdrawal</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold {% if tx.type == 'deposit' %}text-success{% else %}text-danger{% endif %}">
+                                    {{ money(tx.amount) }}
+                                </td>
+                                <td><small>{{ tx.payment_method|replace('_', ' ') }}</small></td>
+                                <td><small class="text-muted">{{ tx.reference_number or '-' }}</small></td>
+                                <td class="pe-3"><small>{{ tx.approver.email if tx.approver else '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if total_pages > 1 %}
+                <div class="card-footer bg-white">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            {% if page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page-1 }}{% if transaction_type %}&transaction_type={{ transaction_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                                    Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for p in range(1, total_pages+1) %}
+                                {% if p == page %}
+                                <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                                {% elif p <= 5 or p > total_pages-5 or (p >= page-2 and p <= page+2) %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ p }}{% if transaction_type %}&transaction_type={{ transaction_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                                        {{ p }}
+                                    </a>
+                                </li>
+                                {% elif p == 6 or p == total_pages-5 %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page < total_pages %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page+1 }}{% if transaction_type %}&transaction_type={{ transaction_type }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                                    Next
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No transactions found for the selected filters</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportToExcel() {
+    const table = document.getElementById('transactionsTable');
+    if (!table) return;
+    
+    const rows = table.querySelectorAll('tr');
+    let csv = [];
+    
+    // Get headers
+    const headers = [];
+    table.querySelectorAll('th').forEach(th => {
+        headers.push(th.innerText);
+    });
+    csv.push(headers.join(','));
+    
+    // Get data
+    rows.forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('td').forEach(cell => {
+            rowData.push('"' + cell.innerText.replace(/"/g, '""') + '"');
+        });
+        if (rowData.length) csv.push(rowData.join(','));
+    });
+    
+    const today = new Date();
+    const filename = `transactions_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.csv`;
+    
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

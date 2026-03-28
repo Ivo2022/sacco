@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}All Loans - Credit Officer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Loan Management</h2>
+            <p class="text-muted">View and manage all loans</p>
+        </div>
+        <div>
+            <a href="/credit-officer/dashboard" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link {% if not status_filter %}active{% endif %}" 
+               href="/credit-officer/loans">
+                All Loans
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status_filter == 'approved' %}active{% endif %}" 
+               href="/credit-officer/loans?status=approved">
+                Active Loans
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status_filter == 'pending' %}active{% endif %}" 
+               href="/credit-officer/loans?status=pending">
+                Pending
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status_filter == 'overdue' %}active{% endif %}" 
+               href="/credit-officer/loans?status=overdue">
+                Overdue
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status_filter == 'completed' %}active{% endif %}" 
+               href="/credit-officer/loans?status=completed">
+                Completed
+            </a>
+        </li>
+    </ul>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6>Total Loans</h6>
+                            <h3>{{ loans|length }}</h3>
+                        </div>
+                        <i class="bi bi-cash-stack fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6>Active Loans</h6>
+                            <h3>{{ loans|selectattr('status', 'equalto', 'approved')|list|length }}</h3>
+                        </div>
+                        <i class="bi bi-check-circle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6>Pending</h6>
+                            <h3>{{ loans|selectattr('status', 'equalto', 'pending')|list|length }}</h3>
+                        </div>
+                        <i class="bi bi-clock fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6>Overdue</h6>
+                            <h3>{{ loans|selectattr('status', 'equalto', 'overdue')|list|length }}</h3>
+                        </div>
+                        <i class="bi bi-exclamation-triangle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loans Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Loan List</h5>
+        </div>
+        <div class="card-body">
+            {% if loans %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Loan ID</th>
+                            <th>Member</th>
+                            <th>Amount</th>
+                            <th>Monthly Payment</th>
+                            <th>Outstanding</th>
+                            <th>Status</th>
+                            <th>Days Since Last Payment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in loans %}
+                        <tr>
+                            <td>#{{ loan.id }}</td>
+                            <td>
+                                <strong>{{ loan.member.full_name or loan.member.email }}</strong><br>
+                                <small class="text-muted">{{ loan.member.phone or 'No phone' }}</small>
+                            </td>
+                            <td class="fw-bold">{{ money(loan.amount) }}</td>
+                            <td>{{ money(loan.calculate_monthly_payment()) }}</td>
+                            <td>
+                                <span class="{% if loan.outstanding > 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {{ money(loan.outstanding) }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if loan.status == 'approved' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif loan.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% elif loan.status == 'overdue' %}
+                                <span class="badge bg-danger">Overdue</span>
+                                {% elif loan.status == 'completed' %}
+                                <span class="badge bg-info">Completed</span>
+                                {% elif loan.status == 'rejected' %}
+                                <span class="badge bg-secondary">Rejected</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ loan.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if loan.days_since_last_payment > 0 %}
+                                <span class="{% if loan.days_since_last_payment > 30 %}text-danger{% else %}text-warning{% endif %}">
+                                    {{ loan.days_since_last_payment }} days
+                                </span>
+                                {% else %}
+                                <span class="text-success">Today</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="/credit-officer/loan/{{ loan.id }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-warning" 
+                                            onclick="sendQuickReminder({{ loan.id }})"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#reminderModal"
+                                            data-loan-id="{{ loan.id }}"
+                                            data-member-name="{{ loan.member.full_name or loan.member.email }}">
+                                        <i class="bi bi-envelope"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="text-muted mt-2">No loans found</p>
+                {% if status_filter %}
+                <a href="/credit-officer/loans" class="btn btn-primary btn-sm">
+                    Clear Filter
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Reminder Modal -->
+<div class="modal fade" id="reminderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="reminderForm" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Reminder</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="reminder_type" value="payment">
+                    <div class="mb-3">
+                        <label class="form-label">Reminder Type</label>
+                        <select name="reminder_type_select" class="form-select" id="reminderTypeSelect">
+                            <option value="payment">Payment Reminder</option>
+                            <option value="overdue">Overdue Notice</option>
+                            <option value="custom">Custom Message</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="customMessageDiv" style="display: none;">
+                        <label class="form-label">Custom Message</label>
+                        <textarea name="message" class="form-control" rows="4" 
+                                  placeholder="Enter your custom reminder message..."></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <span id="defaultMessage">A standard payment reminder will be sent.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send Reminder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store the current loan ID
+let currentLoanId = null;
+
+// Handle reminder modal
+document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+    button.addEventListener('click', function() {
+        currentLoanId = this.getAttribute('data-loan-id');
+        const memberName = this.getAttribute('data-member-name');
+        
+        // Update form action
+        const form = document.getElementById('reminderForm');
+        form.action = `/credit-officer/loan/${currentLoanId}/send-reminder`;
+        
+        // Update default message
+        const defaultMsg = document.getElementById('defaultMessage');
+        defaultMsg.innerHTML = `A standard payment reminder will be sent to <strong>${memberName}</strong>.`;
+    });
+});
+
+// Handle reminder type change
+document.getElementById('reminderTypeSelect').addEventListener('change', function() {
+    const customDiv = document.getElementById('customMessageDiv');
+    const defaultMsg = document.getElementById('defaultMessage');
+    
+    if (this.value === 'custom') {
+        customDiv.style.display = 'block';
+        defaultMsg.innerHTML = 'Enter your custom message above.';
+    } else if (this.value === 'overdue') {
+        customDiv.style.display = 'none';
+        defaultMsg.innerHTML = 'An overdue notice will be sent.';
+    } else {
+        customDiv.style.display = 'none';
+        defaultMsg.innerHTML = 'A standard payment reminder will be sent.';
+    }
+});
+
+// Quick reminder function
+function sendQuickReminder(loanId) {
+    // This is a fallback in case the modal doesn't work
+    if (confirm('Send a standard payment reminder?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/credit-officer/loan/${loanId}/send-reminder`;
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'reminder_type';
+        input.value = 'payment';
+        
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

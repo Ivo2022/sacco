@@ -1,123 +1,410 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>{% block title %}SACCO Management{% endblock %}</title>
-		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-		<link rel="stylesheet" href="/static/css/style.css">
-	</head>
-	<body class="bg-light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}CheonTec SACCO Management{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-light">
+    <header class="mb-4">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm rounded">
+            <div class="container-fluid">
+                {% if user and (user.role.value in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER']) %}
+                <a class="navbar-brand d-flex align-items-center" href="/{{ user.role.value.lower() }}/dashboard">
+                {% elif user and user.role.value == 'SUPER_ADMIN' %}
+                <a class="navbar-brand d-flex align-items-center" href="/superadmin/dashboard">
+                {% elif user and user.role.value == 'MEMBER' %}
+                <a class="navbar-brand d-flex align-items-center" href="/member/dashboard">
+                {% else %}
+                <a class="navbar-brand d-flex align-items-center" href="/">
+                {% endif %}
+                    <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#0052cc,#00b894);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;margin-right:.6rem">S</div>
+                    <div>
+                        <div class="fw-bold">CheonTec SACCO</div>
+                        <small class="text-muted">Management Platform</small>
+                    </div>
+                </a>
 
-		<header class="mb-4">
-			<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm rounded">
-				<div class="container-fluid">
-					  {% if user and user.is_admin %}
-					  <a class="navbar-brand d-flex align-items-center" href="/admin/dashboard">
-					  {% elif user %}
-					  <a class="navbar-brand d-flex align-items-center" href="/client/dashboard">
-					  {% else %}
-					  <a class="navbar-brand d-flex align-items-center" href="/">
-					  {% endif %}
-						<div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#0052cc,#00b894);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;margin-right:.6rem">S</div>
-						<div>
-							<div class="fw-bold">SACCO Management</div>
-							<small class="text-muted">Community Finance Portal</small>
-						</div>
-					</a>
-					<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-controls="navMain" aria-expanded="false" aria-label="Toggle navigation">
-						<span class="navbar-toggler-icon"></span>
-					</button>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-controls="navMain" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-					<div class="collapse navbar-collapse" id="navMain">
-						<ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
-											{% if not user %}
-											<li class="nav-item">
-												<a class="nav-link" href="/">Home</a>
-											</li>
-											{% endif %}
-											{% if user and not user.is_admin %}
-											<li class="nav-item d-none d-lg-block">
-												<a class="nav-link" href="/client/dashboard">Dashboard</a>
-											</li>
-											<li class="nav-item d-none d-lg-block">
-												<a class="nav-link" href="/client/savings">Savings</a>
-											</li>
-											<li class="nav-item d-none d-lg-block">
-												<a class="nav-link" href="/client/loans">Loans</a>
-											</li>
-											{% endif %}
+                <div class="collapse navbar-collapse" id="navMain">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
+                        {% if not user %}
+                        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                        {% endif %}
 
-							  {% if user and show_admin_controls and user.is_admin %}
-							<li class="nav-item dropdown">
-								<a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">Admin</a>
-								<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
-									<li><a class="dropdown-item" href="/admin/dashboard">Overview</a></li>
-									<li><a class="dropdown-item" href="/admin/users">Manage Users</a></li>
-									<li><a class="dropdown-item" href="/admin/loans">Loan Requests</a></li>
-									<li><a class="dropdown-item" href="/admin/reports">Reports</a></li>
-									<li><hr class="dropdown-divider"></li>
-									<li><a class="dropdown-item" href="/admin/logs">Activity Logs</a></li>
-								</ul>
+                        <!-- MEMBER NAVIGATION -->
+                        {% if user and user.role.value == 'MEMBER' %}
+                        <li class="nav-item"><a class="nav-link" href="/member/dashboard">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/member/savings">Savings</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/member/loans">Loans</a></li>
+                        {% endif %}
+
+                        <!-- MANAGER NAVIGATION -->
+                        {% if user and user.role.value == 'MANAGER' %}
+                        <li class="nav-item"><a class="nav-link" href="/manager/dashboard">Dashboard</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="managerMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Management
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="managerMenu">
+                                <li><a class="dropdown-item" href="/manager/loans/pending">💰 Pending Loans</a></li>
+                                <li><a class="dropdown-item" href="/manager/all-loans">📋 All Loans</a></li>
+                                <li><a class="dropdown-item" href="/manager/staff">👥 Staff Management</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/manager/reports">📊 Reports</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+
+                        <!-- ACCOUNTANT NAVIGATION -->
+                        {% if user and user.role.value == 'ACCOUNTANT' %}
+                        <li class="nav-item"><a class="nav-link" href="/accountant/dashboard">Dashboard</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="accountantMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Finance
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountantMenu">
+                                <li><a class="dropdown-item" href="/accountant/deposits/pending">💰 Pending Deposits</a></li>
+                                <li><a class="dropdown-item" href="/accountant/transactions">📋 All Transactions</a></li>
+                                <li><a class="dropdown-item" href="/accountant/savings">💵 Savings Management</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/accountant/reports">📊 Financial Reports</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+
+                        <!-- CREDIT OFFICER NAVIGATION -->
+                        {% if user and user.role.value == 'CREDIT_OFFICER' %}
+                        <li class="nav-item"><a class="nav-link" href="/credit-officer/dashboard">Dashboard</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="creditOfficerMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Loan Management
+                            </a>
+						<ul class="dropdown-menu dropdown-menu-end" aria-labelledby="creditOfficerMenu">
+							<!-- Quick Stats Badge -->
+							<li class="px-3 py-2 bg-light">
+								<div class="d-flex justify-content-between align-items-center">
+									<small class="text-muted">Active Loans</small>
+									<span class="badge bg-primary rounded-pill" id="activeLoansCount">0</span>
+								</div>
+								<div class="d-flex justify-content-between align-items-center mt-1">
+									<small class="text-muted">Overdue</small>
+									<span class="badge bg-danger rounded-pill" id="overdueLoansCount">0</span>
+								</div>
 							</li>
-							{% endif %}
-
-							{% if user %}
-								<li class="nav-item ms-2">
-									<div class="btn-group">
-										<button type="button" class="btn btn-outline-secondary btn-sm">{{ user.username }}</button>
-										<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-											<span class="visually-hidden">Toggle</span>
-										</button>
-										<ul class="dropdown-menu dropdown-menu-end">
-											<li><a class="dropdown-item" href="/client/dashboard">Profile</a></li>
-											<li><a class="dropdown-item" href="/client/savings">My Savings</a></li>
-											<li><a class="dropdown-item" href="/client/loans">My Loans</a></li>
-											{% if user and user.is_admin %}
-											<!-- If admin controls are not shown on this page, expose a link back to the Admin console here -->
-											{% if not show_admin_controls %}
-											<li><a class="dropdown-item" href="/admin/dashboard">Admin</a></li>
-											{% endif %}
-											<!-- Always offer a quick Sudo view into the client account UI for admins -->
-											<li><a class="dropdown-item" href="/client/dashboard">Sudo: View account</a></li>
-											{% endif %}
-											<li><hr class="dropdown-divider"></li>
-											<li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
-										</ul>
-									</div>
-								</li>
-							{% else %}
-								<li class="nav-item ms-2">
-									<a class="btn btn-sm btn-outline-primary" href="/login">Sign in</a>
-								</li>
-								<li class="nav-item ms-2 d-none d-lg-block">
-									<a class="btn btn-sm btn-success" href="/register">Create account</a>
-								</li>
-							{% endif %}
+							
+							<li><hr class="dropdown-divider"></li>
+							
+							<!-- Loans Section -->
+							<li><h6 class="dropdown-header">📋 Loans</h6></li>
+							<li><a class="dropdown-item" href="/credit-officer/loans">
+								<i class="bi bi-table me-2"></i> All Loans
+							</a></li>
+							<li><a class="dropdown-item" href="/credit-officer/loans?status=approved">
+								<i class="bi bi-check-circle-fill text-success me-2"></i> Active Loans
+								<span class="badge bg-success float-end" id="activeBadge">0</span>
+							</a></li>
+							<li><a class="dropdown-item" href="/credit-officer/loans?status=overdue">
+								<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> Overdue
+								<span class="badge bg-danger float-end" id="overdueBadge">0</span>
+							</a></li>
+							<li><a class="dropdown-item" href="/credit-officer/loans?status=pending">
+								<i class="bi bi-clock-history text-warning me-2"></i> Pending
+							</a></li>
+							<li><a class="dropdown-item" href="/credit-officer/loans?status=completed">
+								<i class="bi bi-check2-all text-info me-2"></i> Completed
+							</a></li>
+							
+							<li><hr class="dropdown-divider"></li>
+							
+							<!-- Actions Section -->
+							<li><h6 class="dropdown-header">⚡ Actions</h6></li>
+							<li><a class="dropdown-item" href="/credit-officer/reminders">
+								<i class="bi bi-envelope-paper me-2"></i> Send Reminders
+							</a></li>
+							<li><a class="dropdown-item" href="/credit-officer/reports">
+								<i class="bi bi-file-text me-2"></i> Reports
+							</a></li>
+							
+							<li><hr class="dropdown-divider"></li>
+							
+							<!-- Analytics Section -->
+							<li><a class="dropdown-item" href="/credit-officer/analytics">
+								<i class="bi bi-graph-up me-2"></i> Analytics
+							</a></li>
 						</ul>
-					</div>
+
+						<script>
+						// Optional: Fetch and display counts via AJAX
+						document.addEventListener('DOMContentLoaded', function() {
+							fetch('/api/credit-officer/loan-stats')
+								.then(response => response.json())
+								.then(data => {
+									if (document.getElementById('activeLoansCount')) {
+										document.getElementById('activeLoansCount').innerText = data.active || 0;
+										document.getElementById('overdueLoansCount').innerText = data.overdue || 0;
+										document.getElementById('activeBadge').innerText = data.active || 0;
+										document.getElementById('overdueBadge').innerText = data.overdue || 0;
+									}
+								})
+								.catch(error => console.error('Error loading stats:', error));
+						});
+						</script>
+                        </li>
+                        {% endif %}
+
+                        <!-- SUPER ADMIN NAVIGATION -->
+                        {% if user and user.role.value == 'SUPER_ADMIN' %}
+                        <li class="nav-item"><a class="nav-link" href="/superadmin/dashboard">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/superadmin/managers">Managers</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/superadmin/saccos">SACCOs</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/superadmin/logs">Logs</a></li>
+                        {% endif %}
+
+                        <!-- USER DROPDOWN (Avatar/Profile) -->
+                        {% if user %}
+                        <li class="nav-item ms-2">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-person-circle me-1"></i>{{ user.full_name or user.email }}
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="visually-hidden">Toggle</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <!-- Profile Links -->
+                                    <li><a class="dropdown-item" href="/member/profile">
+                                        <i class="bi bi-person me-2"></i>My Profile
+                                    </a></li>
+                                    
+                                    <!-- Member-specific links -->
+                                    {% if user.role.value == 'MEMBER' %}
+                                    <li><a class="dropdown-item" href="/member/dashboard">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/member/savings">
+                                        <i class="bi bi-piggy-bank me-2"></i>My Savings
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/member/loans">
+                                        <i class="bi bi-cash-stack me-2"></i>My Loans
+                                    </a></li>
+                                    {% endif %}
+                                    
+                                    <!-- Manager links -->
+                                    {% if user.role.value == 'MANAGER' %}
+                                    <li><a class="dropdown-item" href="/manager/dashboard">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/manager/loans/pending">
+                                        <i class="bi bi-clock-history me-2"></i>Pending Approvals
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/manager/staff">
+                                        <i class="bi bi-people me-2"></i>Staff Management
+                                    </a></li>
+                                    {% endif %}
+                                    
+                                    <!-- Accountant links -->
+                                    {% if user.role.value == 'ACCOUNTANT' %}
+                                    <li><a class="dropdown-item" href="/accountant/dashboard">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/accountant/deposits/pending">
+                                        <i class="bi bi-coin me-2"></i>Pending Deposits
+                                    </a></li>
+                                    {% endif %}
+                                    
+                                    <!-- Credit Officer links -->
+                                    {% if user.role.value == 'CREDIT_OFFICER' %}
+                                    <li><a class="dropdown-item" href="/credit-officer/dashboard">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a></li>
+                                    {% endif %}
+                                    
+                                    <!-- Super Admin links -->
+                                    {% if user.role.value == 'SUPER_ADMIN' %}
+                                    <li><a class="dropdown-item" href="/superadmin/dashboard">
+                                        <i class="bi bi-speedometer2 me-2"></i>Super Admin
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/superadmin/saccos">
+                                        <i class="bi bi-building me-2"></i>Manage SACCOs
+                                    </a></li>
+                                    {% endif %}
+                                    
+                                    <!-- Account Switcher Section -->
+                                    {% if user.linked_member_account_id or user.linked_admin_id %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li class="dropdown-header">
+                                        <i class="bi bi-arrow-left-right me-1"></i> Switch Account
+                                    </li>
+                                    
+                                    <!-- Staff to Member switch -->
+									{% if user.role.value in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] and user.linked_member_account_id %}
+									<li>
+										<a class="dropdown-item" href="/switch/to-member?as_member={{ user.linked_member_account_id }}">
+											<i class="bi bi-person me-2"></i> Switch to Member View
+											<small class="d-block text-muted">Access your personal savings & loans</small>
+										</a>
+									</li>
+									{% endif %}
+
+									<!-- Member to Staff switch -->
+									{% if user.role.value == 'MEMBER' and user.linked_admin_id %}
+									<li>
+										<a class="dropdown-item" href="/switch/to-staff?as_staff={{ user.linked_admin_id }}">
+											<i class="bi bi-building me-2"></i> Switch to Staff View
+											<small class="d-block text-muted">
+												{% set staff_user = user.linked_admin %}
+												{% if staff_user %}
+													{% if staff_user.role.value == 'MANAGER' %}Manage SACCO operations
+													{% elif staff_user.role.value == 'ACCOUNTANT' %}Handle finances
+													{% elif staff_user.role.value == 'CREDIT_OFFICER' %}Manage loans
+													{% endif %}
+												{% endif %}
+											</small>
+										</a>
+									</li>
+									{% endif %}
+
+									<!-- Switch back button (shows when in switched mode) -->
+									{% if request.session.get('is_switched') %}
+									<li>
+										<a class="dropdown-item text-warning" href="/switch/back">
+											<i class="bi bi-arrow-return-left me-2"></i> Switch Back to Staff
+											<small class="d-block text-muted">Return to staff dashboard</small>
+										</a>
+									</li>
+									{% endif %}
+                                    {% endif %}
+                                    
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="/auth/logout">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </li>
+                        {% else %}
+                        <li class="nav-item ms-2"><a class="btn btn-sm btn-outline-primary" href="/auth/login">Sign in</a></li>
+                        <li class="nav-item ms-2 d-none d-lg-block"><a class="btn btn-sm btn-success" href="/auth/register">Create account</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <!-- SACCO Status Alert -->
+    {% if user and user.sacco_id and user.role.value != 'SUPER_ADMIN' %}
+        {% set sacco = user.sacco %}
+        {% if sacco and sacco.status == 'inactive' %}
+        <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                <div>
+                    <strong>SACCO Inactive:</strong> Your SACCO is currently inactive. Services are limited.
+                    {% if user.role.value in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] %}
+                    <a href="/sacco/settings" class="alert-link">Activate SACCO</a>
+                    {% endif %}
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% elif sacco and sacco.status == 'suspended' %}
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-shield-exclamation me-2 fs-5"></i>
+                <div>
+                    <strong>SACCO Suspended:</strong> Your SACCO has been suspended. Please contact the administrator.
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+    {% endif %}
+    
+    <main class="container">
+		<!-- Flash Messages -->
+		{% if request.session.flash_message %}
+		<div class="alert alert-{{ request.session.flash_type }} alert-dismissible fade show" role="alert">
+			{{ request.session.flash_message }}
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+		<!-- Clear the flash message after displaying -->
+		{% set _ = request.session.pop('flash_message', None) %}
+		{% set _ = request.session.pop('flash_type', None) %}
+		{% endif %}
+		
+		<!-- Legacy error/message alerts -->
+		{% if error %}<div class="alert alert-danger alert-dismissible fade show" role="alert">
+			{{ error }}
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>{% endif %}
+		{% if message %}<div class="alert alert-success alert-dismissible fade show" role="alert">
+			{{ message }}
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>{% endif %}
+        
+        <!-- Dual-Account Info Banner -->
+		{% if user and user.linked_member_account_id %}
+		<div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+			<div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+				<div>
+					<i class="bi bi-info-circle-fill me-2"></i>
+					<strong>Dual Account Access:</strong> You have a linked member account for personal savings and loans.
 				</div>
-			</nav>
-		</header>
-
-		<main class="container">
-			{% if error %}
-				<div class="alert alert-danger">{{ error }}</div>
-			{% endif %}
-			{% if message %}
-				<div class="alert alert-success">{{ message }}</div>
-			{% endif %}
-					{% block content %}
-					{% endblock %}
-		</main>
-
-		<footer class="mt-4 mb-4 text-center text-muted">
-			<div class="container">
-				<small>&copy; {{ now().year if now is defined else '2026' }} SACCO Management — Built for community finance</small>
+				<a href="/switch/to-member?as_member={{ user.linked_member_account_id }}" class="btn btn-sm btn-outline-primary">
+					<i class="bi bi-box-arrow-right me-1"></i> Switch to Member View
+				</a>
 			</div>
-		</footer>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+		{% endif %}
 
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-	</body>
+		{% if user and user.linked_admin_id %}
+		<div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+			<div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+				<div>
+					<i class="bi bi-building me-2"></i>
+					<strong>Staff Access:</strong> You have staff privileges for this SACCO.
+				</div>
+				<a href="/switch/to-staff?as_staff={{ user.linked_admin_id }}" class="btn btn-sm btn-outline-primary">
+					<i class="bi bi-box-arrow-right me-1"></i> Switch to Staff View
+				</a>
+			</div>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+		{% endif %}
+        
+        {% if user and user.linked_admin_id %}
+        <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div>
+                    <i class="bi bi-building me-2"></i>
+                    <strong>Staff Access:</strong> You have staff privileges for this SACCO.
+                </div>
+                <a href="/switch-to-admin?as_admin={{ user.linked_admin_id }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-box-arrow-right me-1"></i> Switch to Staff View
+                </a>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="mt-4 mb-4 text-center text-muted">
+        <div class="container">
+            <small>&copy; {{ now.year if now is defined else '2026' }} CheonTec SACCO Management — Built for community finance</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</body>
 </html>
-

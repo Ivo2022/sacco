@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Reports - Accountant{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">Financial Reports</h4>
+            <small class="text-muted">Generate and analyze financial reports</small>
+        </div>
+        <div>
+            <a href="/accountant/dashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Report Type Selection -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-white py-2">
+            <h6 class="mb-0"><i class="bi bi-calendar-range"></i> Report Period</h6>
+        </div>
+        <div class="card-body">
+            <div class="btn-group w-100 mb-3" role="group">
+                <a href="?report_type=daily" class="btn btn-outline-primary {% if report_type == 'daily' %}active{% endif %}">Daily</a>
+                <a href="?report_type=weekly" class="btn btn-outline-primary {% if report_type == 'weekly' %}active{% endif %}">Weekly</a>
+                <a href="?report_type=monthly" class="btn btn-outline-primary {% if report_type == 'monthly' %}active{% endif %}">Monthly</a>
+                <button class="btn btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#customDateRange">
+                    Custom
+                </button>
+            </div>
+            
+            <div class="collapse" id="customDateRange">
+                <form method="get" class="row g-2">
+                    <input type="hidden" name="report_type" value="custom">
+                    <div class="col-md-5">
+                        <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date }}">
+                    </div>
+                    <div class="col-md-5">
+                        <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date }}">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary btn-sm w-100">Generate</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <div class="card bg-success text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <small>Total Deposits</small>
+                    <h5 class="mb-0">{{ money(total_deposits) }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <small>Total Withdrawals</small>
+                    <h5 class="mb-0">{{ money(total_withdrawals) }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <small>Net Flow</small>
+                    <h5 class="mb-0">{{ money(net_flow) }}</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <small>Transactions</small>
+                    <h5 class="mb-0">{{ total_transactions }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Daily Breakdown Chart -->
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-graph-up"></i> Daily Breakdown</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-credit-card"></i> Payment Methods</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="paymentChart" height="200"></canvas>
+                    <div class="mt-3">
+                        {% for method in payment_methods %}
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between small">
+                                <span>{{ method.payment_method|replace('_', ' ') }}</span>
+                                <span class="fw-bold">{{ money(method.total) }}</span>
+                            </div>
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar bg-info" style="width: {{ (method.total / total_deposits * 100) if total_deposits > 0 else 0 }}%"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Depositors -->
+    <div class="card shadow-sm mt-3">
+        <div class="card-header bg-white py-2">
+            <h6 class="mb-0"><i class="bi bi-trophy"></i> Top Depositors</h6>
+        </div>
+        <div class="card-body p-0">
+            {% if top_depositors %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Rank</th>
+                            <th>Member</th>
+                            <th>Total Deposits</th>
+                            <th class="pe-3">Percentage</th>
+                        </thead>
+                        <tbody>
+                            {% for depositor in top_depositors %}
+                            <tr>
+                                <td class="ps-3 fw-bold">#{{ loop.index }}</td>
+                                <td>
+                                    <div class="fw-semibold">{{ depositor.member.full_name or depositor.member.email }}</div>
+                                    <small class="text-muted">{{ depositor.member.phone or '' }}</small>
+                                </td>
+                                <td class="fw-bold text-success">{{ money(depositor.total) }}</td>
+                                <td class="pe-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height: 5px;">
+                                            <div class="progress-bar bg-success" style="width: {{ (depositor.total / total_deposits * 100) if total_deposits > 0 else 0 }}%"></div>
+                                        </div>
+                                        <span class="small">{{ "%.1f"|format((depositor.total / total_deposits * 100) if total_deposits > 0 else 0) }}%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted small mb-0">No deposit data available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-list-ul"></i> Recent Transactions</h6>
+                <a href="/accountant/transactions" class="small">View all →</a>
+            </div>
+            <div class="card-body p-0">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Date</th>
+                                <th>Member</th>
+                                <th>Type</th>
+                                <th class="pe-3">Amount</th>
+                            </thead>
+                            <tbody>
+                                {% for tx in transactions[:10] %}
+                                <tr>
+                                    <td class="ps-3"><small>{{ local_time(tx.timestamp) }}</small></td>
+                                    <td><small>{{ tx.member.full_name or tx.member.email|truncate(25) }}</small></td>
+                                    <td>
+                                        {% if tx.type == 'deposit' %}
+                                        <span class="badge bg-success">Deposit</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Withdrawal</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-3 fw-bold {% if tx.type == 'deposit' %}text-success{% else %}text-danger{% endif %}">
+                                        {{ money(tx.amount) }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted small mb-0">No transactions in this period</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    // Daily Chart
+    const dailyData = {{ daily_data|tojson }};
+    if (dailyData && dailyData.length > 0) {
+        const ctx = document.getElementById('dailyChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dailyData.map(d => d.date),
+                datasets: [
+                    {
+                        label: 'Deposits',
+                        data: dailyData.map(d => d.deposits || 0),
+                        backgroundColor: '#28a745',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Withdrawals',
+                        data: dailyData.map(d => d.withdrawals || 0),
+                        backgroundColor: '#ffc107',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': UGX ' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return (value / 1000).toFixed(0) + 'k';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Payment Method Chart
+    const paymentData = {{ payment_methods|tojson }};
+    if (paymentData && paymentData.length > 0) {
+        const ctx2 = document.getElementById('paymentChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: paymentData.map(p => p.payment_method.replace('_', ' ')),
+                datasets: [{
+                    data: paymentData.map(p => p.total),
+                    backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545', '#6c757d']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a,b) => a + b, 0);
+                                const percentage = ((context.raw / total) * 100).toFixed(1);
+                                return `${context.label}: UGX ${context.raw.toLocaleString()} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    </script>
+    {% endblock %}

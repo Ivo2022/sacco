@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}My Profile - SACCO Management{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar / Profile Summary -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <!-- Profile Picture -->
+                    <div class="position-relative d-inline-block mb-3">
+                        {% if user.profile_picture %}
+                            <img src="/static/uploads/profiles/{{ user.profile_picture }}" 
+                                 alt="{{ user.full_name }}" 
+                                 class="rounded-circle img-thumbnail"
+                                 style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                                 style="width: 150px; height: 150px;">
+                                <i class="bi bi-person-circle text-primary" style="font-size: 80px;"></i>
+                            </div>
+                        {% endif %}
+                        <div class="position-absolute bottom-0 end-0">
+                            <label for="profile_picture" class="btn btn-sm btn-primary rounded-circle" style="width: 32px; height: 32px;">
+                                <i class="bi bi-camera"></i>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <h4 class="fw-bold mb-1">{{ user.full_name or user.email }}</h4>
+                    <p class="text-muted small mb-2">
+                        <i class="bi bi-envelope me-1"></i>{{ user.email }}
+                    </p>
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-calendar-check me-1"></i>Member since {{ member_since }}
+                    </p>
+                    
+                    <div class="row g-2 mt-3">
+                        <div class="col-6">
+                            <div class="bg-light rounded-3 p-2 text-center">
+                                <small class="text-muted d-block">Balance</small>
+                                <span class="fw-bold">{{ money(balance) }}</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-light rounded-3 p-2 text-center">
+                                <small class="text-muted d-block">Active Loans</small>
+                                <span class="fw-bold">{{ active_loans }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content - Edit Profile -->
+        <div class="col-lg-8">
+            <!-- Success/Error Messages -->
+            {% if success %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>{{ success }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+            
+            {% if error %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+            
+            <!-- Profile Information Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 rounded-2 p-2 me-2">
+                            <i class="bi bi-person-badge text-primary"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">Profile Information</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" action="/member/profile/update" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Full Name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="full_name" 
+                                       value="{{ user.full_name or '' }}"
+                                       placeholder="Enter your full name">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Email Address</label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       name="email" 
+                                       value="{{ user.email }}"
+                                       required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Phone Number</label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       name="phone" 
+                                       value="{{ user.phone or '' }}"
+                                       placeholder="+256 XXX XXX XXX">
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">National ID</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="national_id" 
+                                       value="{{ user.national_id or '' }}"
+                                       placeholder="National ID Number">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Username</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       name="username" 
+                                       value="{{ user.username or '' }}"
+                                       placeholder="Username">
+                            </div>
+							
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Date of Birth</label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       name="date_of_birth" 
+                                       value="{{ user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '' }}">
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-muted">Address</label>
+                                <textarea class="form-control" 
+                                          name="address" 
+                                          rows="2" 
+                                          placeholder="Your address">{{ user.address or '' }}</textarea>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-muted">Profile Picture</label>
+                                <input type="file" 
+                                       class="form-control" 
+                                       name="profile_picture" 
+                                       accept="image/*">
+                                <small class="text-muted">Allowed formats: JPEG, PNG, GIF. Max size: 5MB</small>
+                            </div>
+                            
+                            <div class="col-12">
+                                <hr>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-2"></i>Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Change Password Card -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-warning bg-opacity-10 rounded-2 p-2 me-2">
+                            <i class="bi bi-key text-warning"></i>
+                        </div>
+                        <h5 class="fw-bold mb-0">Change Password</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    {% if password_error %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ password_error }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                    
+                    {% if password_success %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>{{ password_success }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" action="/member/profile/change-password">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label small fw-bold text-muted">Current Password</label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       name="current_password" 
+                                       required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">New Password</label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       name="new_password" 
+                                       required>
+                                <small class="text-muted">Minimum 6 characters</small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">Confirm New Password</label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       name="confirm_password" 
+                                       required>
+                            </div>
+                            
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-outline-warning">
+                                    <i class="bi bi-key me-2"></i>Change Password
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<!-- Custom JavaScript for profile picture preview -->
+<script>
+document.querySelector('input[name="profile_picture"]').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = document.querySelector('.rounded-circle.img-thumbnail');
+            if (img) {
+                img.src = event.target.result;
+            } else {
+                const container = document.querySelector('.position-relative.d-inline-block');
+                const newImg = document.createElement('img');
+                newImg.src = event.target.result;
+                newImg.alt = "Profile Preview";
+                newImg.className = "rounded-circle img-thumbnail";
+                newImg.style.width = "150px";
+                newImg.style.height = "150px";
+                newImg.style.objectFit = "cover";
+                container.appendChild(newImg);
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+
+{% endblock %}

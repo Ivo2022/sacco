@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Loan Reports - Credit Officer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Loan Reports</h2>
+            <p class="text-muted">Generate and export loan reports</p>
+        </div>
+        <div>
+            <a href="/credit-officer/dashboard" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Report Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="bi bi-funnel"></i> Report Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Report Type</label>
+                    <select name="report_type" class="form-select">
+                        <option value="">All Loans</option>
+                        <option value="active" {% if report_type == 'active' %}selected{% endif %}>Active Loans</option>
+                        <option value="overdue" {% if report_type == 'overdue' %}selected{% endif %}>Overdue Loans</option>
+                        <option value="completed" {% if report_type == 'completed' %}selected{% endif %}>Completed Loans</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Generate Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <!-- Summary Cards - More Compact -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small>Total Loans</small>
+                            <h4 class="mb-0">{{ total_loans }}</h4>
+                        </div>
+                        <i class="bi bi-cash-stack fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small>Disbursed</small>
+                            <h4 class="mb-0">{{ money(total_amount) }}</h4>
+                        </div>
+                        <i class="bi bi-arrow-up-circle fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small>Collected</small>
+                            <h4 class="mb-0">{{ money(total_collections) }}</h4>
+                        </div>
+                        <i class="bi bi-piggy-bank fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small>Outstanding</small>
+                            <h4 class="mb-0">{{ money(total_outstanding) }}</h4>
+                        </div>
+                        <i class="bi bi-clock fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Collections Chart - Compact and Conditional -->
+    {% if monthly_data and monthly_data|length > 0 %}
+    <div class="card mb-4">
+        <div class="card-header py-2">
+            <h6 class="mb-0"><i class="bi bi-graph-up"></i> Monthly Collections</h6>
+        </div>
+        <div class="card-body py-2">
+            <canvas id="monthlyChart" height="200" style="max-height: 200px;"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Loans Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-table"></i> Loan Details</h5>
+            <button class="btn btn-sm btn-success" onclick="exportToExcel()">
+                <i class="bi bi-file-excel"></i> Export to Excel
+            </button>
+        </div>
+        <div class="card-body">
+            {% if loans %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="loansTable">
+                    <thead>
+                        <tr>
+                            <th>Loan ID</th>
+                            <th>Member</th>
+                            <th>Amount</th>
+                            <th>Paid</th>
+                            <th>Outstanding</th>
+                            <th>Status</th>
+                            <th>Disbursed Date</th>
+                            <th>Payment %</th>
+                        </thead>
+                    <tbody>
+                        {% for loan in loans %}
+                        <tr>
+                            <td>#{{ loan.id }}</td>
+                            <td>
+                                <strong>{{ loan.member.full_name or loan.member.email }}</strong><br>
+                                <small class="text-muted">{{ loan.member.phone or 'No phone' }}</small>
+                             </td>
+                            <td>{{ money(loan.amount) }}</td>
+                            <td class="text-success">{{ money(loan.total_paid) }}</td>
+                            <td class="text-danger">{{ money(loan.outstanding) }}</td>
+                            <td>
+                                {% if loan.status == 'approved' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif loan.status == 'overdue' %}
+                                <span class="badge bg-danger">Overdue</span>
+                                {% elif loan.status == 'completed' %}
+                                <span class="badge bg-info">Completed</span>
+                                {% elif loan.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ loan.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ local_time(loan.approved_at) if loan.approved_at else '-' }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                        <div class="progress-bar bg-success" 
+                                             style="width: {{ loan.payment_percentage }}%"></div>
+                                    </div>
+                                    <span>{{ "%.1f"|format(loan.payment_percentage) }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="text-muted mt-2">No loans found for the selected filters</p>
+                <a href="/credit-officer/reports" class="btn btn-primary btn-sm mt-2">
+                    Clear Filters
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Monthly Chart - Only create if there's data
+{% if monthly_data and monthly_data|length > 0 %}
+const monthlyData = {{ monthly_data|tojson }};
+const ctx = document.getElementById('monthlyChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: monthlyData.map(item => item.month),
+        datasets: [{
+            label: 'Collections (UGX)',
+            data: monthlyData.map(item => item.total),
+            borderColor: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.05)',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    font: {
+                        size: 11
+                    }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'UGX ' + context.raw.toLocaleString();
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                ticks: {
+                    callback: function(value) {
+                        return 'UGX ' + (value / 1000).toFixed(0) + 'k';
+                    },
+                    font: {
+                        size: 10
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Amount (UGX)',
+                    font: {
+                        size: 10
+                    }
+                }
+            },
+            x: {
+                ticks: {
+                    font: {
+                        size: 10
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+
+// Export to Excel
+function exportToExcel() {
+    const table = document.getElementById('loansTable');
+    if (!table) {
+        console.error('Table not found');
+        return;
+    }
+    
+    const rows = table.querySelectorAll('tr');
+    let csv = [];
+    
+    // Get headers
+    const headers = [];
+    table.querySelectorAll('th').forEach(th => {
+        headers.push(th.innerText);
+    });
+    csv.push(headers.join(','));
+    
+    // Get data
+    rows.forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('td').forEach(cell => {
+            rowData.push('"' + cell.innerText.replace(/"/g, '""') + '"');
+        });
+        if (rowData.length) csv.push(rowData.join(','));
+    });
+    
+    // Use filename from server or generate with JavaScript
+    let filename = "{{ export_filename }}";
+    
+    // Fallback in case export_filename is not available
+    if (!filename || filename === "{{ export_filename }}") {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const hours = String(today.getHours()).padStart(2, '0');
+        const minutes = String(today.getMinutes()).padStart(2, '0');
+        const seconds = String(today.getSeconds()).padStart(2, '0');
+        filename = `loan_report_${year}${month}${day}_${hours}${minutes}${seconds}.csv`;
+    }
+    
+    // Download
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

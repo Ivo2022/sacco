@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}Send Reminders - Credit Officer{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Send Reminders</h2>
+            <p class="text-muted">Send payment reminders to members via email and SMS</p>
+        </div>
+        <div>
+            <a href="/credit-officer/dashboard" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Tabs for Different Reminder Types -->
+    <ul class="nav nav-tabs mb-4" id="reminderTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue" type="button" role="tab">
+                <i class="bi bi-exclamation-triangle text-danger"></i> Overdue Loans
+                <span class="badge bg-danger ms-1" id="overdueCount">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">
+                <i class="bi bi-clock text-warning"></i> Upcoming Payments
+                <span class="badge bg-warning ms-1" id="upcomingCount">0</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="bulk-tab" data-bs-toggle="tab" data-bs-target="#bulk" type="button" role="tab">
+                <i class="bi bi-envelope-paper"></i> Bulk Reminders
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                <i class="bi bi-clock-history"></i> Reminder History
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Overdue Loans Tab -->
+        <div class="tab-pane fade show active" id="overdue" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Overdue Loans</h5>
+                </div>
+                <div class="card-body">
+                    {% if overdue_loans %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAllOverdue"></th>
+                                    <th>Loan ID</th>
+                                    <th>Member</th>
+                                    <th>Phone</th>
+                                    <th>Outstanding</th>
+                                    <th>Days Overdue</th>
+                                    <th>Monthly Payment</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in overdue_loans %}
+                                <tr>
+                                    <td><input type="checkbox" class="loan-checkbox overdue-checkbox" value="{{ loan.id }}"></td>
+                                    <td>#{{ loan.id }}</td>
+                                    <td>
+                                        <strong>{{ loan.member.full_name or loan.member.email }}</strong>
+                                    </td>
+                                    <td>{{ loan.member.phone or 'Not provided' }}</td>
+                                    <td class="text-danger fw-bold">{{ money(loan.outstanding) }}</td>
+                                    <td>
+                                        <span class="badge bg-danger">{{ loan.days_overdue }} days</span>
+                                    </td>
+                                    <td>{{ money(loan.monthly_payment) }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning send-single-reminder" 
+                                                data-loan-id="{{ loan.id }}"
+                                                data-member-name="{{ loan.member.full_name or loan.member.email }}"
+                                                data-reminder-type="overdue">
+                                            <i class="bi bi-envelope"></i> Send Reminder
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-danger" id="sendSelectedOverdue" disabled>
+                            <i class="bi bi-envelope-paper"></i> Send Reminders to Selected (0)
+                        </button>
+                        <button class="btn btn-outline-danger ms-2" id="sendAllOverdue">
+                            <i class="bi bi-send"></i> Send to All Overdue
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-check-circle fs-1 text-success"></i>
+                        <p class="text-muted mt-2">No overdue loans! Great job!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Payments Tab -->
+        <div class="tab-pane fade" id="upcoming" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="bi bi-clock"></i> Upcoming Payments (Next 7 Days)</h5>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_loans %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAllUpcoming"></th>
+                                    <th>Loan ID</th>
+                                    <th>Member</th>
+                                    <th>Phone</th>
+                                    <th>Due Date</th>
+                                    <th>Amount Due</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for loan in upcoming_loans %}
+                                <tr>
+                                    <td><input type="checkbox" class="loan-checkbox upcoming-checkbox" value="{{ loan.id }}"></td>
+                                    <td>#{{ loan.id }}</td>
+                                    <td>
+                                        <strong>{{ loan.member.full_name or loan.member.email }}</strong>
+                                    </td>
+                                    <td>{{ loan.member.phone or 'Not provided' }}</td>
+                                    <td>{{ datetime(loan.next_payment_date) }}</td>
+                                    <td>{{ money(loan.monthly_payment) }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary send-single-reminder" 
+                                                data-loan-id="{{ loan.id }}"
+                                                data-member-name="{{ loan.member.full_name or loan.member.email }}"
+                                                data-reminder-type="payment">
+                                            <i class="bi bi-envelope"></i> Send Reminder
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-warning" id="sendSelectedUpcoming" disabled>
+                            <i class="bi bi-envelope-paper"></i> Send Reminders to Selected (0)
+                        </button>
+                        <button class="btn btn-outline-warning ms-2" id="sendAllUpcoming">
+                            <i class="bi bi-send"></i> Send to All Upcoming
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar-check fs-1 text-success"></i>
+                        <p class="text-muted mt-2">No upcoming payments in the next 7 days</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Reminders Tab -->
+        <div class="tab-pane fade" id="bulk" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-envelope-paper"></i> Bulk Custom Reminder</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/credit-officer/reminders/bulk-send" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Select Recipients</label>
+                            <select name="recipient_type" class="form-select" required>
+                                <option value="overdue">All Overdue Loans</option>
+                                <option value="upcoming">All Upcoming Payments (Next 7 Days)</option>
+                                <option value="all_active">All Active Loans</option>
+                                <option value="custom">Custom Selection</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Reminder Type</label>
+                            <select name="reminder_type" class="form-select" id="bulkReminderType" required>
+                                <option value="payment">Payment Reminder</option>
+                                <option value="overdue">Overdue Notice</option>
+                                <option value="custom">Custom Message</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3" id="customMessageDiv" style="display: none;">
+                            <label class="form-label">Custom Message</label>
+                            <textarea name="custom_message" class="form-control" rows="5" 
+                                      placeholder="Enter your custom reminder message..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Delivery Method</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="send_email" value="true" checked>
+                                    <label class="form-check-label">Email</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="send_sms" value="true">
+                                    <label class="form-check-label">SMS</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> Send Bulk Reminders
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reminder History Tab -->
+        <div class="tab-pane fade" id="history" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Reminders Sent</h5>
+                </div>
+                <div class="card-body">
+                    {% if reminder_history %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Loan ID</th>
+                                    <th>Member</th>
+                                    <th>Reminder Type</th>
+                                    <th>Sent By</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reminder in reminder_history %}
+                                <tr>
+                                    <td>{{ datetime(reminder.timestamp) }}</td>
+                                    <td>#{{ reminder.loan_id }}</td>
+                                    <td>{{ reminder.member_name }}</td>
+                                    <td>
+                                        {% if reminder.reminder_type == 'overdue' %}
+                                        <span class="badge bg-danger">Overdue Notice</span>
+                                        {% elif reminder.reminder_type == 'payment' %}
+                                        <span class="badge bg-primary">Payment Reminder</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Custom</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ reminder.sent_by }}</td>
+                                    <td><span class="badge bg-success">Sent</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                        <p class="text-muted mt-2">No reminders sent yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Send Reminder Modal -->
+<div class="modal fade" id="reminderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="reminderForm" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Reminder</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="reminder_type" id="modalReminderType">
+                    <div class="mb-3">
+                        <label class="form-label">Member</label>
+                        <input type="text" class="form-control" id="modalMemberName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Message</label>
+                        <textarea name="message" class="form-control" rows="5" id="modalMessage"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Delivery Method</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="send_email" value="true" checked>
+                                <label class="form-check-label">Email</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" name="send_sms" value="true">
+                                <label class="form-check-label">SMS</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send Reminder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle checkbox selections for overdue loans
+const overdueCheckboxes = document.querySelectorAll('.overdue-checkbox');
+const sendSelectedOverdue = document.getElementById('sendSelectedOverdue');
+const selectAllOverdue = document.getElementById('selectAllOverdue');
+
+function updateSelectedCount() {
+    const selectedOverdue = document.querySelectorAll('.overdue-checkbox:checked').length;
+    if (sendSelectedOverdue) {
+        sendSelectedOverdue.textContent = `Send Reminders to Selected (${selectedOverdue})`;
+        sendSelectedOverdue.disabled = selectedOverdue === 0;
+    }
+    
+    const selectedUpcoming = document.querySelectorAll('.upcoming-checkbox:checked').length;
+    const sendSelectedUpcoming = document.getElementById('sendSelectedUpcoming');
+    if (sendSelectedUpcoming) {
+        sendSelectedUpcoming.textContent = `Send Reminders to Selected (${selectedUpcoming})`;
+        sendSelectedUpcoming.disabled = selectedUpcoming === 0;
+    }
+}
+
+if (overdueCheckboxes.length) {
+    overdueCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateSelectedCount);
+    });
+}
+
+if (selectAllOverdue) {
+    selectAllOverdue.addEventListener('change', function() {
+        overdueCheckboxes.forEach(cb => cb.checked = this.checked);
+        updateSelectedCount();
+    });
+}
+
+// Handle upcoming checkboxes
+const upcomingCheckboxes = document.querySelectorAll('.upcoming-checkbox');
+const selectAllUpcoming = document.getElementById('selectAllUpcoming');
+
+if (upcomingCheckboxes.length) {
+    upcomingCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateSelectedCount);
+    });
+}
+
+if (selectAllUpcoming) {
+    selectAllUpcoming.addEventListener('change', function() {
+        upcomingCheckboxes.forEach(cb => cb.checked = this.checked);
+        updateSelectedCount();
+    });
+}
+
+// Handle send selected buttons
+if (sendSelectedOverdue) {
+    sendSelectedOverdue.addEventListener('click', function() {
+        const selected = Array.from(document.querySelectorAll('.overdue-checkbox:checked'))
+            .map(cb => cb.value);
+        if (selected.length > 0) {
+            sendBulkReminders(selected, 'overdue');
+        }
+    });
+}
+
+const sendSelectedUpcoming = document.getElementById('sendSelectedUpcoming');
+if (sendSelectedUpcoming) {
+    sendSelectedUpcoming.addEventListener('click', function() {
+        const selected = Array.from(document.querySelectorAll('.upcoming-checkbox:checked'))
+            .map(cb => cb.value);
+        if (selected.length > 0) {
+            sendBulkReminders(selected, 'payment');
+        }
+    });
+}
+
+// Handle send all buttons
+document.getElementById('sendAllOverdue')?.addEventListener('click', function() {
+    if (confirm('Send reminders to all overdue loans?')) {
+        sendBulkReminders('all_overdue', 'overdue');
+    }
+});
+
+document.getElementById('sendAllUpcoming')?.addEventListener('click', function() {
+    if (confirm('Send reminders to all upcoming payments?')) {
+        sendBulkReminders('all_upcoming', 'payment');
+    }
+});
+
+function sendBulkReminders(loanIds, reminderType) {
+    fetch('/credit-officer/reminders/bulk-send', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            loan_ids: loanIds,
+            reminder_type: reminderType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Reminders sent successfully to ${data.count} members`);
+            location.reload();
+        } else {
+            alert('Error sending reminders: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error sending reminders');
+    });
+}
+
+// Handle single reminder modal
+document.querySelectorAll('.send-single-reminder').forEach(button => {
+    button.addEventListener('click', function() {
+        const loanId = this.dataset.loanId;
+        const memberName = this.dataset.memberName;
+        const reminderType = this.dataset.reminderType;
+        
+        const form = document.getElementById('reminderForm');
+        form.action = `/credit-officer/loan/${loanId}/send-reminder`;
+        
+        document.getElementById('modalReminderType').value = reminderType;
+        document.getElementById('modalMemberName').value = memberName;
+        
+        // Set default message based on reminder type
+        let defaultMessage = '';
+        if (reminderType === 'overdue') {
+            defaultMessage = `Dear ${memberName},\n\nYour loan payment is overdue. Please clear the outstanding balance to avoid penalties.\n\nThank you.`;
+        } else {
+            defaultMessage = `Dear ${memberName},\n\nThis is a reminder that your loan payment is due soon. Please make your payment promptly.\n\nThank you.`;
+        }
+        document.getElementById('modalMessage').value = defaultMessage;
+        
+        new bootstrap.Modal(document.getElementById('reminderModal')).show();
+    });
+});
+
+// Handle bulk reminder type change
+document.getElementById('bulkReminderType')?.addEventListener('change', function() {
+    const customDiv = document.getElementById('customMessageDiv');
+    customDiv.style.display = this.value === 'custom' ? 'block' : 'none';
+});
+</script>
+{% endblock %}

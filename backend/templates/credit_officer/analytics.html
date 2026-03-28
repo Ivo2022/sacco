@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}Loan Analytics - Credit Officer{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- Header - More Compact -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">Loan Analytics Dashboard</h4>
+            <small class="text-muted">Performance metrics and insights</small>
+        </div>
+        <div>
+            <a href="/credit-officer/dashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Key Metrics - Compact Cards -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-primary text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Total Disbursed</small>
+                            <h5 class="mb-0 fw-bold">{{ money(total_disbursed) }}</h5>
+                        </div>
+                        <i class="bi bi-cash-stack fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-success text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Total Received</small>
+                            <h5 class="mb-0 fw-bold">{{ money(total_received) }}</h5>
+                        </div>
+                        <i class="bi bi-piggy-bank fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-warning text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Collection Rate</small>
+                            <h5 class="mb-0 fw-bold">{{ "%.1f"|format(collection_rate) }}%</h5>
+                        </div>
+                        <i class="bi bi-percent fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-danger text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Outstanding</small>
+                            <h5 class="mb-0 fw-bold">{{ money(total_outstanding) }}</h5>
+                        </div>
+                        <i class="bi bi-clock fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row - Side by Side on Desktop -->
+    <div class="row g-3 mb-3">
+        <!-- Loan Status Distribution -->
+        <div class="col-lg-5 col-md-12">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-pie-chart me-1"></i> Loan Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="statusChart" height="180"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mt-2">
+                                {% set status_list = [
+                                    {'label': 'Active', 'count': status_counts.approved, 'color': '#28a745'},
+                                    {'label': 'Pending', 'count': status_counts.pending, 'color': '#ffc107'},
+                                    {'label': 'Completed', 'count': status_counts.completed, 'color': '#17a2b8'},
+                                    {'label': 'Overdue', 'count': status_counts.overdue, 'color': '#dc3545'},
+                                    {'label': 'Rejected', 'count': status_counts.rejected, 'color': '#6c757d'}
+                                ] %}
+                                {% for status in status_list %}
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small">
+                                        <span><i class="bi bi-circle-fill me-1" style="color: {{ status.color }}"></i> {{ status.label }}</span>
+                                        <strong>{{ status.count }}</strong>
+                                    </div>
+                                    <div class="progress" style="height: 4px;">
+                                        <div class="progress-bar" style="width: {{ (status.count / (total_disbursed|float) * 100) if total_disbursed > 0 else 0 }}%; background-color: {{ status.color }}"></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Method Distribution -->
+        <div class="col-lg-7 col-md-12">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-credit-card me-1"></i> Payment Methods</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <canvas id="paymentMethodChart" height="160"></canvas>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="mt-2">
+                                {% for method in payment_methods %}
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span>{{ method.method|replace('_', ' ') }}</span>
+                                        <span class="fw-bold">{{ money(method.total) }}</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-info" style="width: {{ (method.total / total_received * 100) if total_received > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% if not payment_methods %}
+                                <p class="text-muted small text-center mt-3">No payment data available</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Trends - Compact -->
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-graph-up me-1"></i> Monthly Trends (Last 6 Months)</h6>
+            <button class="btn btn-sm btn-link p-0" type="button" data-bs-toggle="collapse" data-bs-target="#trendsCollapse">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+        <div class="collapse show" id="trendsCollapse">
+            <div class="card-body py-2">
+                <canvas id="trendsChart" height="220" style="max-height: 220px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout for Tables -->
+    <div class="row g-3">
+        <!-- Top Performing Loans -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-trophy me-1"></i> Top Performing Loans</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if top_loans %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Member</th>
+                                    <th>Amount</th>
+                                    <th>Repaid</th>
+                                    <th class="pe-3">Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in top_loans %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="fw-semibold small">{{ item.member.full_name or item.member.email|truncate(20) }}</div>
+                                        <small class="text-muted">{{ item.member.phone or '' }}</small>
+                                    </td>
+                                    <td class="small">{{ money(item.loan.amount) }}</td>
+                                    <td class="small">{{ money(item.paid) }}</td>
+                                    <td class="pe-3" style="min-width: 100px;">
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 5px;">
+                                                <div class="progress-bar bg-success" style="width: {{ item.repayment_rate }}%"></div>
+                                            </div>
+                                            <span class="small">{{ "%.0f"|format(item.repayment_rate) }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox fs-4 text-muted"></i>
+                        <p class="text-muted small mb-0">No loan data available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Payments -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-calendar-event me-1"></i> Upcoming Payments (Next 30 Days)</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if upcoming_payments %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Member/Loan</th>
+                                    <th>Due</th>
+                                    <th class="pe-3">Days</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in upcoming_payments[:5] %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="fw-semibold small">{{ item.loan.user.full_name or item.loan.user.email|truncate(20) }}</div>
+                                        <small class="text-muted">Loan #{{ item.loan.id }}</small>
+                                    </td>
+                                    <td class="small">
+                                        <div>{{ money(item.amount_due) }}</div>
+                                        <small class="text-muted">{{ local_time(item.next_payment_date) }}</small>
+                                    </td>
+                                    <td class="pe-3">
+                                        {% if item.days_until_due == 0 %}
+                                        <span class="badge bg-danger">Today</span>
+                                        {% elif item.days_until_due <= 7 %}
+                                        <span class="badge bg-warning">{{ item.days_until_due }}d</span>
+                                        {% else %}
+                                        <span class="badge bg-info">{{ item.days_until_due }}d</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        {% if upcoming_payments|length > 5 %}
+                        <div class="text-center p-2 border-top">
+                            <a href="/credit-officer/loans?status=approved" class="small">View all {{ upcoming_payments|length }} upcoming →</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar-check fs-4 text-muted"></i>
+                        <p class="text-muted small mb-0">No upcoming payments</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Status Distribution Chart - Compact Donut
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Active', 'Pending', 'Completed', 'Overdue', 'Rejected'],
+        datasets: [{
+            data: [
+                {{ status_counts.approved }},
+                {{ status_counts.pending }},
+                {{ status_counts.completed }},
+                {{ status_counts.overdue }},
+                {{ status_counts.rejected }}
+            ],
+            backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'],
+            borderWidth: 0,
+            cutout: '60%'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: { 
+                callbacks: {
+                    label: function(context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((context.raw / total) * 100).toFixed(1);
+                        return `${context.label}: ${context.raw} (${percentage}%)`;
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Payment Method Chart - Compact Bar
+const paymentCtx = document.getElementById('paymentMethodChart').getContext('2d');
+new Chart(paymentCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ payment_methods|map(attribute='method')|list|tojson }},
+        datasets: [{
+            data: {{ payment_methods|map(attribute='total')|list|tojson }},
+            backgroundColor: '#17a2b8',
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'UGX ' + context.raw.toLocaleString();
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return (value / 1000).toFixed(0) + 'k';
+                    },
+                    font: { size: 9 }
+                },
+                grid: { display: false }
+            },
+            x: {
+                ticks: {
+                    font: { size: 9 },
+                    maxRotation: 45,
+                    minRotation: 45
+                }
+            }
+        }
+    }
+});
+
+// Monthly Trends Chart
+const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+new Chart(trendsCtx, {
+    type: 'line',
+    data: {
+        labels: {{ monthly_trends.months|tojson }},
+        datasets: [
+            {
+                label: 'Disbursements',
+                data: {{ monthly_trends.disbursements|tojson }},
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.05)',
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 5,
+                tension: 0.3,
+                fill: true
+            },
+            {
+                label: 'Collections',
+                data: {{ monthly_trends.collections|tojson }},
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.05)',
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 5,
+                tension: 0.3,
+                fill: true
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: { font: { size: 10 }, boxWidth: 10 }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': UGX ' + context.raw.toLocaleString();
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                ticks: {
+                    callback: function(value) {
+                        return (value / 1000).toFixed(0) + 'k';
+                    },
+                    font: { size: 9 }
+                }
+            },
+            x: {
+                ticks: { font: { size: 9 } }
+            }
+        }
+    }
+});
+
+// Send reminder functionality
+document.querySelectorAll('.send-reminder').forEach(button => {
+    button.addEventListener('click', function() {
+        const loanId = this.dataset.loanId;
+        const memberName = this.dataset.memberName;
+        
+        if (confirm(`Send payment reminder to ${memberName}?`)) {
+            fetch(`/credit-officer/loan/${loanId}/send-reminder`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ 'reminder_type': 'payment' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.success ? 'Reminder sent successfully!' : 'Error sending reminder');
+            })
+            .catch(() => alert('Error sending reminder'));
+        }
+    });
+});
+</script>
+{% endblock %}

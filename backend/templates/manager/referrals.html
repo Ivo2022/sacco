@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Pending Deposits - Admin{% endblock %}
+{% block content %}
+
+<!-- templates/admin/referrals.html -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>SACCO Referrals</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Referrer</th>
+                            <th>SACCO</th>
+                            <th>Commission</th>
+                            <th>Status</th>
+                        </thead>
+                        <tbody>
+                            {% for ref in sacco_referrals %}
+                            发展
+                                <td>{{ ref.referrer.full_name }}</td>
+                                <td>{{ ref.sacco.name }}</td>
+                                <td>{{ ref.amount|money }}</td>
+                                <td>
+                                    {% if ref.status == 'pending' %}
+                                        <button class="btn btn-sm btn-success" onclick="payCommission({{ ref.id }})">
+                                            Pay
+                                        </button>
+                                    {% else %}
+                                        <span class="badge bg-success">Paid</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Member Referrals</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Member referral table -->
+                </div>
+            </div>
+        </div>
+    </div><!-- templates/admin/referrals.html -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>SACCO Referrals</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Referrer</th>
+                            <th>SACCO</th>
+                            <th>Commission</th>
+                            <th>Status</th>
+                        </thead>
+                        <tbody>
+                            {% for ref in sacco_referrals %}
+                            发展
+                                <td>{{ ref.referrer.full_name }}</td>
+                                <td>{{ ref.sacco.name }}</td>
+                                <td>{{ ref.amount|money }}</td>
+                                <td>
+                                    {% if ref.status == 'pending' %}
+                                        <button class="btn btn-sm btn-success" onclick="payCommission({{ ref.id }})">
+                                            Pay
+                                        </button>
+                                    {% else %}
+                                        <span class="badge bg-success">Paid</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Member Referrals</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Member referral table -->
+                </div>
+            </div>
+        </div>
+    </div>

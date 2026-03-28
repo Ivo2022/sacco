@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}System Reports{% endblock %}
+{% block content %}
+<h3>System Reports</h3>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card p-3">
+      <small class="text-muted">Net Savings</small>
+      <div class="h4 mt-1">{{ '%.2f'|format(report.net_savings) }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <small class="text-muted">Total Loans</small>
+      <div class="h4 mt-1">{{ '%.2f'|format(report.total_loans) }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <small class="text-muted">Outstanding Loans</small>
+      <div class="h4 mt-1">{{ '%.2f'|format(report.outstanding_loans) }}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

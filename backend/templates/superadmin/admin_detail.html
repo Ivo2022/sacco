@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+{% block title %}Admin Details - {{ admin.full_name or admin.email }}{% endblock %}
+{% block content %}
+
+<!-- Header with Back Navigation -->
+<div class="d-flex align-items-center gap-3 mb-4">
+  <a href="/superadmin/admins" class="btn btn-outline-secondary btn-sm rounded-pill">
+    <i class="bi bi-arrow-left me-1"></i>Back to Admins
+  </a>
+  <div>
+    <h2 class="fw-bold mb-1">{{ admin.full_name or admin.email }}</h2>
+    <p class="text-muted mb-0">
+      <i class="bi bi-shield-shaded me-1"></i>Admin Profile and Management
+    </p>
+  </div>
+</div>
+
+<!-- Admin Profile Card -->
+<div class="row g-4 mb-4">
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <div class="d-flex align-items-center">
+          <div class="flex-shrink-0">
+            <div class="bg-primary bg-opacity-10 rounded-3 p-4">
+              <i class="bi bi-person-circle text-primary fs-1"></i>
+            </div>
+          </div>
+          <div class="flex-grow-1 ms-4">
+            <h3 class="fw-bold mb-1">{{ admin.full_name or admin.email }}</h3>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+              <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                <i class="bi bi-shield me-1"></i>{{ admin.role.name }}
+              </span>
+              {% if admin.is_active %}
+                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">
+                  <i class="bi bi-check-circle me-1"></i>Active
+                </span>
+              {% else %}
+                <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-2">
+                  <i class="bi bi-pause-circle me-1"></i>Inactive
+                </span>
+              {% endif %}
+              {% if sacco %}
+                <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2">
+                  <i class="bi bi-building me-1"></i>{{ sacco.name }}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-4 pt-2">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="bg-light rounded-3 p-3">
+              <small class="text-muted d-block mb-2">
+                <i class="bi bi-envelope me-1"></i>Email Address
+              </small>
+              <div class="d-flex align-items-center">
+                <span class="fw-semibold">{{ admin.email }}</span>
+                <button class="btn btn-sm btn-link text-muted ms-2" 
+                        onclick="copyToClipboard('{{ admin.email }}')"
+                        title="Copy email">
+                  <i class="bi bi-copy"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="bg-light rounded-3 p-3">
+              <small class="text-muted d-block mb-2">
+                <i class="bi bi-calendar3 me-1"></i>Created Date
+              </small>
+              <span class="fw-semibold">{{ admin.created_at.strftime('%B %d, %Y at %I:%M %p') if admin.created_at else '—' }}</span>
+            </div>
+          </div>
+          {% if admin.last_login %}
+          <div class="col-md-6">
+            <div class="bg-light rounded-3 p-3">
+              <small class="text-muted d-block mb-2">
+                <i class="bi bi-clock-history me-1"></i>Last Login
+              </small>
+              <span class="fw-semibold">{{ admin.last_login.strftime('%B %d, %Y at %I:%M %p') if admin.last_login else 'Never' }}</span>
+            </div>
+          </div>
+          {% endif %}
+          <div class="col-md-6">
+            <div class="bg-light rounded-3 p-3">
+              <small class="text-muted d-block mb-2">
+                <i class="bi bi-key me-1"></i>User ID
+              </small>
+              <span class="fw-semibold">#{{ admin.id }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Information Card -->
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <div class="d-flex align-items-center">
+          <div class="bg-warning bg-opacity-10 rounded-2 p-2 me-2">
+            <i class="bi bi-lock text-warning"></i>
+          </div>
+          <h5 class="fw-bold mb-0">Password Information</h5>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        {% if admin.password_plaintext %}
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted">Current Password</label>
+            <div class="input-group">
+              <input type="password" 
+                     id="passwordField" 
+                     class="form-control font-monospace" 
+                     value="{{ admin.password_plaintext }}" 
+                     readonly>
+              <button class="btn btn-outline-secondary" 
+                      type="button" 
+                      onclick="togglePasswordVisibility()"
+                      title="Show/Hide Password">
+                <i class="bi bi-eye" id="togglePasswordIcon"></i>
+              </button>
+              <button class="btn btn-outline-primary" 
+                      type="button" 
+                      onclick="copyToClipboard('{{ admin.password_plaintext }}')"
+                      title="Copy Password">
+                <i class="bi bi-copy"></i>
+              </button>
+            </div>
+            <small class="text-muted mt-2 d-block">
+              <i class="bi bi-info-circle me-1"></i>
+              This is the admin's current password. Share securely with the admin.
+            </small>
+          </div>
+        {% else %}
+          <div class="alert alert-info mb-3">
+            <i class="bi bi-info-circle me-2"></i>
+            Password is stored securely (hashed). Use the reset option below.
+          </div>
+        {% endif %}
+        
+        <div class="alert alert-warning small">
+          <i class="bi bi-shield-exclamation me-2"></i>
+          <strong>Security Note:</strong> Always share passwords securely and encourage admins to change their password after first login.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Management Actions -->
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <div class="d-flex align-items-center">
+          <div class="bg-primary bg-opacity-10 rounded-2 p-2 me-2">
+            <i class="bi bi-gear text-primary"></i>
+          </div>
+          <h5 class="fw-bold mb-0">Account Management</h5>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <div class="d-grid gap-3">
+          <!-- Reset Password -->
+          <button class="btn btn-outline-primary" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#resetPasswordModal">
+            <i class="bi bi-key me-2"></i>Reset Password
+          </button>
+          
+          <!-- Change Role -->
+          <button class="btn btn-outline-info" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#changeRoleModal">
+            <i class="bi bi-shield me-2"></i>Change Role
+          </button>
+          
+          <!-- Reassign SACCO -->
+          {% if sacco %}
+            <button class="btn btn-outline-secondary" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#reassignSaccoModal">
+              <i class="bi bi-building me-2"></i>Reassign to Different SACCO
+            </button>
+          {% endif %}
+          
+          <!-- Toggle Status -->
+          {% if admin.is_active %}
+            <button class="btn btn-outline-warning" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#deactivateModal">
+              <i class="bi bi-pause-circle me-2"></i>Deactivate Admin
+            </button>
+          {% else %}
+            <button class="btn btn-outline-success" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#activateModal">
+              <i class="bi bi-play-circle me-2"></i>Activate Admin
+            </button>
+          {% endif %}
+          
+          <!-- Delete Admin (Dangerous) -->
+          {% if admin.role.name != 'SUPER_ADMIN' %}
+            <button class="btn btn-outline-danger" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#deleteAdminModal">
+              <i class="bi bi-trash me-2"></i>Delete Admin Account
+            </button>
+          {% else %}
+            <div class="alert alert-secondary mb-0">
+              <i class="bi bi-shield-check me-2"></i>
+              Super Admin accounts cannot be deleted through this interface.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit Log & Activity -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <div class="d-flex align-items-center">
+          <div class="bg-info bg-opacity-10 rounded-2 p-2 me-2">
+            <i class="bi bi-clock-history text-info"></i>
+          </div>
+          <h5 class="fw-bold mb-0">Recent Activity</h5>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        {% if activities and activities|length > 0 %}
+          <div class="list-group list-group-flush">
+            {% for activity in activities[:5] %}
+              <div class="list-group-item px-0 py-3 border-0 border-bottom">
+                <div class="d-flex align-items-center">
+                  <div class="flex-shrink-0">
+                    <div class="bg-light rounded-circle p-2">
+                      <i class="bi bi-{{ activity.icon|default('activity') }} text-primary"></i>
+                    </div>
+                  </div>
+                  <div class="flex-grow-1 ms-3">
+                    <div class="d-flex justify-content-between">
+                      <span class="fw-semibold small">{{ activity.action }}</span>
+                      <small class="text-muted">{{ activity.timestamp }}</small>
+                    </div>
+                    <small class="text-muted d-block">{{ activity.details|default('No additional details') }}</small>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="text-center mt-3">
+            <a href="/superadmin/admin/{{ admin.id }}/logs" class="btn btn-sm btn-link">
+              View Full Activity Log <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+        {% else %}
+          <div class="text-center py-4">
+            <div class="bg-light rounded-circle d-inline-flex p-3 mb-3">
+              <i class="bi bi-activity fs-4 text-muted"></i>
+            </div>
+            <p class="text-muted mb-0">No recent activity found</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reset Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/superadmin/admin/{{ admin.id }}/reset-password">
+        <div class="modal-body">
+          <p>Reset password for <strong>{{ admin.full_name or admin.email }}</strong></p>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">New Password</label>
+            <div class="input-group">
+              <input type="password" class="form-control" name="new_password" id="newPassword" required>
+              <button class="btn btn-outline-secondary" type="button" onclick="toggleNewPassword()">
+                <i class="bi bi-eye" id="toggleNewPasswordIcon"></i>
+              </button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Confirm Password</label>
+            <input type="password" class="form-control" name="confirm_password" required>
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="show_password" id="showPasswordCheck">
+            <label class="form-check-label" for="showPasswordCheck">
+              Show new password to admin
+            </label>
+          </div>
+          <div class="alert alert-info small">
+            <i class="bi bi-info-circle me-2"></i>
+            Password must be at least 8 characters and include letters and numbers.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Reset Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Change Role Modal -->
+<div class="modal fade" id="changeRoleModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Change Admin Role</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/superadmin/admin/{{ admin.id }}/change-role">
+        <div class="modal-body">
+          <p>Change role for <strong>{{ admin.full_name or admin.email }}</strong></p>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">New Role</label>
+            <select class="form-select" name="role_id" required>
+              <option value="{{ admin.role.id }}">{{ admin.role.name }} (Current)</option>
+              {% for role in roles %}
+                {% if role.id != admin.role.id %}
+                  <option value="{{ role.id }}">{{ role.name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="alert alert-warning small">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Changing role will affect admin permissions immediately.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Change Role</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Reassign SACCO Modal -->
+<div class="modal fade" id="reassignSaccoModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reassign to SACCO</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/superadmin/admin/{{ admin.id }}/reassign-sacco">
+        <div class="modal-body">
+          <p>Reassign <strong>{{ admin.full_name or admin.email }}</strong> to a different SACCO</p>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Select SACCO</label>
+            <select class="form-select" name="sacco_id" required>
+              <option value="">None</option>
+              {% for sacco in saccos %}
+                <option value="{{ sacco.id }}" {% if admin.sacco and admin.sacco.id == sacco.id %}selected{% endif %}>
+                  {{ sacco.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Reassign</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Deactivate Modal -->
+<div class="modal fade" id="deactivateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Deactivate Admin</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/superadmin/admin/{{ admin.id }}/deactivate">
+        <div class="modal-body">
+          <p>Are you sure you want to deactivate <strong>{{ admin.full_name or admin.email }}</strong>?</p>
+          <p class="small text-muted">Deactivated admins cannot log in until reactivated.</p>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Reason (Optional)</label>
+            <textarea class="form-control" name="reason" rows="2" placeholder="Enter reason for deactivation..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning">Deactivate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Activate Modal -->
+<div class="modal fade" id="activateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Activate Admin</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/superadmin/admin/{{ admin.id }}/activate">
+        <div class="modal-body">
+          <p>Are you sure you want to activate <strong>{{ admin.full_name or admin.email }}</strong>?</p>
+          <p class="small text-muted">Activated admins will be able to log in again.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">Activate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Admin Modal -->
+<div class="modal fade" id="deleteAdminModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger">Delete Admin Account</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="/superadmin/admin/{{ admin.id }}/delete">
+        <div class="modal-body">
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Warning:</strong> This action cannot be undone!
+          </div>
+          <p>Are you sure you want to permanently delete <strong>{{ admin.full_name or admin.email }}</strong>?</p>
+          <p class="small text-muted">All associated data will be removed from the system.</p>
+          <div class="mb-3">
+            <label class="form-label">Type "DELETE" to confirm:</label>
+            <input type="text" class="form-control" id="confirmDelete" 
+                   placeholder="DELETE" onkeyup="checkDeleteConfirm()">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>Delete Permanently</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<script>
+// Toggle password visibility
+function togglePasswordVisibility() {
+  const passwordField = document.getElementById('passwordField');
+  const toggleIcon = document.getElementById('togglePasswordIcon');
+  
+  if (passwordField.type === 'password') {
+    passwordField.type = 'text';
+    toggleIcon.classList.remove('bi-eye');
+    toggleIcon.classList.add('bi-eye-slash');
+  } else {
+    passwordField.type = 'password';
+    toggleIcon.classList.remove('bi-eye-slash');
+    toggleIcon.classList.add('bi-eye');
+  }
+}
+
+function toggleNewPassword() {
+  const passwordField = document.getElementById('newPassword');
+  const toggleIcon = document.getElementById('toggleNewPasswordIcon');
+  
+  if (passwordField.type === 'password') {
+    passwordField.type = 'text';
+    toggleIcon.classList.remove('bi-eye');
+    toggleIcon.classList.add('bi-eye-slash');
+  } else {
+    passwordField.type = 'password';
+    toggleIcon.classList.remove('bi-eye-slash');
+    toggleIcon.classList.add('bi-eye');
+  }
+}
+
+// Copy to clipboard
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    // Show temporary tooltip or alert
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => {
+      btn.innerHTML = originalText;
+    }, 2000);
+  });
+}
+
+// Delete confirmation
+function checkDeleteConfirm() {
+  const confirmInput = document.getElementById('confirmDelete');
+  const deleteBtn = document.getElementById('deleteBtn');
+  
+  if (confirmInput && deleteBtn) {
+    deleteBtn.disabled = confirmInput.value !== 'DELETE';
+  }
+}
+</script>
+
+<style>
+.table-hover tbody tr:hover {
+  background-color: rgba(0,0,0,.02);
+}
+.modal-content {
+  border: none;
+  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+}
+.font-monospace {
+  font-family: monospace;
+}
+</style>
+
+{% endblock %}

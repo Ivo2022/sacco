@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Member Management - Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">Member Management</h4>
+            <small class="text-muted">View and manage all SACCO members</small>
+        </div>
+        <div>
+            <a href="/manager/dashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Total Members</small>
+                            <h5 class="mb-0 fw-bold">{{ member_count|default(0) }}</h5>
+                        </div>
+                        <i class="bi bi-people fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Total Savings</small>
+                            <h5 class="mb-0 fw-bold">{{ money(total_savings|default(0)) }}</h5>
+                        </div>
+                        <i class="bi bi-piggy-bank fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Active Loans</small>
+                            <h5 class="mb-0 fw-bold">{{ total_active_loans|default(0) }}</h5>
+                        </div>
+                        <i class="bi bi-cash-stack fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">New This Month</small>
+                            <h5 class="mb-0 fw-bold">{{ new_members|default(0) }}</h5>
+                        </div>
+                        <i class="bi bi-calendar-plus fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-white py-2">
+            <h6 class="mb-0"><i class="bi bi-search"></i> Search & Filter</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control form-control-sm" 
+                           placeholder="Search by name, email, or phone..." 
+                           value="{{ search_query }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">All Status</option>
+                        <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="has_loans" class="form-select form-select-sm">
+                        <option value="">All Members</option>
+                        <option value="yes" {% if has_loans == 'yes' %}selected{% endif %}>With Active Loans</option>
+                        <option value="no" {% if has_loans == 'no' %}selected{% endif %}>No Active Loans</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="sort" class="form-select form-select-sm">
+                        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+                        <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                        <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name A-Z</option>
+                        <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name Z-A</option>
+                        <option value="savings_desc" {% if sort == 'savings_desc' %}selected{% endif %}>Highest Savings</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Members Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="bi bi-list-ul"></i> Member List</h6>
+            <button class="btn btn-sm btn-success" onclick="exportToExcel()">
+                <i class="bi bi-file-excel"></i> Export
+            </button>
+        </div>
+        <div class="card-body p-0">
+            {% if members %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="membersTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>Member</th>
+                            <th>Contact</th>
+                            <th>Savings Balance</th>
+                            <th>Active Loans</th>
+                            <th>Joined</th>
+                            <th>Status</th>
+                            <th class="pe-3">Actions</th>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr>
+                                <td class="ps-3">#{{ member.id }}</td>
+                                <td>
+                                    <div class="fw-semibold">{{ member.full_name or member.email }}</div>
+                                    <small class="text-muted">{{ member.email }}</small>
+                                </td>
+                                <td>
+                                    {{ member.phone or 'No phone' }}<br>
+                                    <small class="text-muted">{{ member.national_id or 'No ID' }}</small>
+                                </td>
+                                <td class="fw-bold text-success">{{ money(member.savings_balance|default(0)) }}</td>
+                                <td>
+                                    {% if member.active_loans > 0 %}
+                                    <span class="badge bg-warning">{{ member.active_loans }} active</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">No loans</span>
+                                    {% endif %}
+                                </td>
+                                <td><small>{{ local_time(member.created_at) }}</small></td>
+                                <td>
+                                    {% if member.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="pe-3">
+                                    <a href="/manager/member/{{ member.id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-secondary" 
+                                            onclick="toggleMemberStatus({{ member.id }}, '{{ member.is_active }}')">
+                                        {% if member.is_active %}
+                                        <i class="bi bi-pause-circle"></i> Deactivate
+                                        {% else %}
+                                        <i class="bi bi-play-circle"></i> Activate
+                                        {% endif %}
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if total_pages > 1 %}
+                <div class="card-footer bg-white">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            {% if page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page-1 }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if has_loans %}&has_loans={{ has_loans }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">
+                                    Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for p in range(1, total_pages+1) %}
+                                {% if p == page %}
+                                <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                                {% elif p <= 3 or p > total_pages-3 or (p >= page-2 and p <= page+2) %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ p }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if has_loans %}&has_loans={{ has_loans }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">
+                                        {{ p }}
+                                    </a>
+                                </li>
+                                {% elif p == 4 or p == total_pages-3 %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page < total_pages %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page+1 }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if has_loans %}&has_loans={{ has_loans }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">
+                                    Next
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No members found</p>
+                    <small class="text-muted">Try adjusting your search filters</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportToExcel() {
+    const table = document.getElementById('membersTable');
+    if (!table) return;
+    
+    const rows = table.querySelectorAll('tr');
+    let csv = [];
+    
+    // Get headers
+    const headers = [];
+    table.querySelectorAll('th').forEach(th => {
+        headers.push(th.innerText);
+    });
+    csv.push(headers.join(','));
+    
+    // Get data
+    rows.forEach(row => {
+        const rowData = [];
+        row.querySelectorAll('td').forEach(cell => {
+            rowData.push('"' + cell.innerText.replace(/"/g, '""') + '"');
+        });
+        if (rowData.length) csv.push(rowData.join(','));
+    });
+    
+    const today = new Date();
+    const filename = `members_export_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.csv`;
+    
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function toggleMemberStatus(memberId, currentStatus) {
+    const action = currentStatus === 'True' ? 'deactivate' : 'activate';
+    if (confirm(`Are you sure you want to ${action} this member?`)) {
+        fetch(`/manager/member/${memberId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ active: currentStatus === 'False' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error updating member status');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating member status');
+        });
+    }
+}
+</script>
+{% endblock %}

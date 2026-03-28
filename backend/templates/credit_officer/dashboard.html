@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Credit Officer Dashboard{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>Credit Officer Dashboard</h2>
+    <p>Welcome, {{ user.full_name or user.email }}</p>
+
+    <!-- Overdue Loans Alert -->
+    {% if overdue_loans_list %}
+    <div class="alert alert-danger">
+        <h5><i class="bi bi-exclamation-triangle"></i> Overdue Loans ({{ overdue_loans_list|length }})</h5>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Days Overdue</th>
+                        <th>Action</th>
+                    </thead>
+                    <tbody>
+                        {% for loan in overdue_loans_list %}
+                        <tr>
+                            <td>{{ loan.user.full_name or loan.user.email }}</td>
+                            <td>{{ money(loan.outstanding) }}</td>
+                            <td>{{ loan.next_payment_date }}</td>
+                            <td class="text-danger">{{ loan.days_overdue }} days</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="sendReminder({{ loan.id }})">
+                                    <i class="bi bi-envelope"></i> Send Reminder
+                                </button>
+                                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#contactModal{{ loan.id }}">
+                                    <i class="bi bi-telephone"></i> Contact
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Upcoming Payments -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Upcoming Payments (Next 7 Days)</h5>
+        </div>
+        <div class="card-body">
+            {% if upcoming_payments %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Loan Amount</th>
+                            <th>Monthly Payment</th>
+                            <th>Due Date</th>
+                            <th>Action</th>
+                        </thead>
+                        <tbody>
+                            {% for loan in upcoming_payments %}
+                            <tr>
+                                <td>{{ loan.user.full_name or loan.user.email }}</td>
+                                <td>{{ money(loan.amount) }}</td>
+                                <td>{{ money(loan.monthly_payment) }}</td>
+                                <td>{{ loan.next_payment_date }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="sendReminder({{ loan.id }})">
+                                        <i class="bi bi-bell"></i> Send Reminder
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+            <p class="text-muted">No upcoming payments in the next 7 days</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- All Active Loans -->
+    <div class="card">
+        <div class="card-header">
+            <h5>All Active Loans</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Principal</th>
+                            <th>Paid</th>
+                            <th>Outstanding</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </thead>
+                        <tbody>
+                            {% for loan in active_loans %}
+                            <tr>
+                                <td>{{ loan.user.full_name or loan.user.email }}</td>
+                                <td>{{ money(loan.amount) }}</td>
+                                <td class="text-success">{{ money(loan.total_paid) }}</td>
+                                <td class="text-warning">{{ money(loan.outstanding) }}</td>
+                                <td>
+                                    {% if loan.status == 'approved' %}
+                                    <span class="badge bg-success">On Track</span>
+                                    {% elif loan.status == 'partial' %}
+                                    <span class="badge bg-info">Partially Paid</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewLoanDetails({{ loan.id }})">
+                                        View Details
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function sendReminder(loanId) {
+    fetch(`/credit-officer/loan/${loanId}/send-reminder`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Reminder sent successfully!');
+            } else {
+                alert('Error sending reminder: ' + data.error);
+            }
+        });
+}
+
+function viewLoanDetails(loanId) {
+    window.location.href = `/credit-officer/loan/${loanId}`;
+}
+</script>
+
+{% endblock %}

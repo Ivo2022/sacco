@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}{{ sacco.name }} - Super Admin{% endblock %}
+{% block content %}
+
+<div class="container mt-4">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/superadmin/dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="/superadmin/saccos">SACCOs</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ sacco.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>
+                <i class="bi bi-building"></i> {{ sacco.name }}
+            </h2>
+            <p class="text-muted">SACCO Details and Management</p>
+        </div>
+        <div>
+            <a href="/superadmin/sacco/{{ sacco.id }}/edit" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Edit SACCO
+            </a>
+            <a href="/superadmin/saccos" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- SACCO Status Badge -->
+    <div class="mb-4">
+        {% if sacco.status == 'active' %}
+            <span class="badge bg-success px-3 py-2">Active</span>
+        {% elif sacco.status == 'inactive' %}
+            <span class="badge bg-secondary px-3 py-2">Inactive</span>
+        {% elif sacco.status == 'suspended' %}
+            <span class="badge bg-danger px-3 py-2">Suspended</span>
+        {% else %}
+            <span class="badge bg-info px-3 py-2">{{ sacco.status }}</span>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <!-- Left Column - SACCO Information -->
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> SACCO Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong><i class="bi bi-tag"></i> Name:</strong><br>
+                        {{ sacco.name }}
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="bi bi-envelope"></i> Email:</strong><br>
+                        {{ sacco.email or 'Not provided' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="bi bi-telephone"></i> Phone:</strong><br>
+                        {{ sacco.phone or 'Not provided' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="bi bi-geo-alt"></i> Address:</strong><br>
+                        {{ sacco.address or 'Not provided' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="bi bi-card-text"></i> Registration No:</strong><br>
+                        {{ sacco.registration_no or 'Not provided' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="bi bi-globe"></i> Website:</strong><br>
+                        {% if sacco.website %}
+                            <a href="{{ sacco.website }}" target="_blank">{{ sacco.website }}</a>
+                        {% else %}
+                            Not provided
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <strong><i class="bi bi-calendar3"></i> Created:</strong><br>
+                        {{ local_time(sacco.created_at) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Management & Statistics -->
+        <div class="col-lg-7">
+            <!-- Manager Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge"></i> SACCO Manager
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if manager %}
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 60px; height: 60px;">
+                                    <i class="bi bi-person-circle fs-1 text-primary"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="mb-1">{{ manager.full_name or manager.email }}</h5>
+                                <p class="text-muted mb-1">{{ manager.email }}</p>
+                                <div>
+                                    {% if manager.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                    <span class="badge bg-info ms-1">Joined: {{ local_time(manager.created_at) }}</span>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <a href="/superadmin/manager/{{ manager.id }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> View Details
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-person-x fs-1 text-muted"></i>
+                            <p class="text-muted mt-2">No manager assigned to this SACCO yet.</p>
+                            <a href="/superadmin/saccos" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle"></i> Create Manager
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ members_count|default(0) }}</h3>
+                            <small>Total Members</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ money(total_savings|default(0)) }}</h3>
+                            <small>Total Savings</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ money(total_loans|default(0)) }}</h3>
+                            <small>Total Loans</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Information -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people"></i> SACCO Staff
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if staff and staff|length > 0 %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </thead>
+                                <tbody>
+                                    {% for member in staff %}
+                                    <tr>
+                                        <td>{{ member.full_name or member.email }}</td>
+                                        <td>
+                                            {% if member.role.name == 'ACCOUNTANT' %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-calculator"></i> Accountant
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="bi bi-credit-card"></i> Credit Officer
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if member.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="small">{{ local_time(member.created_at) }}</td>
+                                        <td>
+                                            <a href="/superadmin/staff/{{ member.id }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-people fs-1 text-muted"></i>
+                            <p class="text-muted mt-2">No staff members assigned to this SACCO yet.</p>
+                            <small class="text-muted">Staff can be created by the SACCO Manager.</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

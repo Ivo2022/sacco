@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0">Management Reports</h4>
+            <small class="text-muted">SACCO performance and operational reports</small>
+        </div>
+        <div>
+            <a href="/manager/dashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Report Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-cash-stack fs-1 text-primary"></i>
+                    <h5 class="mt-2">Loan Portfolio Report</h5>
+                    <p class="small text-muted">Active loans, disbursements, collections, and repayment rates</p>
+                    <a href="#" class="btn btn-sm btn-outline-primary disabled" aria-disabled="true" tabindex="-1">
+                        <i class="bi bi-hourglass-split"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-piggy-bank fs-1 text-success"></i>
+                    <h5 class="mt-2">Savings Report</h5>
+                    <p class="small text-muted">Total savings, deposits, withdrawals, and member balances</p>
+                    <a href="#" class="btn btn-sm btn-outline-success disabled" aria-disabled="true" tabindex="-1">
+                        <i class="bi bi-hourglass-split"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people fs-1 text-info"></i>
+                    <h5 class="mt-2">Membership Report</h5>
+                    <p class="small text-muted">Member growth, demographics, and activity statistics</p>
+                    <a href="#" class="btn btn-sm btn-outline-info disabled" aria-disabled="true" tabindex="-1">
+                        <i class="bi bi-hourglass-split"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-currency-exchange fs-1 text-warning"></i>
+                    <h5 class="mt-2">Cash Flow Report</h5>
+                    <p class="small text-muted">Daily, weekly, and monthly cash flow analysis</p>
+                    <a href="#" class="btn btn-sm btn-outline-warning disabled" aria-disabled="true" tabindex="-1">
+                        <i class="bi bi-hourglass-split"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-bar-chart-line fs-1 text-danger"></i>
+                    <h5 class="mt-2">Performance Dashboard</h5>
+                    <p class="small text-muted">KPIs, trends, and performance metrics</p>
+                    <a href="#" class="btn btn-sm btn-outline-danger disabled" aria-disabled="true" tabindex="-1">
+                        <i class="bi bi-hourglass-split"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-file-text fs-1 text-secondary"></i>
+                    <h5 class="mt-2">Audit Log Report</h5>
+                    <p class="small text-muted">System activity and user actions log</p>
+                    <a href="#" class="btn btn-sm btn-outline-secondary disabled" aria-disabled="true" tabindex="-1">
+                        <i class="bi bi-hourglass-split"></i> Coming Soon
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Development Notice -->
+    <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <strong>Development Notice:</strong> Report generation features are currently under development and will be available soon.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Quick Stats Preview -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-2">
+            <h6 class="mb-0"><i class="bi bi-graph-up"></i> Quick Statistics Preview</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <h3 class="text-primary mb-0">{{ active_loans_count|default(0) }}</h3>
+                    <small class="text-muted">Active Loans</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h3 class="text-success mb-0">{{ money(total_savings|default(0)) }}</h3>
+                    <small class="text-muted">Total Savings</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h3 class="text-info mb-0">{{ member_count|default(0) }}</h3>
+                    <small class="text-muted">Total Members</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <h3 class="text-warning mb-0">{{ staff_count|default(0) }}</h3>
+                    <small class="text-muted">Staff Members</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease;
+}
+
+.btn.disabled, .btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+</style>
+{% endblock %}

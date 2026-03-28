@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+
+{% block title %}Manager Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Welcome Section with Gradient Background -->
+    <div class="welcome-section mb-4 p-4 rounded-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h2 class="text-white mb-1 fw-bold">Welcome back, {{ user.full_name or user.email }}!</h2>
+                <p class="text-white-50 mb-0">Here's what's happening with your SACCO today.</p>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-light btn-sm dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-bell me-1"></i> Notifications
+                    {% if pending_notifications|default(0) > 0 %}
+                    <span class="badge bg-danger ms-1">{{ pending_notifications }}</span>
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                    <li><a class="dropdown-item py-2" href="/manager/loans/pending">
+                        <i class="bi bi-clock-history text-warning me-2"></i>
+                        <span>Pending Loans: <strong>{{ pending_loans|default(0) }}</strong></span>
+                    </a></li>
+                    <li><a class="dropdown-item py-2" href="/manager/all-loans?status=overdue">
+                        <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                        <span>Overdue Loans: <strong>{{ overdue_loans|default(0) }}</strong></span>
+                    </a></li>
+                    <li><a class="dropdown-item py-2" href="/accountant/deposits/pending">
+                        <i class="bi bi-coin text-info me-2"></i>
+                        <span>Pending Deposits: <strong>{{ pending_deposits|default(0) }}</strong></span>
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item py-2" href="/manager/notifications">
+                        <i class="bi bi-bell me-2"></i> View all notifications
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards with Hover Effects -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card bg-white rounded-4 p-3 shadow-sm hover-lift">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Total Members</span>
+                        <h3 class="mb-0 fw-bold mt-1">{{ member_count|default(0) }}</h3>
+                        <small class="text-success"><i class="bi bi-arrow-up"></i> +{{ new_members_this_month|default(0) }} this month</small>
+                    </div>
+                    <div class="metric-icon bg-primary bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-people-fill fs-2 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card bg-white rounded-4 p-3 shadow-sm hover-lift">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Total Savings</span>
+                        <h3 class="mb-0 fw-bold mt-1">{{ money(total_savings|default(0)) }}</h3>
+                        <small class="text-success"><i class="bi bi-trending-up"></i> Growing steadily</small>
+                    </div>
+                    <div class="metric-icon bg-success bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-piggy-bank-fill fs-2 text-success"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card bg-white rounded-4 p-3 shadow-sm hover-lift">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Total Loans</span>
+                        <h3 class="mb-0 fw-bold mt-1">{{ money(total_loan_amount|default(0)) }}</h3>
+                        <small class="text-info">{{ active_loans_count|default(0) }} active loans</small>
+                    </div>
+                    <div class="metric-icon bg-info bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-cash-stack fs-2 text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="metric-card bg-white rounded-4 p-3 shadow-sm hover-lift">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase">Staff Members</span>
+                        <h3 class="mb-0 fw-bold mt-1">{{ staff_count|default(0) }}</h3>
+                        <small class="text-warning">{{ accountant_count|default(0) }} Accountants, {{ credit_officer_count|default(0) }} Credit Officers</small>
+                    </div>
+                    <div class="metric-icon bg-warning bg-opacity-10 rounded-3 p-3">
+                        <i class="bi bi-person-badge-fill fs-2 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Status Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="status-card rounded-4 p-3 text-white" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-white-50 small">Active Loans</span>
+                        <h2 class="mb-0 fw-bold">{{ active_loans_count|default(0) }}</h2>
+                    </div>
+                    <i class="bi bi-check-circle-fill fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="status-card rounded-4 p-3 text-white" style="background: linear-gradient(135deg, #ffc107, #fd7e14);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-white-50 small">Pending Loans</span>
+                        <h2 class="mb-0 fw-bold">{{ pending_loans|default(0) }}</h2>
+                    </div>
+                    <i class="bi bi-clock-history fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="status-card rounded-4 p-3 text-white" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-white-50 small">Overdue Loans</span>
+                        <h2 class="mb-0 fw-bold">{{ overdue_loans|default(0) }}</h2>
+                    </div>
+                    <i class="bi bi-exclamation-triangle-fill fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="status-card rounded-4 p-3 text-white" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-white-50 small">Completed Loans</span>
+                        <h2 class="mb-0 fw-bold">{{ completed_loans|default(0) }}</h2>
+                    </div>
+                    <i class="bi bi-check2-all fs-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern Navigation Tabs -->
+    <ul class="nav nav-tabs modern-tabs mb-4" id="managerTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                <i class="bi bi-speedometer2 me-2"></i>Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="members-tab" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab">
+                <i class="bi bi-people me-2"></i>Members
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="loans-tab" data-bs-toggle="tab" data-bs-target="#loans" type="button" role="tab">
+                <i class="bi bi-cash-stack me-2"></i>Loans
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="staff-tab" data-bs-toggle="tab" data-bs-target="#staff" type="button" role="tab">
+                <i class="bi bi-person-badge me-2"></i>Staff Oversight
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">
+                <i class="bi bi-list-ul me-2"></i>Transactions
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <div class="row g-4">
+                <!-- Pending Approvals Section -->
+				<!-- Add to the pending approvals section -->
+				<div class="col-md-12">
+					<div class="card shadow-sm h-100">
+						<div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+							<h6 class="mb-0"><i class="bi bi-person-check"></i> Pending Member Approvals</h6>
+							<a href="/manager/pending-members" class="small">View all →</a>
+						</div>
+						<div class="card-body p-0">
+							{% if pending_members_count > 0 %}
+							<div class="alert alert-warning m-3">
+								<i class="bi bi-exclamation-triangle"></i> 
+								{{ pending_members_count }} member{% if pending_members_count > 1 %}s{% endif %} awaiting approval.
+							</div>
+							{% else %}
+							<div class="text-center py-4">
+								<i class="bi bi-check-circle fs-3 text-success"></i>
+								<p class="text-muted small mb-0">No pending member approvals</p>
+							</div>
+							{% endif %}
+						</div>
+					</div>
+				</div>
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2 text-warning"></i>Pending Loan Approvals</h5>
+                            <a href="/manager/loans/pending" class="btn btn-sm btn-outline-primary rounded-pill">View all →</a>
+                        </div>
+                        <div class="card-body p-0">
+                            {% if recent_pending_loans and recent_pending_loans|length > 0 %}
+                            <div class="list-group list-group-flush">
+                                {% for loan in recent_pending_loans[:5] %}
+                                <div class="list-group-item border-0 py-3 px-4 hover-bg-light">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar-circle bg-warning bg-opacity-10 rounded-circle p-2">
+                                                <i class="bi bi-person text-warning"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1 fw-semibold">{{ loan.user.full_name or loan.user.email|truncate(25) }}</h6>
+                                                <small class="text-muted">Applied: {{ local_time(loan.timestamp) }} • {{ loan.term }} months term</small>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold text-primary">{{ money(loan.amount) }}</div>
+                                            <a href="/manager/loan/{{ loan.id }}/review" class="btn btn-sm btn-primary rounded-pill mt-1">Review</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-check-circle fs-1 text-success"></i>
+                                <p class="text-muted mt-2 mb-0">No pending loan approvals</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Deposits -->
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-semibold"><i class="bi bi-coin me-2 text-success"></i>Pending Deposits</h5>
+                            <a href="/accountant/deposits/pending" class="btn btn-sm btn-outline-primary rounded-pill">View all →</a>
+                        </div>
+                        <div class="card-body p-0">
+                            {% if recent_pending_deposits and recent_pending_deposits|length > 0 %}
+                            <div class="list-group list-group-flush">
+                                {% for deposit in recent_pending_deposits[:5] %}
+                                <div class="list-group-item border-0 py-3 px-4 hover-bg-light">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar-circle bg-success bg-opacity-10 rounded-circle p-2">
+                                                <i class="bi bi-person text-success"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1 fw-semibold">{{ deposit.user.full_name or deposit.user.email|truncate(25) }}</h6>
+                                                <small class="text-muted">{{ deposit.payment_method|replace('_', ' ') }} • {{ local_time(deposit.timestamp) }}</small>
+                                            </div>
+                                        </div>
+                                        <div class="fw-bold text-success">{{ money(deposit.amount) }}</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-check-circle fs-1 text-success"></i>
+                                <p class="text-muted mt-2 mb-0">No pending deposits</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart and Activity Row -->
+            <div class="row g-4 mt-2">
+                <div class="col-lg-7">
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4">
+                            <h5 class="mb-0 fw-semibold"><i class="bi bi-graph-up me-2 text-info"></i>Loan Performance Overview</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if (pending_loans|default(0) + approved_loans|default(0) + completed_loans|default(0) + overdue_loans|default(0)) > 0 %}
+                            <canvas id="loanChart" height="280" style="max-height: 280px;"></canvas>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-bar-chart-line fs-1 text-muted"></i>
+                                <p class="text-muted mt-2 mb-0">No loan data available yet</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-semibold"><i class="bi bi-activity me-2 text-primary"></i>Recent Activity</h5>
+                            <a href="/manager/logs" class="btn btn-sm btn-outline-secondary rounded-pill">View all</a>
+                        </div>
+                        <div class="card-body p-0">
+                            {% if recent_activities and recent_activities|length > 0 %}
+                            <div class="list-group list-group-flush">
+                                {% for activity in recent_activities[:5] %}
+                                <div class="list-group-item border-0 py-3 px-4">
+                                    <div class="d-flex gap-3">
+                                        <div class="activity-icon mt-1">
+                                            {% if 'APPROVED' in activity.action %}
+                                            <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                            {% elif 'REJECTED' in activity.action %}
+                                            <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+                                            {% elif 'CREATED' in activity.action %}
+                                            <i class="bi bi-plus-circle-fill text-primary fs-5"></i>
+                                            {% else %}
+                                            <i class="bi bi-info-circle-fill text-info fs-5"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold small">{{ activity.action|replace('_', ' ') }}</div>
+                                            <small class="text-muted">{{ activity.details|truncate(60) }}</small>
+                                            <div class="text-muted small mt-1">{{ local_time(activity.timestamp) }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted"></i>
+                                <p class="text-muted mt-2 mb-0">No recent activity</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Tab -->
+        <div class="tab-pane fade" id="members" role="tabpanel">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4">
+                            <div class="stat-card bg-primary bg-opacity-10 rounded-4 p-3 text-center">
+                                <h2 class="mb-0 fw-bold text-primary">{{ member_count|default(0) }}</h2>
+                                <small class="text-muted">Total Members</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card bg-success bg-opacity-10 rounded-4 p-3 text-center">
+                                <h2 class="mb-0 fw-bold text-success">{{ active_members|default(0) }}</h2>
+                                <small class="text-muted">Active Members</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card bg-info bg-opacity-10 rounded-4 p-3 text-center">
+                                <h2 class="mb-0 fw-bold text-info">{{ new_members_this_month|default(0) }}</h2>
+                                <small class="text-muted">New This Month</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-3 d-md-flex justify-content-md-center">
+                        <a href="/manager/members" class="btn btn-primary btn-lg px-4 rounded-pill">
+                            <i class="bi bi-people me-2"></i>View All Members
+                        </a>
+                        <a href="/manager/members/export" class="btn btn-outline-success btn-lg px-4 rounded-pill">
+                            <i class="bi bi-file-excel me-2"></i>Export Members List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loans Tab -->
+        <div class="tab-pane fade" id="loans" role="tabpanel">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card bg-warning bg-opacity-10 rounded-4 p-3 text-center">
+                                <h3 class="mb-0 fw-bold text-warning">{{ pending_loans|default(0) }}</h3>
+                                <small class="text-muted">Pending</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-success bg-opacity-10 rounded-4 p-3 text-center">
+                                <h3 class="mb-0 fw-bold text-success">{{ active_loans_count|default(0) }}</h3>
+                                <small class="text-muted">Active</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-danger bg-opacity-10 rounded-4 p-3 text-center">
+                                <h3 class="mb-0 fw-bold text-danger">{{ overdue_loans|default(0) }}</h3>
+                                <small class="text-muted">Overdue</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card bg-info bg-opacity-10 rounded-4 p-3 text-center">
+                                <h3 class="mb-0 fw-bold text-info">{{ completed_loans|default(0) }}</h3>
+                                <small class="text-muted">Completed</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center">
+                        <a href="/manager/loans/pending" class="btn btn-outline-warning rounded-pill px-4">
+                            <i class="bi bi-clock-history me-2"></i>Review Pending Loans
+                        </a>
+                        <a href="/manager/all-loans" class="btn btn-outline-primary rounded-pill px-4">
+                            <i class="bi bi-list-ul me-2"></i>View All Loans
+                        </a>
+                        <a href="/manager/all-loans?status=overdue" class="btn btn-outline-danger rounded-pill px-4">
+                            <i class="bi bi-exclamation-triangle me-2"></i>View Overdue Loans
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Oversight Tab -->
+        <div class="tab-pane fade" id="staff" role="tabpanel">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body p-4">
+                            <h5 class="mb-4 fw-semibold"><i class="bi bi-person-badge me-2 text-primary"></i>Staff Overview</h5>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="stat-card bg-light rounded-4 p-3 text-center">
+                                        <h3 class="mb-0 fw-bold">{{ staff_count|default(0) }}</h3>
+                                        <small>Total Staff</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-card bg-light rounded-4 p-3 text-center">
+                                        <h3 class="mb-0 fw-bold">{{ accountant_count|default(0) }}</h3>
+                                        <small>Accountants</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-card bg-light rounded-4 p-3 text-center">
+                                        <h3 class="mb-0 fw-bold">{{ credit_officer_count|default(0) }}</h3>
+                                        <small>Credit Officers</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <a href="/manager/staff" class="btn btn-primary w-100 rounded-pill">
+                                    <i class="bi bi-people me-2"></i>Manage Staff
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body p-4">
+                            <h5 class="mb-4 fw-semibold"><i class="bi bi-eye me-2 text-info"></i>Role-Specific Dashboards</h5>
+                            <div class="d-grid gap-3">
+                                <a href="/manager/accountant-dashboard" class="btn btn-outline-info rounded-pill py-3 text-start px-4">
+                                    <i class="bi bi-calculator-fill me-2"></i> Accountant Dashboard
+                                    <small class="d-block text-muted mt-1">View financial operations and pending deposits</small>
+                                </a>
+                                <a href="/manager/credit-officer-dashboard" class="btn btn-outline-warning rounded-pill py-3 text-start px-4">
+                                    <i class="bi bi-shield-check me-2"></i> Credit Officer Dashboard
+                                    <small class="d-block text-muted mt-1">Monitor loans and repayment activities</small>
+                                </a>
+                                <!--<a href="/manager/staff-activity" class="btn btn-outline-success rounded-pill py-3 text-start px-4">
+                                    <i class="bi bi-activity me-2"></i> Staff Activity Logs
+                                    <small class="d-block text-muted mt-1">View all staff actions and approvals</small>
+                                </a>-->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Tab -->
+        <div class="tab-pane fade" id="transactions" role="tabpanel">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4">
+                            <div class="stat-card bg-success bg-opacity-10 rounded-4 p-3 text-center">
+                                <h4 class="mb-0 fw-bold text-success">{{ money(total_deposits_30d|default(0)) }}</h4>
+                                <small>Last 30 Days Deposits</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card bg-warning bg-opacity-10 rounded-4 p-3 text-center">
+                                <h4 class="mb-0 fw-bold text-warning">{{ money(total_withdrawals_30d|default(0)) }}</h4>
+                                <small>Last 30 Days Withdrawals</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card bg-info bg-opacity-10 rounded-4 p-3 text-center">
+                                <h4 class="mb-0 fw-bold text-info">{{ transaction_count_30d|default(0) }}</h4>
+                                <small>Total Transactions</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3 justify-content-center">
+                        <a href="/manager/all-transactions" class="btn btn-primary rounded-pill px-4">
+                            <i class="bi bi-list-ul me-2"></i>View All Transactions
+                        </a>
+                        <a href="/manager/reports" class="btn btn-outline-success rounded-pill px-4">
+                            <i class="bi bi-file-text me-2"></i>Generate Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Bar -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="quick-actions bg-white rounded-4 p-3 shadow-sm">
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    <a href="/manager/loans/pending" class="btn btn-outline-primary rounded-pill">
+                        <i class="bi bi-clock-history me-1"></i> Review Loans
+                    </a>
+                    <a href="/manager/staff/create" class="btn btn-outline-info rounded-pill">
+                        <i class="bi bi-person-plus me-1"></i> Create Staff
+                    </a>
+                    <a href="/manager/members" class="btn btn-outline-secondary rounded-pill">
+                        <i class="bi bi-people me-1"></i> Manage Members
+                    </a>
+                    <a href="/manager/reports" class="btn btn-outline-success rounded-pill">
+                        <i class="bi bi-file-text me-1"></i> Reports
+                    </a>
+                    <a href="/manager/all-transactions" class="btn btn-outline-warning rounded-pill">
+                        <i class="bi bi-cash-stack me-1"></i> Transactions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+}
+.metric-icon {
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.status-card {
+    transition: transform 0.2s ease;
+}
+.status-card:hover {
+    transform: translateY(-2px);
+}
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.hover-bg-light:hover {
+    background-color: #f8f9fa;
+}
+.modern-tabs {
+    border-bottom: 2px solid #e9ecef;
+}
+.modern-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    margin-right: 0.5rem;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+.modern-tabs .nav-link:hover {
+    color: #667eea;
+    background-color: #f8f9fa;
+}
+.modern-tabs .nav-link.active {
+    color: #667eea;
+    background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+    border-bottom: 3px solid #667eea;
+}
+.stat-card {
+    transition: transform 0.2s ease;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+.quick-actions {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border: 1px solid #e9ecef;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('loanChart');
+    if (canvas) {
+        const pendingLoans = {{ pending_loans|default(0, true) }};
+        const approvedLoans = {{ approved_loans|default(0, true) }};
+        const completedLoans = {{ completed_loans|default(0, true) }};
+        const overdueLoans = {{ overdue_loans|default(0, true) }};
+        
+        if (pendingLoans + approvedLoans + completedLoans + overdueLoans > 0) {
+            try {
+                new Chart(canvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Pending', 'Approved', 'Completed', 'Overdue'],
+                        datasets: [{
+                            label: 'Number of Loans',
+                            data: [pendingLoans, approvedLoans, completedLoans, overdueLoans],
+                            backgroundColor: ['#ffc107', '#28a745', '#17a2b8', '#dc3545'],
+                            borderRadius: 8,
+                            barPercentage: 0.7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { size: 12 } } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } }, grid: { display: false } },
+                            x: { ticks: { font: { size: 11 } }, grid: { display: false } }
+                        }
+                    }
+                });
+            } catch (error) {
+                canvas.parentElement.innerHTML = '<div class="text-center py-5"><i class="bi bi-exclamation-triangle fs-1 text-warning"></i><p class="text-muted mt-2">Chart could not be loaded</p></div>';
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
