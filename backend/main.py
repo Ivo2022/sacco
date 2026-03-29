@@ -86,7 +86,7 @@ app.add_middleware(
     max_age=settings.SESSION_MAX_AGE
 )
 app.add_middleware(SACCOStatusMiddleware)
-app.add_middleware(TemplateHelpersMiddleware)
+# app.add_middleware(TemplateHelpersMiddleware)
 
 # Static files and templates
 static_dir = Path(__file__).parent / "static"
