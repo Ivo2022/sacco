@@ -12,7 +12,7 @@ from ..models import Sacco, User
 from ..core.template_helpers import format_money, format_local_time, format_date
 from datetime import datetime
 
-templates = Jinja2Templates(directory="backend/templates")
+# templates = Jinja2Templates(directory="backend/templates")
 
 from fastapi import APIRouter
 router = APIRouter()
@@ -23,6 +23,7 @@ async def index(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    templates = request.app.state.templates  # ✅ use shared instance
     """Home page showing all SACCOS"""
     # Get all active SACCOS
     saccos: List[Sacco] = db.query(Sacco).order_by(Sacco.name).all()
@@ -33,11 +34,7 @@ async def index(
         "saccos": saccos,
         "user": current_user,
         "show_admin_controls": False,
-        "now": datetime.utcnow(),
-        # Add helper functions directly for this template
-        # "money": format_money,
-        # "local_time": format_local_time,
-        # "date": format_date
+        "now": datetime.utcnow()
     }
     
     return templates.TemplateResponse("index.html", context)
