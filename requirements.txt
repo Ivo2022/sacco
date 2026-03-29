@@ -10,3 +10,4 @@ itsdangerous
 pytz
 pydantic>=2.0
 pydantic-settings
+pydantic[email]
