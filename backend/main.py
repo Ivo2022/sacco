@@ -68,7 +68,7 @@ app = FastAPI(
 
 # CORS configuration (IMPORTANT for Render + browser requests)
 origins = [
-    "https://www.api.cheontec.com/",  
+    "https://www.api.cheontec.com",  
 ]
 
 app.add_middleware(
@@ -184,9 +184,10 @@ async def health_check():
         "debug": settings.DEBUG
     }
 
-
+"""
 # Root endpoint
 @app.get("/")
 async def root():
-    """Root endpoint - redirects to appropriate dashboard based on session"""
+    # Root endpoint - redirects to appropriate dashboard based on session
     return {"message": f"Welcome to {settings.PROJECT_NAME}", "version": settings.VERSION}
+"""
