@@ -57,11 +57,26 @@ if settings.DATABASE_URL.startswith("sqlite:///"):
     db_path = settings.DATABASE_URL.replace("sqlite:///", "")
     logger.info(f"Database file exists: {os.path.exists(db_path)}")
 
+from fastapi.middleware.cors import CORSMiddleware
+
 # Create FastAPI application
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     debug=settings.DEBUG
+)
+
+# CORS configuration (IMPORTANT for Render + browser requests)
+origins = [
+    "*",  # 🔥 For testing only — restrict later
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Add middleware
