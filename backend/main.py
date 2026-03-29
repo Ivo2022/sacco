@@ -10,10 +10,12 @@ from datetime import date
 import shutil
 
 from sqlalchemy.exc import SAWarning
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 # Suppress SQLAlchemy relationship overlap warnings
 warnings.filterwarnings("ignore", category=SAWarning, module="sqlalchemy.orm.relationships")
@@ -57,8 +59,6 @@ if settings.DATABASE_URL.startswith("sqlite:///"):
     db_path = settings.DATABASE_URL.replace("sqlite:///", "")
     logger.info(f"Database file exists: {os.path.exists(db_path)}")
 
-from fastapi.middleware.cors import CORSMiddleware
-
 # Create FastAPI application
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -66,9 +66,12 @@ app = FastAPI(
     debug=settings.DEBUG
 )
 
-# CORS configuration (IMPORTANT for Render + browser requests)
+# CORS configuration
 origins = [
-    "https://www.api.cheontec.com",  
+    "https://www.api.cheontec.com",
+    "https://api.cheontec.com",
+    "http://localhost:8000",
+    "http://localhost:3000",
 ]
 
 app.add_middleware(
@@ -86,16 +89,39 @@ app.add_middleware(
     max_age=settings.SESSION_MAX_AGE
 )
 app.add_middleware(SACCOStatusMiddleware)
-# app.add_middleware(TemplateHelpersMiddleware)
 
-# Static files and templates
-static_dir = Path(__file__).parent / "static"
+# Setup static files - with absolute path handling for Render
+current_dir = Path(__file__).parent.absolute()
+static_dir = current_dir / "static"
 static_dir.mkdir(exist_ok=True)
+
+# Log paths for debugging on Render
+logger.info(f"Current directory: {current_dir}")
+logger.info(f"Static directory: {static_dir}")
+logger.info(f"Static directory exists: {static_dir.exists()}")
+
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-# Setup templates
-templates_dir = Path(__file__).parent / "templates"
-templates = Jinja2Templates(directory=str(templates_dir))
+# Setup templates - with absolute path and error handling for Render
+templates_dir = current_dir / "templates"
+logger.info(f"Templates directory: {templates_dir}")
+logger.info(f"Templates directory exists: {templates_dir.exists()}")
+
+# List template files for debugging
+if templates_dir.exists():
+    template_files = list(templates_dir.glob("*.html"))
+    logger.info(f"Template files found: {[f.name for f in template_files]}")
+else:
+    logger.error(f"Templates directory NOT FOUND at {templates_dir}")
+
+# Create templates instance with auto-reload disabled for production
+templates = Jinja2Templates(
+    directory=str(templates_dir),
+    auto_reload=False  # Disable auto-reload in production
+)
+
+# Disable template caching temporarily to debug
+templates.env.cache_size = 0
 
 # Store templates in app state for access in routers
 app.state.templates = templates
@@ -181,13 +207,27 @@ async def health_check():
         "status": "healthy",
         "project": settings.PROJECT_NAME,
         "version": settings.VERSION,
-        "debug": settings.DEBUG
+        "debug": settings.DEBUG,
+        "templates_dir": str(templates_dir),
+        "templates_exist": templates_dir.exists()
     }
 
-"""
-# Root endpoint
-@app.get("/")
-async def root():
-    # Root endpoint - redirects to appropriate dashboard based on session
-    return {"message": f"Welcome to {settings.PROJECT_NAME}", "version": settings.VERSION}
-"""
+
+# Debug endpoint to check template availability
+@app.get("/debug/templates")
+async def debug_templates():
+    """Debug endpoint to check template loading"""
+    if templates_dir.exists():
+        template_files = list(templates_dir.glob("*.html"))
+        return {
+            "templates_dir": str(templates_dir),
+            "exists": True,
+            "files": [f.name for f in template_files],
+            "base_exists": (templates_dir / "base.html").exists()
+        }
+    else:
+        return {
+            "templates_dir": str(templates_dir),
+            "exists": False,
+            "error": "Templates directory not found"
+        }

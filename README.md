@@ -1,51 +1,387 @@
-Password hashing and migration
+SACCO Management System - Deployment Guide & README
+Project Overview
+A comprehensive SACCO (Savings and Credit Cooperative Organization) Management System built with FastAPI, providing role-based access control for managing members, savings, loans, and financial operations.
 
-This project hashes user passwords using a two-step approach to avoid bcrypt's 72-byte input limit and to maintain compatibility with a PBKDF2 fallback.
+System Architecture
+text
+SACCO Management System
+├── Backend (FastAPI)
+├── Database (SQLite/PostgreSQL)
+├── Templates (Jinja2)
+└── Static Files (CSS/JS)
+Technology Stack
+Framework: FastAPI 0.115+
 
-Current scheme
+Database: SQLite (development) / PostgreSQL (production)
 
-- When a user registers, we first compute the SHA-256 hex digest of the raw password (64 hex chars). We then pass that digest into the configured `pwd_context` hash function (bcrypt via `passlib[bcrypt]` in production, or a PBKDF2 fallback in lightweight environments).
-- On login, the same SHA-256 digest is computed from the submitted password and verified with the configured `pwd_context` verify method.
+Templating: Jinja2
 
-Why SHA-256 pre-hashing?
+Authentication: Session-based with JWT
 
-- Bcrypt has a 72-byte input limit. Pre-hashing with SHA-256 produces a fixed-length input and avoids accidental truncation which can cause errors or weaken security.
-- Pre-hashing is a common and acceptable pattern when done consistently for both hashing and verification.
+Deployment: Render.com
 
-Migration guidance
+Project Structure
+text
+backend/
+├── main.py                 # Application entry point
+├── routers/               # Route handlers
+│   ├── home.py           # Home page routes
+│   ├── auth.py           # Authentication routes
+│   ├── superadmin.py     # Super admin routes
+│   ├── manager.py        # SACCO manager routes
+│   ├── member.py         # Member routes
+│   ├── accountant.py     # Accountant routes
+│   ├── credit_officer.py # Credit officer routes
+│   └── switch_account.py # Account switching
+├── models/               # SQLAlchemy models
+├── schemas/              # Pydantic schemas
+├── core/                 # Core functionality
+│   ├── database.py      # Database connection
+│   ├── config.py        # Configuration settings
+│   ├── auth.py          # Authentication logic
+│   └── template_helpers.py # Jinja2 helpers
+├── templates/            # HTML templates
+│   ├── base.html        # Base template
+│   ├── index.html       # Home page
+│   └── ...              # Other templates
+└── static/              # Static assets
+    ├── css/
+    ├── js/
+    └── images/
+Prerequisites
+Python 3.11 or higher
 
-If you have existing users whose password hashes were produced by a different scheme (for example: direct `pwd_context.hash(raw_password)` without pre-hashing), you'll need to migrate them to the new scheme.
+pip (Python package manager)
 
-Recommended approaches:
+Git
 
-1) Transparent migration on first login (recommended)
-- On login, attempt verification using the new scheme (SHA-256 pre-hash) first.
-- If verification fails, try the legacy verification (e.g., `pwd_context.verify(raw_password, stored_hash)`). If the legacy check succeeds, re-hash the password using the new scheme and update the stored hash. This transparently upgrades the user's password hash on next login.
+Render.com account (for deployment)
 
-2) Force password reset
-- Require all users to reset their password via email reset flow. This is simplest and safest from a verification standpoint but requires user interaction.
+Local Development Setup
+1. Clone the Repository
+bash
+git clone https://github.com/yourusername/sacco-management.git
+cd sacco-management
+2. Create Virtual Environment
+bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
 
-3) Bulk migration (only if you can safely verify credentials)
-- If you have plaintext passwords (rare and not recommended) or can otherwise re-obtain them securely, re-hash them with the new scheme.
+# macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+3. Install Dependencies
+bash
+pip install -r requirements.txt
+4. Environment Configuration
+Create a .env file in the root directory:
 
-Implementation notes
+env
+# Application Settings
+PROJECT_NAME="SACCO Management System"
+VERSION="1.0.0"
+DEBUG=True
+SECRET_KEY="your-secret-key-here-change-in-production"
 
-- We provide helper functions in `backend/main.py`:
-  - `hash_password(password: str) -> str` — computes sha256(password) and then uses `pwd_context.hash(...)`.
-  - `verify_password(password: str, hashed_password: str) -> bool` — computes sha256(password) and calls `pwd_context.verify(...)`.
+# Database
+DATABASE_URL="sqlite:///./sacco.db"
 
-- To implement transparent migration, on a successful legacy verify you can run:
+# Session Settings
+SESSION_MAX_AGE=86400  # 24 hours in seconds
 
-  row = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
-  if row:
-      new_hash = hash_password(raw_password)
-      conn.execute("UPDATE users SET password = ? WHERE id = ?", (new_hash, row[0]))
-      conn.commit()
+# Admin Settings
+SUPER_ADMIN_EMAIL="admin@example.com"
+SUPER_ADMIN_PASSWORD="ChangeMe123!"
+5. Initialize Database
+bash
+# Create database and tables
+python -m backend.scripts.init_db
 
-Security notes
+# Create super admin (if not created automatically)
+python -m backend.scripts.create_superadmin
+6. Run Development Server
+bash
+# Using uvicorn directly
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 
-- Use `passlib[bcrypt]` or a stronger modern hasher (e.g., Argon2) in production.
-- Always serve your app over HTTPS and set secure cookie flags on session cookies.
-- Avoid storing or logging plaintext passwords.
+# Or using python
+python run.py
+7. Access the Application
+Open browser: http://localhost:8000
 
-If you want, I can implement the transparent migration helper and wire it into the login handler so legacy hashes are upgraded automatically on first successful login. Would you like me to do that now?
+API Documentation: http://localhost:8000/docs
+
+Alternative API docs: http://localhost:8000/redoc
+
+Deployment to Render.com
+Method 1: One-Click Deploy (Recommended)
+Push your code to GitHub repository
+
+Log in to Render.com
+
+Click "New +" → "Web Service"
+
+Connect your GitHub repository
+
+Render will auto-detect settings
+
+Method 2: Manual Configuration
+Step 1: Create render.yaml in root directory
+yaml
+services:
+  - type: web
+    name: sacco-management
+    runtime: python
+    repo: https://github.com/yourusername/sacco-management
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sacco-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+
+databases:
+  - name: sacco-db
+    plan: free
+Step 2: Create requirements.txt
+txt
+fastapi==0.115.0
+uvicorn==0.30.0
+sqlalchemy==2.0.23
+jinja2==3.1.2
+python-multipart==0.0.6
+passlib==1.7.4
+python-jose[cryptography]==3.3.0
+python-dotenv==1.0.0
+email-validator==2.1.0
+alembic==1.13.0
+psycopg2-binary==2.9.9
+bcrypt==4.1.0
+Step 3: Create runtime.txt (optional)
+txt
+python-3.11.8
+Step 4: Deploy via CLI
+bash
+# Install Render CLI
+npm install -g @render/cli
+
+# Login
+render login
+
+# Deploy
+render deploy
+Environment Variables on Render
+Set these in Render Dashboard → Environment:
+
+env
+DATABASE_URL=postgresql://user:password@host:port/dbname
+SECRET_KEY=<auto-generated>
+DEBUG=false
+PROJECT_NAME="SACCO Management System"
+SESSION_MAX_AGE=86400
+Troubleshooting Common Issues
+Issue 1: Template Not Found Error
+Error: TypeError: cannot use 'tuple' as a dict key
+
+Solution:
+
+python
+# Ensure templates are initialized correctly in main.py
+current_dir = Path(__file__).parent.absolute()
+templates_dir = current_dir / "templates"
+
+# Disable caching for debugging
+templates = Jinja2Templates(directory=str(templates_dir))
+templates.env.cache_size = 0
+Issue 2: Database Connection Failed
+Solution:
+
+bash
+# Check database URL format
+# SQLite: sqlite:///./sacco.db
+# PostgreSQL: postgresql://username:password@host:port/database
+
+# Verify database file permissions
+chmod 666 sacco.db
+Issue 3: Static Files Not Loading
+Solution:
+
+python
+# Ensure correct static files mounting in main.py
+current_dir = Path(__file__).parent.absolute()
+static_dir = current_dir / "static"
+static_dir.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+Issue 4: CORS Errors on Render
+Solution:
+
+python
+# Update CORS origins in main.py
+origins = [
+    "https://your-app.onrender.com",
+    "https://www.api.cheontec.com",
+    "http://localhost:8000",
+]
+Database Management
+Backup Database
+bash
+# SQLite backup
+sqlite3 sacco.db ".backup backup.db"
+
+# PostgreSQL backup
+pg_dump $DATABASE_URL > backup.sql
+Migrations (using Alembic)
+bash
+# Initialize Alembic
+alembic init migrations
+
+# Create migration
+alembic revision --autogenerate -m "description"
+
+# Apply migration
+alembic upgrade head
+Monitoring & Logging
+Check Logs on Render
+bash
+# Via CLI
+render logs --service sacco-management
+
+# Via Dashboard
+# Go to Service → Logs tab
+Health Check Endpoints
+bash
+# Health status
+curl https://your-app.onrender.com/health
+
+# Template debugging
+curl https://your-app.onrender.com/debug/templates
+
+# Test template loading
+curl https://your-app.onrender.com/test-template
+Performance Optimization
+Production Settings
+python
+# In main.py for production
+templates = Jinja2Templates(
+    directory=str(templates_dir),
+    auto_reload=False,  # Disable auto-reload
+    cache_size=500      # Enable caching
+)
+Database Optimization
+python
+# Connection pooling for PostgreSQL
+from sqlalchemy.pool import QueuePool
+
+engine = create_engine(
+    DATABASE_URL,
+    poolclass=QueuePool,
+    pool_size=20,
+    max_overflow=10,
+    pool_pre_ping=True
+)
+Security Checklist
+Change default SECRET_KEY
+
+Set DEBUG=False in production
+
+Enable HTTPS (Render auto-enables)
+
+Implement rate limiting
+
+Add CSRF protection
+
+Sanitize user inputs
+
+Use parameterized queries
+
+Implement proper password hashing
+
+Set secure session cookies
+
+Regular security updates
+
+Maintenance Tasks
+Daily
+Check error logs
+
+Monitor database size
+
+Verify backup completion
+
+Weekly
+Review user activity logs
+
+Check system performance
+
+Update dependencies
+
+Monthly
+Database optimization
+
+Security audit
+
+Backup restoration test
+
+Support & Resources
+Documentation: /docs endpoint after deployment
+
+Issues: GitHub Issues tracker
+
+Email: admin@cheontec.com
+
+License
+This project is proprietary and confidential.
+
+Version History
+v1.0.0 - Initial release
+
+Role-based access control
+
+Member management
+
+Savings management
+
+Loan management
+
+Financial reporting
+
+Quick Deployment Checklist for Render
+bash
+# 1. Ensure all files are committed
+git add .
+git commit -m "Ready for deployment"
+
+# 2. Push to GitHub
+git push origin main
+
+# 3. On Render Dashboard:
+# - Connect repository
+# - Set environment variables
+# - Deploy
+
+# 4. After deployment, verify:
+curl https://your-app.onrender.com/health
+curl https://your-app.onrender.com/debug/templates
+Environment-Specific Configuration
+Development (.env)
+env
+DEBUG=true
+DATABASE_URL=sqlite:///./sacco.db
+SECRET_KEY=dev-secret-key
+Production (Render)
+env
+DEBUG=false
+DATABASE_URL=postgresql://...
+SECRET_KEY=<render-auto-generated>
+Last Updated: March 2026
+Maintainer: CheonTec Systems
