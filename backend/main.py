@@ -126,7 +126,7 @@ templates.env.cache_size = 0
 app.state.templates = templates
 
 # Register template helpers
-register_template_helpers(templates)
+# register_template_helpers(templates)
 
 # Include routers with prefixes
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
