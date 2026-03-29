@@ -1,23 +1,43 @@
 # backend/routers/home.py
 """
-Home page router
+Home page router (Render-safe, Jinja2-stable)
 """
+
 from fastapi import Request, Depends, APIRouter
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import List
 import logging
-from pathlib import Path
+from datetime import datetime
 
 from ..core import get_db, get_current_user
 from ..models import Sacco, User
-from ..core.template_helpers import format_money, format_local_time, format_date
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def serialize_sacco(sacco: Sacco) -> dict:
+    """Convert Sacco ORM object to safe dict"""
+    return {
+        "id": sacco.id,
+        "name": sacco.name,
+        "status": sacco.status,
+    }
+
+
+def serialize_user(user: User) -> dict | None:
+    """Convert User ORM object to safe dict"""
+    if not user:
+        return None
+
+    return {
+        "id": user.id,
+        "email": user.email,
+        "role": str(user.role) if user.role else None,
+    }
+
 
 @router.get("/", response_class=HTMLResponse)
 async def index(
@@ -27,54 +47,43 @@ async def index(
 ):
     """Home page showing all SACCOS"""
     try:
-        # Get templates from app state
+        # ✅ Always use templates from app state
         templates = request.app.state.templates
-        
-        # Debug logging
-        logger.info(f"Rendering index page for user: {current_user.email if current_user else 'Anonymous'}")
-        logger.info(f"Templates object: {templates}")
-        logger.info(f"Templates directory: {templates.env.loader.searchpath if hasattr(templates.env.loader, 'searchpath') else 'Unknown'}")
-        
-        # Get all active SACCOS
+
+        logger.info(
+            f"Rendering index page for user: "
+            f"{current_user.email if current_user else 'Anonymous'}"
+        )
+
+        # ✅ Fetch data
         saccos: List[Sacco] = db.query(Sacco).order_by(Sacco.name).all()
-        
-        # Prepare template context
+
+        # ✅ SERIALIZE (CRITICAL FIX)
+        safe_saccos = [serialize_sacco(s) for s in saccos]
+        safe_user = serialize_user(current_user)
+
+        # ✅ CLEAN CONTEXT (ONLY SAFE TYPES)
         context = {
-            "request": request,
-            "saccos": saccos,
-            "user": current_user,
+            "request": request,   # required by Jinja2Templates
+            "saccos": safe_saccos,
+            "user": safe_user,
             "show_admin_controls": False,
-            "now": datetime.utcnow()
+            "now": datetime.utcnow(),
         }
-        
-        # Try to get template first to catch errors
-        try:
-            template = templates.get_template("index.html")
-            logger.info("Successfully loaded index.html template")
-        except Exception as template_error:
-            logger.error(f"Failed to load index.html template: {template_error}")
-            # Try to list available templates
-            if hasattr(templates.env.loader, 'searchpath'):
-                template_dir = templates.env.loader.searchpath[0]
-                logger.error(f"Template directory: {template_dir}")
-                if Path(template_dir).exists():
-                    logger.error(f"Available templates: {list(Path(template_dir).glob('*.html'))}")
-            raise
-        
-        # Return template response
+
+        # ✅ Render directly (no pre-loading needed)
         return templates.TemplateResponse("index.html", context)
-        
+
     except Exception as e:
         logger.error(f"Error in index route: {e}", exc_info=True)
-        # Return a simple error page instead of crashing
+
         return HTMLResponse(
             content=f"""
             <html>
                 <head><title>Error</title></head>
                 <body>
                     <h1>Template Error</h1>
-                    <p>Error loading page: {str(e)}</p>
-                    <p>Please check the logs for more details.</p>
+                    <p>{str(e)}</p>
                 </body>
             </html>
             """,
@@ -82,24 +91,22 @@ async def index(
         )
 
 
-# Alternative endpoint to test template loading
+# ✅ Lightweight test endpoint (kept simple)
 @router.get("/test-template")
 async def test_template(request: Request):
-    """Test endpoint to verify template loading"""
     templates = request.app.state.templates
-    
-    # Try to manually load the template
+
     try:
         template = templates.get_template("index.html")
+
         return {
             "status": "success",
-            "message": "Template loaded successfully",
-            "template_name": "index.html",
-            "template_object": str(template)
+            "template": "index.html",
+            "loader_paths": getattr(templates.env.loader, "searchpath", []),
         }
+
     except Exception as e:
         return {
             "status": "error",
-            "message": str(e),
-            "template_dirs": templates.env.loader.searchpath if hasattr(templates.env.loader, 'searchpath') else None
+            "error": str(e),
         }
