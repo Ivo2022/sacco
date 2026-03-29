@@ -116,8 +116,7 @@ else:
 
 # Create templates instance with auto-reload disabled for production
 templates = Jinja2Templates(
-    directory=str(templates_dir),
-    auto_reload=False  # Disable auto-reload in production
+    directory=str(templates_dir)
 )
 
 # Disable template caching temporarily to debug
