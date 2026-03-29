@@ -11,11 +11,11 @@
     <header class="mb-4">
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm rounded">
             <div class="container-fluid">
-                {% if user and (user.role.value in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER']) %}
-                <a class="navbar-brand d-flex align-items-center" href="/{{ user.role.value.lower() }}/dashboard">
-                {% elif user and user.role.value == 'SUPER_ADMIN' %}
+                {% if user and (user.role in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER']) %}
+                <a class="navbar-brand d-flex align-items-center" href="/{{ user.role.lower() }}/dashboard">
+                {% elif user and user.role == 'SUPER_ADMIN' %}
                 <a class="navbar-brand d-flex align-items-center" href="/superadmin/dashboard">
-                {% elif user and user.role.value == 'MEMBER' %}
+                {% elif user and user.role == 'MEMBER' %}
                 <a class="navbar-brand d-flex align-items-center" href="/member/dashboard">
                 {% else %}
                 <a class="navbar-brand d-flex align-items-center" href="/">
@@ -38,14 +38,14 @@
                         {% endif %}
 
                         <!-- MEMBER NAVIGATION -->
-                        {% if user and user.role.value == 'MEMBER' %}
+                        {% if user and user.role == 'MEMBER' %}
                         <li class="nav-item"><a class="nav-link" href="/member/dashboard">Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" href="/member/savings">Savings</a></li>
                         <li class="nav-item"><a class="nav-link" href="/member/loans">Loans</a></li>
                         {% endif %}
 
                         <!-- MANAGER NAVIGATION -->
-                        {% if user and user.role.value == 'MANAGER' %}
+                        {% if user and user.role == 'MANAGER' %}
                         <li class="nav-item"><a class="nav-link" href="/manager/dashboard">Dashboard</a></li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="managerMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -62,7 +62,7 @@
                         {% endif %}
 
                         <!-- ACCOUNTANT NAVIGATION -->
-                        {% if user and user.role.value == 'ACCOUNTANT' %}
+                        {% if user and user.role == 'ACCOUNTANT' %}
                         <li class="nav-item"><a class="nav-link" href="/accountant/dashboard">Dashboard</a></li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="accountantMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -79,7 +79,7 @@
                         {% endif %}
 
                         <!-- CREDIT OFFICER NAVIGATION -->
-                        {% if user and user.role.value == 'CREDIT_OFFICER' %}
+                        {% if user and user.role == 'CREDIT_OFFICER' %}
                         <li class="nav-item"><a class="nav-link" href="/credit-officer/dashboard">Dashboard</a></li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="creditOfficerMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -159,7 +159,7 @@
                         {% endif %}
 
                         <!-- SUPER ADMIN NAVIGATION -->
-                        {% if user and user.role.value == 'SUPER_ADMIN' %}
+                        {% if user and user.role == 'SUPER_ADMIN' %}
                         <li class="nav-item"><a class="nav-link" href="/superadmin/dashboard">Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" href="/superadmin/managers">Managers</a></li>
                         <li class="nav-item"><a class="nav-link" href="/superadmin/saccos">SACCOs</a></li>
@@ -183,7 +183,7 @@
                                     </a></li>
                                     
                                     <!-- Member-specific links -->
-                                    {% if user.role.value == 'MEMBER' %}
+                                    {% if user.role == 'MEMBER' %}
                                     <li><a class="dropdown-item" href="/member/dashboard">
                                         <i class="bi bi-speedometer2 me-2"></i>Dashboard
                                     </a></li>
@@ -196,7 +196,7 @@
                                     {% endif %}
                                     
                                     <!-- Manager links -->
-                                    {% if user.role.value == 'MANAGER' %}
+                                    {% if user.role == 'MANAGER' %}
                                     <li><a class="dropdown-item" href="/manager/dashboard">
                                         <i class="bi bi-speedometer2 me-2"></i>Dashboard
                                     </a></li>
@@ -209,7 +209,7 @@
                                     {% endif %}
                                     
                                     <!-- Accountant links -->
-                                    {% if user.role.value == 'ACCOUNTANT' %}
+                                    {% if user.role == 'ACCOUNTANT' %}
                                     <li><a class="dropdown-item" href="/accountant/dashboard">
                                         <i class="bi bi-speedometer2 me-2"></i>Dashboard
                                     </a></li>
@@ -219,14 +219,14 @@
                                     {% endif %}
                                     
                                     <!-- Credit Officer links -->
-                                    {% if user.role.value == 'CREDIT_OFFICER' %}
+                                    {% if user.role == 'CREDIT_OFFICER' %}
                                     <li><a class="dropdown-item" href="/credit-officer/dashboard">
                                         <i class="bi bi-speedometer2 me-2"></i>Dashboard
                                     </a></li>
                                     {% endif %}
                                     
                                     <!-- Super Admin links -->
-                                    {% if user.role.value == 'SUPER_ADMIN' %}
+                                    {% if user.role == 'SUPER_ADMIN' %}
                                     <li><a class="dropdown-item" href="/superadmin/dashboard">
                                         <i class="bi bi-speedometer2 me-2"></i>Super Admin
                                     </a></li>
@@ -243,7 +243,7 @@
                                     </li>
                                     
                                     <!-- Staff to Member switch -->
-									{% if user.role.value in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] and user.linked_member_account_id %}
+									{% if user.role in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] and user.linked_member_account_id %}
 									<li>
 										<a class="dropdown-item" href="/switch/to-member?as_member={{ user.linked_member_account_id }}">
 											<i class="bi bi-person me-2"></i> Switch to Member View
@@ -253,16 +253,16 @@
 									{% endif %}
 
 									<!-- Member to Staff switch -->
-									{% if user.role.value == 'MEMBER' and user.linked_admin_id %}
+									{% if user.role == 'MEMBER' and user.linked_admin_id %}
 									<li>
 										<a class="dropdown-item" href="/switch/to-staff?as_staff={{ user.linked_admin_id }}">
 											<i class="bi bi-building me-2"></i> Switch to Staff View
 											<small class="d-block text-muted">
 												{% set staff_user = user.linked_admin %}
 												{% if staff_user %}
-													{% if staff_user.role.value == 'MANAGER' %}Manage SACCO operations
-													{% elif staff_user.role.value == 'ACCOUNTANT' %}Handle finances
-													{% elif staff_user.role.value == 'CREDIT_OFFICER' %}Manage loans
+													{% if staff_user.role == 'MANAGER' %}Manage SACCO operations
+													{% elif staff_user.role == 'ACCOUNTANT' %}Handle finances
+													{% elif staff_user.role == 'CREDIT_OFFICER' %}Manage loans
 													{% endif %}
 												{% endif %}
 											</small>
@@ -299,7 +299,7 @@
     </header>
     
     <!-- SACCO Status Alert -->
-    {% if user and user.sacco_id and user.role.value != 'SUPER_ADMIN' %}
+    {% if user and user.sacco_id and user.role != 'SUPER_ADMIN' %}
         {% set sacco = user.sacco %}
         {% if sacco and sacco.status == 'inactive' %}
         <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
@@ -307,7 +307,7 @@
                 <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
                 <div>
                     <strong>SACCO Inactive:</strong> Your SACCO is currently inactive. Services are limited.
-                    {% if user.role.value in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] %}
+                    {% if user.role in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] %}
                     <a href="/sacco/settings" class="alert-link">Activate SACCO</a>
                     {% endif %}
                 </div>
