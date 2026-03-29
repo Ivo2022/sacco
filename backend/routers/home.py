@@ -62,12 +62,13 @@ async def index(
 
         # Serialize ORM objects safely
         safe_saccos = [serialize_sacco(s) for s in saccos]
+		sacco_dict = {s["id"]: s for s in safe_saccos}
         safe_user = serialize_user(current_user)
 
         # Build context for Jinja2 (no ORM objects, only dicts, lists, strings, numbers)
         context = {
             "request": request,
-            "saccos": safe_saccos,
+            "saccos": sacco_dict,
             "user": safe_user,
             "show_admin_controls": safe_user["is_admin"] if safe_user else False,
             "now": datetime.utcnow(),

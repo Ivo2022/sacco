@@ -107,20 +107,16 @@
     </header>
 
     <!-- SACCO Status Alert -->
-    {% if user and user.get("sacco_id") %}
-        {% set user_sacco = saccos | selectattr("id", "equalto", user["sacco_id"]) | first %}
-        {% if user_sacco %}
-            {% if user_sacco["status"] == 'inactive' %}
-                <div class="alert alert-warning alert-dismissible fade show mb-3">
-                    Your SACCO is inactive. Services are limited.
-                </div>
-            {% elif user_sacco["status"] == 'suspended' %}
-                <div class="alert alert-danger alert-dismissible fade show mb-3">
-                    Your SACCO has been suspended.
-                </div>
-            {% endif %}
-        {% endif %}
-    {% endif %}
+		{% if user and user.sacco_id %}
+			{% set user_sacco = saccos.get(user.sacco_id) %}
+			{% if user_sacco %}
+				{% if user_sacco.status == 'inactive' %}
+					<div class="alert alert-warning">Your SACCO is inactive.</div>
+				{% elif user_sacco.status == 'suspended' %}
+					<div class="alert alert-danger">Your SACCO is suspended.</div>
+				{% endif %}
+			{% endif %}
+		{% endif %}
 
     <main class="container">
         {% if request.session.flash_message %}
