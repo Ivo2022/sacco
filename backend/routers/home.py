@@ -35,9 +35,9 @@ async def index(
         "show_admin_controls": False,
         "now": datetime.utcnow(),
         # Add helper functions directly for this template
-        "money": format_money,
-        "local_time": format_local_time,
-        "date": format_date
+        # "money": format_money,
+        # "local_time": format_local_time,
+        # "date": format_date
     }
     
     return templates.TemplateResponse("index.html", context)

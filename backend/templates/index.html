@@ -11,19 +11,19 @@
         
         <div class="d-flex justify-content-center gap-3 mt-4">
             {% if user %}
-                {% if user.role.value == 'SUPER_ADMIN' %}
+                {% if user.role == 'SUPER_ADMIN' %}
                     <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/superadmin/dashboard">
                         <i class="bi bi-speedometer2 me-2"></i>Go to Super Admin Dashboard
                     </a>
-                {% elif user.role.value == 'MANAGER' %}
+                {% elif user.role == 'MANAGER' %}
                     <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/manager/dashboard">
                         <i class="bi bi-speedometer2 me-2"></i>Go to Manager Dashboard
                     </a>
-                {% elif user.role.value == 'ACCOUNTANT' %}
+                {% elif user.role == 'ACCOUNTANT' %}
                     <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/accountant/dashboard">
                         <i class="bi bi-calculator-fill me-2"></i>Go to Accountant Dashboard
                     </a>
-                {% elif user.role.value == 'CREDIT_OFFICER' %}
+                {% elif user.role == 'CREDIT_OFFICER' %}
                     <a class="btn btn-light btn-lg px-4 rounded-pill shadow-sm" href="/credit-officer/dashboard">
                         <i class="bi bi-shield-check me-2"></i>Go to Credit Officer Dashboard
                     </a>
