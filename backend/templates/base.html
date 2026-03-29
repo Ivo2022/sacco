@@ -75,7 +75,7 @@
                                     <li><a class="dropdown-item" href="/superadmin/saccos">Manage SACCOs</a></li>
                                     {% endif %}
 
-                                    {% if user.get("linked_member_account_id") %}
+                                    {% if user['linked_member_account_id'] %}
                                     <li>
                                         <a class="dropdown-item" href="/switch/to-member?as_member={{ user['linked_member_account_id'] }}">
                                             Switch to Member View
@@ -83,7 +83,7 @@
                                     </li>
                                     {% endif %}
 
-                                    {% if user.get("linked_admin_id") %}
+                                    {% if user['linked_admin_id'] %}
                                     <li>
                                         <a class="dropdown-item" href="/switch/to-staff?as_staff={{ user['linked_admin_id'] }}">
                                             Switch to Staff View
