@@ -68,7 +68,7 @@ app = FastAPI(
 
 # CORS configuration (IMPORTANT for Render + browser requests)
 origins = [
-    "*",  # 🔥 For testing only — restrict later
+    "https://www.api.cheontec.com/",  
 ]
 
 app.add_middleware(
