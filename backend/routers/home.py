@@ -58,19 +58,19 @@ async def index(
         logger.info(f"Rendering index for user: {current_user.email if current_user else 'Anonymous'}")
 
         # Fetch data
-        saccos: List[Sacco] = db.query(Sacco).order_by(Sacco.name).all()
+        # saccos: List[Sacco] = db.query(Sacco).order_by(Sacco.name).all()
 
         # Serialize ORM objects safely
-        safe_saccos = [serialize_sacco(s) for s in saccos]
-        sacco_dict = {s["id"]: s for s in safe_saccos}
-        safe_user = serialize_user(current_user)
+        # safe_saccos = [serialize_sacco(s) for s in saccos]
+        # sacco_dict = {s["id"]: s for s in safe_saccos}
+        # safe_user = serialize_user(current_user)
 
         # Build context for Jinja2 (no ORM objects, only dicts, lists, strings, numbers)
         context = {
             "request": request,
-            "saccos": sacco_dict,
-            "user": safe_user,
-            "show_admin_controls": safe_user["is_admin"] if safe_user else False,
+            # "saccos": sacco_dict,
+            # "user": safe_user,
+            # "show_admin_controls": safe_user["is_admin"] if safe_user else False,
             "now": datetime.utcnow(),
             # Safe helpers
             "money": lambda amount: format_money(amount),
