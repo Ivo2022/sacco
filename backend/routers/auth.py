@@ -58,22 +58,22 @@ def login_post(
     templates = request.app.state.templates
 
     user = authenticate_user(db, email=email, password=password)
-
+    context = {"request": request, "error": "Invalid credentials"}
     if not user:
         return templates.TemplateResponse(
             request,
             "login.html",
-            {"request": request, "error": "Invalid credentials"}
+            context
         )
-
+    context = {"request": request, "error": "Account is deactivated"}
     if not user.is_active:
         return templates.TemplateResponse(
 		     request,
             "login.html",
-            {"request": request, "error": "Account is deactivated"}
+             context
         )
 
-    # Session
+    # Set Session
     request.session["user_id"] = user.id
 
     create_log(
@@ -81,7 +81,8 @@ def login_post(
         action="USER_LOGIN",
         user_id=user.id,
         sacco_id=user.sacco_id,
-        details=f"User {user.email} logged in"
+        details=f"User {user.email} logged in",
+		ip_address=request.client.host if request.client else None
     )
 
     role_redirects = {

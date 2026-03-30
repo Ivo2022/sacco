@@ -129,7 +129,7 @@ def serialize_loan(loan: Loan) -> dict:
 # =============================================================================
 # ROUTES
 # =============================================================================
-
+@router.head("/superadmin/dashboard", response_class=HTMLResponse)
 @router.get("/superadmin/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request, user=Depends(require_superadmin), db: Session = Depends(get_db)):
     """Super admin dashboard with overview of all SACCOs and managers"""
@@ -161,7 +161,7 @@ def dashboard(request: Request, user=Depends(require_superadmin), db: Session = 
         "show_admin_controls": True,
         **helpers,
     }
-    return templates.TemplateResponse("superadmin/dashboard.html", context)
+    return templates.TemplateResponse(request, "superadmin/dashboard.html", context)
 
 
 @router.post("/superadmin/sacco/create")
@@ -184,7 +184,7 @@ def create_sacco_route(
     request.session["flash_type"] = "success"
     return RedirectResponse(url="/superadmin/dashboard", status_code=303)
 
-
+@router.head("/superadmin/managers", response_class=HTMLResponse)
 @router.get("/superadmin/managers", response_class=HTMLResponse)
 def list_managers(
     request: Request,
@@ -406,7 +406,7 @@ def activate_manager(
 
     return RedirectResponse(url=f"/superadmin/manager/{manager_id}", status_code=303)
 
-
+@router.head("/superadmin/manager/{manager_id}", response_class=HTMLResponse)
 @router.get("/superadmin/manager/{manager_id}", response_class=HTMLResponse)
 def view_manager(
     request: Request,
@@ -468,7 +468,7 @@ def view_manager(
     }
     return templates.TemplateResponse("superadmin/manager_detail.html", context)
 
-
+@router.head("/superadmin/sacco/{sacco_id}", response_class=HTMLResponse)
 @router.get("/superadmin/sacco/{sacco_id}", response_class=HTMLResponse)
 def view_sacco(
     request: Request,
@@ -528,7 +528,7 @@ def view_sacco(
     }
     return templates.TemplateResponse("superadmin/sacco_detail.html", context)
 
-
+@router.head("/superadmin/saccos", response_class=HTMLResponse)
 @router.get("/superadmin/saccos", response_class=HTMLResponse)
 def manage_saccos(request: Request, user=Depends(require_superadmin), db: Session = Depends(get_db)):
     """List all SACCOs with their managers"""
@@ -560,7 +560,7 @@ def manage_saccos(request: Request, user=Depends(require_superadmin), db: Sessio
     }
     return templates.TemplateResponse("superadmin/saccos.html", context)
 
-
+@router.head("/superadmin/staff", response_class=HTMLResponse)
 @router.get("/superadmin/staff", response_class=HTMLResponse)
 def manage_staff(request: Request, user=Depends(require_superadmin), db: Session = Depends(get_db)):
     """View all staff (Accountants and Credit Officers) across all SACCOs"""
@@ -581,7 +581,7 @@ def manage_staff(request: Request, user=Depends(require_superadmin), db: Session
     }
     return templates.TemplateResponse("superadmin/staff.html", context)
 
-
+@router.head("/superadmin/sacco/{sacco_id}/edit", response_class=HTMLResponse)
 @router.get("/superadmin/sacco/{sacco_id}/edit", response_class=HTMLResponse)
 def edit_sacco_form(
     request: Request,
@@ -675,7 +675,7 @@ def update_sacco_status(
 
     return RedirectResponse(url=f"/superadmin/sacco/{sacco_id}", status_code=303)
 
-
+@router.head("/superadmin/logs", response_class=HTMLResponse)
 @router.get("/superadmin/logs")
 def superadmin_logs(
     request: Request,
@@ -765,7 +765,7 @@ def superadmin_logs(
     }
     return templates.TemplateResponse("superadmin/logs.html", context)
 
-
+@router.head("/superadmin/logs/export", response_class=HTMLResponse)
 @router.get("/superadmin/logs/export")
 def export_logs(
     request: Request,
