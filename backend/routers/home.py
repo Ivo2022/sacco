@@ -42,7 +42,7 @@ def serialize_user(user: User) -> Dict[str, Any] | None:
         "id": user.id,
         "email": user.email,
         "full_name": user.full_name,
-        "role": str(user.role) if user.role else None,
+        "role": user.role.value if hasattr(user.role, 'value') else str(user.role).split('.')[-1] if user.role else None,
         "is_admin": user.is_admin,
         "dashboard_url": user.get_dashboard_url,
         "sacco_id": user.sacco_id,

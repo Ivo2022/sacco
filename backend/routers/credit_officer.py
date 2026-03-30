@@ -27,7 +27,7 @@ def serialize_user_basic(user: User) -> dict:
         "email": user.email,
         "full_name": user.full_name,
         "username": user.username,
-        "role": str(user.role) if user.role else None,
+        "role": user.role.value if hasattr(user.role, 'value') else str(user.role).split('.')[-1] if user.role else None,
         "is_active": user.is_active,
         "sacco_id": user.sacco_id,
         "phone": user.phone,

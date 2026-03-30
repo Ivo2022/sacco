@@ -182,7 +182,7 @@
               <td class="small text-muted">
                 <i class="bi bi-calendar3 me-1"></i>
                 {% if s.created_at %}
-                  {{ s.created_at.strftime('%Y-%m-%d') }}
+                  {{ local_time(s.created_at) }}
                 {% else %}
                   —
                 {% endif %}

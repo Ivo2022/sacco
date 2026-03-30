@@ -7,15 +7,22 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
+<!-- DEBUG: Remove after fixing -->
+<div style="display:none;">
+    User Role: {{ user.role if user else 'No user' }}
+    User Email: {{ user.email if user else 'No user' }}
+    User Full Name: {{ user.full_name if user else 'No user' }}
+    User Dashboard URL: {{ user.dashboard_url if user else 'No user' }}
+</div>
 <body class="bg-light">
     <header class="mb-4">
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm rounded">
             <div class="container-fluid">
-                {% if user and (user["role"] in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER']) %}
+                {% if user and (user.role in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER']) %}
                 <a class="navbar-brand d-flex align-items-center" href="/{{ user['role'].lower() }}/dashboard">
-                {% elif user and user["role"] == 'SUPER_ADMIN' %}
+                {% elif user and user.role == 'SUPER_ADMIN' %}
                 <a class="navbar-brand d-flex align-items-center" href="/superadmin/dashboard">
-                {% elif user and user["role"] == 'MEMBER' %}
+                {% elif user and user.role == 'MEMBER' %}
                 <a class="navbar-brand d-flex align-items-center" href="/member/dashboard">
                 {% else %}
                 <a class="navbar-brand d-flex align-items-center" href="/">
@@ -51,26 +58,26 @@
                                         <i class="bi bi-person me-2"></i>My Profile
                                     </a></li>
 
-                                    {% if user["role"] == 'MEMBER' %}
+                                    {% if user.role == 'MEMBER' %}
                                     <li><a class="dropdown-item" href="/member/dashboard">Dashboard</a></li>
                                     <li><a class="dropdown-item" href="/member/savings">My Savings</a></li>
                                     <li><a class="dropdown-item" href="/member/loans">My Loans</a></li>
                                     {% endif %}
 
-                                    {% if user["role"] == 'MANAGER' %}
+                                    {% if user.role == 'MANAGER' %}
                                     <li><a class="dropdown-item" href="/manager/dashboard">Dashboard</a></li>
                                     <li><a class="dropdown-item" href="/manager/staff">Staff Management</a></li>
                                     {% endif %}
 
-                                    {% if user["role"] == 'ACCOUNTANT' %}
+                                    {% if user.role == 'ACCOUNTANT' %}
                                     <li><a class="dropdown-item" href="/accountant/dashboard">Dashboard</a></li>
                                     {% endif %}
 
-                                    {% if user["role"] == 'CREDIT_OFFICER' %}
+                                    {% if user.role == 'CREDIT_OFFICER' %}
                                     <li><a class="dropdown-item" href="/credit-officer/dashboard">Dashboard</a></li>
                                     {% endif %}
 
-                                    {% if user["role"] == 'SUPER_ADMIN' %}
+                                    {% if user.role == 'SUPER_ADMIN' %}
                                     <li><a class="dropdown-item" href="/superadmin/dashboard">Dashboard</a></li>
                                     <li><a class="dropdown-item" href="/superadmin/saccos">Manage SACCOs</a></li>
                                     {% endif %}

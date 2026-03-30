@@ -46,7 +46,7 @@ def serialize_user_basic(user: User) -> dict:
         "email": user.email,
         "full_name": user.full_name,
         "username": user.username,
-        "role": str(user.role) if user.role else None,
+        "role": user.role.value if hasattr(user.role, 'value') else str(user.role).split('.')[-1] if user.role else None,
         "is_active": user.is_active,
         "is_approved": user.is_approved,
         "sacco_id": user.sacco_id,
@@ -550,12 +550,13 @@ def manage_saccos(request: Request, user=Depends(require_superadmin), db: Sessio
         s_dict["manager"] = serialize_user_full(manager_orm) if manager_orm else None
         s_dict["members_count"] = members_count
         saccos.append(s_dict)
-
+    helpers = get_template_helpers()
     context = {
         "request": request,
         "user": serialize_user_full(user),
         "saccos": saccos,
         "show_admin_controls": True,
+        **helpers
     }
     return templates.TemplateResponse("superadmin/saccos.html", context)
 
