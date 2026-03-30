@@ -4,10 +4,35 @@
     <title>Test</title>
 </head>
 <body>
-    <h1>Test Template</h1>
-    <p>User: {{ user.email if user else 'Anonymous' }}</p>
-    <p>User Role: {{ user.role if user else 'None' }}</p>
-    <p>SACCOS count: {{ saccos|length }}</p>
-    <p>Now: {{ now.year }}</p>
+    <h1>Debug Template</h1>
+    
+    <h2>saccos variable:</h2>
+    <p>Type: {{ saccos.__class__.__name__ }}</p>
+    <p>Length: {{ saccos|length }}</p>
+    <p>Keys: {{ saccos.keys()|list }}</p>
+    
+    <h2>user variable:</h2>
+    <p>Type: {{ user.__class__.__name__ if user else 'None' }}</p>
+    <p>User ID: {{ user.id if user else 'None' }}</p>
+    <p>User Sacco ID: {{ user.sacco_id if user else 'None' }}</p>
+    <p>Sacco ID type: {{ user.sacco_id.__class__.__name__ if user and user.sacco_id else 'None' }}</p>
+    
+    <h2>Access test:</h2>
+    {% if user and user.sacco_id %}
+        {% set sacco_id = user.sacco_id %}
+        <p>Sacco ID value: {{ sacco_id }}</p>
+        {% if sacco_id is number %}
+            <p>Sacco ID is a number</p>
+        {% elif sacco_id is string %}
+            <p>Sacco ID is a string</p>
+        {% else %}
+            <p>Sacco ID is other type: {{ sacco_id.__class__.__name__ }}</p>
+        {% endif %}
+        
+        {% set sacco = saccos.get(sacco_id) %}
+        <p>Found SACCO: {{ sacco.name if sacco else 'Not found' }}</p>
+    {% endif %}
+    
+    <p>Now: {{ now.year if now else 'Unknown' }}</p>
 </body>
 </html>

@@ -113,17 +113,38 @@
         </nav>
     </header>
 
-    <!-- SACCO Status Alert -->
-		{% if user and user["sacco_id"]%}
-			{% set user_sacco = saccos.get(user.sacco_id) %}
-			{% if user_sacco %}
-				{% if user_sacco.status == 'inactive' %}
-					<div class="alert alert-warning">Your SACCO is inactive.</div>
-				{% elif user_sacco.status == 'suspended' %}
-					<div class="alert alert-danger">Your SACCO is suspended.</div>
-				{% endif %}
-			{% endif %}
-		{% endif %}
+    <!-- SACCO Status Alert - Only show when user exists and is authenticated -->
+    {% if user and user.sacco_id and saccos %}
+        {# Safely get sacco_id as a number #}
+        {% set sacco_id_raw = user.sacco_id %}
+        
+        {# Convert if it's a dict (shouldn't happen now, but safe) #}
+        {% if sacco_id_raw is mapping %}
+            {% set sacco_id = sacco_id_raw.id if sacco_id_raw.id is defined else None %}
+        {% else %}
+            {% set sacco_id = sacco_id_raw %}
+        {% endif %}
+        
+        {# Only proceed if we have a valid ID #}
+        {% if sacco_id and sacco_id is number %}
+            {% set user_sacco = saccos.get(sacco_id) %}
+            {% if user_sacco %}
+                {% if user_sacco.status == 'inactive' %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Your SACCO "{{ user_sacco.name }}" is currently inactive.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% elif user_sacco.status == 'suspended' %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-octagon me-2"></i>
+                        Your SACCO "{{ user_sacco.name }}" has been suspended.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
 
     <main class="container">
         {% if request.session.flash_message %}
