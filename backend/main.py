@@ -122,6 +122,29 @@ templates = Jinja2Templates(
 # Disable template caching temporarily to debug
 templates.env.cache_size = 0
 
+# ============================================================
+# FIX: Clean up template globals to remove invalid keys
+# This prevents "cannot use 'tuple' as a dict key" errors
+# ============================================================
+logger.info("Cleaning template globals...")
+clean_globals = {}
+invalid_keys = []
+
+for k, v in templates.env.globals.items():
+    if isinstance(k, str):
+        clean_globals[k] = v
+    else:
+        invalid_keys.append(f"{k} ({type(k).__name__})")
+        logger.warning(f"Removing invalid global key: {k} (type: {type(k).__name__})")
+
+templates.env.globals = clean_globals
+
+if invalid_keys:
+    logger.info(f"Removed {len(invalid_keys)} invalid global keys from template environment")
+else:
+    logger.info("All template global keys are valid strings")
+# ============================================================
+
 # Store templates in app state for access in routers
 app.state.templates = templates
 
@@ -230,3 +253,12 @@ async def debug_templates():
             "exists": False,
             "error": "Templates directory not found"
         }
+		
+@app.get("/debug/globals")
+async def debug_globals():
+    """Debug endpoint to check template globals"""
+    return {
+        "globals_count": len(app.state.templates.env.globals),
+        "globals_keys": [str(k) for k in app.state.templates.env.globals.keys()],
+        "invalid_keys_removed": hasattr(app.state.templates, '_cleaned')
+    }
