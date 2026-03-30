@@ -195,7 +195,7 @@
                 {% if a.sacco %}
                   <span class="d-flex align-items-center">
                     <i class="bi bi-building text-muted me-2"></i>
-                    {{ a.sacco.name }}
+                    {{ a.sacco["name"] }}
                   </span>
                 {% else %}
                   <span class="text-muted">—</span>
@@ -260,7 +260,7 @@
                   {% endif %}
                   
                   <!-- Delete Button (Super Admins only, and not self) -->
-                  {% if user.role.name == 'SUPER_ADMIN' and a.id != user.id %}
+                  {% if user.role.name == 'SUPER_ADMIN' and a.id != user["id"]%}
                     <button class="btn btn-sm btn-outline-danger" 
                             data-bs-toggle="modal" 
                             data-bs-target="#deleteModal{{ a.id }}"
@@ -307,8 +307,8 @@
                             <select class="form-select" name="sacco_id">
                               <option value="">None</option>
                               {% for sacco in saccos %}
-                                <option value="{{ sacco.id }}" {% if a.sacco and a.sacco.id == sacco.id %}selected{% endif %}>
-                                  {{ sacco.name }}
+                                <option value="{{ sacco["id"] }}" {% if a.sacco and a.sacco["id"] == sacco["id"] %}selected{% endif %}>
+                                  {{ sacco["name"] }}
                                 </option>
                               {% endfor %}
                             </select>
@@ -461,7 +461,7 @@
               <select class="form-select" name="sacco_id">
                 <option value="">None</option>
                 {% for sacco in saccos %}
-                  <option value="{{ sacco.id }}">{{ sacco.name }}</option>
+                  <option value="{{ sacco["id"] }}">{{ sacco["name"] }}</option>
                 {% endfor %}
               </select>
             </div>

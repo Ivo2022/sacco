@@ -150,45 +150,45 @@
                         <tbody>
                             {% for loan in loans %}
                             <tr>
-                                <td class="ps-3">#{{ loan.id }}</td>
+                                <td class="ps-3">#{{ loan["id"] }}</td>
                                 <td>
-                                    <div class="fw-semibold">{{ loan.member.full_name or loan.member.email }}</div>
-                                    <small class="text-muted">{{ loan.member.phone or 'No phone' }}</small>
+                                    <div class="fw-semibold">{{ loan["member"].full_name or loan["member"].email }}</div>
+                                    <small class="text-muted">{{ loan["member"].phone or 'No phone' }}</small>
                                 </td>
-                                <td class="fw-bold text-primary">{{ money(loan.amount) }}</td>
-                                <td class="fw-bold text-danger">{{ money(loan.outstanding) }}</td>
-                                <td>{{ money(loan.monthly_payment) }}</td>
+                                <td class="fw-bold text-primary">{{ money(loan["amount"]) }}</td>
+                                <td class="fw-bold text-danger">{{ money(loan["outstanding"]) }}</td>
+                                <td>{{ money(loan["monthly_payment"]) }}</td>
                                 <td>
-                                    {% if loan.status == 'pending' %}
+                                    {% if loan["status"] == 'pending' %}
                                     <span class="badge bg-warning">Pending</span>
-                                    {% elif loan.status == 'approved' %}
+                                    {% elif loan["status"] == 'approved' %}
                                     <span class="badge bg-success">Active</span>
-                                    {% elif loan.status == 'completed' %}
+                                    {% elif loan["status"] == 'completed' %}
                                     <span class="badge bg-info">Completed</span>
-                                    {% elif loan.status == 'overdue' %}
+                                    {% elif loan["status"] == 'overdue' %}
                                     <span class="badge bg-danger">Overdue</span>
-                                    {% elif loan.status == 'rejected' %}
+                                    {% elif loan["status"] == 'rejected' %}
                                     <span class="badge bg-secondary">Rejected</span>
                                     {% endif %}
                                 </td>
-                                <td><small>{{ local_time(loan.timestamp) }}</small></td>
+                                <td><small>{{ local_time(loan["timestamp"]) }}</small></td>
                                 <td>
-                                    {% if loan.last_payment_date %}
-                                    <small>{{ local_time(loan.last_payment_date) }}</small><br>
-                                    <small class="text-muted">{{ loan.days_since_last_payment }} days ago</small>
+                                    {% if loan["last_payment_date"] %}
+                                    <small>{{ local_time(loan["last_payment_date"]) }}</small><br>
+                                    <small class="text-muted">{{ loan["days_since_last_payment"] }} days ago</small>
                                     {% else %}
                                     <span class="text-muted">No payments</span>
                                     {% endif %}
                                 </td>
                                 <td class="pe-3">
-                                    <a href="/manager/loan/{{ loan.id }}/review" class="btn btn-sm btn-outline-primary">
+                                    <a href="/manager/loan/{{ loan["id"] }}/review" class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-eye"></i> View
                                     </a>
-                                    {% if loan.status == 'pending' %}
-                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ loan.id }}">
+                                    {% if loan["status"] == 'pending' %}
+                                    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ loan["id"] }}">
                                         <i class="bi bi-check"></i> Approve
                                     </button>
-                                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ loan.id }}">
+                                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ loan["id"] }}">
                                         <i class="bi bi-x"></i> Reject
                                     </button>
                                     {% endif %}
@@ -196,19 +196,19 @@
                             </tr>
 
                             <!-- Approve Modal -->
-                            <div class="modal fade" id="approveModal{{ loan.id }}" tabindex="-1">
+                            <div class="modal fade" id="approveModal{{ loan["id"] }}" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
-                                        <form action="/manager/loan/{{ loan.id }}/approve" method="post">
+                                        <form action="/manager/loan/{{ loan["id"] }}/approve" method="post">
                                             <div class="modal-header bg-success text-white">
-                                                <h5 class="modal-title">Approve Loan #{{ loan.id }}</h5>
+                                                <h5 class="modal-title">Approve Loan #{{ loan["id"] }}</h5>
                                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
                                                 <div class="alert alert-info">
-                                                    <strong>Member:</strong> {{ loan.member.full_name or loan.member.email }}<br>
-                                                    <strong>Amount:</strong> {{ money(loan.amount) }}<br>
-                                                    <strong>Term:</strong> {{ loan.term }} months
+                                                    <strong>Member:</strong> {{ loan["member"].full_name or loan["member"].email }}<br>
+                                                    <strong>Amount:</strong> {{ money(loan["amount"]) }}<br>
+                                                    <strong>Term:</strong> {{ loan["term"] }} months
                                                 </div>
                                                 <div class="mb-3">
                                                     <label class="form-label">Approval Notes (Optional)</label>
@@ -225,12 +225,12 @@
                             </div>
 
                             <!-- Reject Modal -->
-                            <div class="modal fade" id="rejectModal{{ loan.id }}" tabindex="-1">
+                            <div class="modal fade" id="rejectModal{{ loan["id"] }}" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
-                                        <form action="/manager/loan/{{ loan.id }}/reject" method="post">
+                                        <form action="/manager/loan/{{ loan["id"] }}/reject" method="post">
                                             <div class="modal-header bg-danger text-white">
-                                                <h5 class="modal-title">Reject Loan #{{ loan.id }}</h5>
+                                                <h5 class="modal-title">Reject Loan #{{ loan["id"] }}</h5>
                                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">

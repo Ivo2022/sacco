@@ -6,7 +6,7 @@ Home page router (Render-safe, Jinja2-stable)
 from fastapi import Request, Depends, APIRouter
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Any
 import logging
 from datetime import datetime
 
@@ -19,20 +19,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def serialize_sacco(sacco: Sacco) -> dict:
+def serialize_sacco(sacco: Sacco) -> Dict[str, Any]:
     """Convert Sacco ORM object to safe dict for templates"""
     return {
         "id": sacco.id,
         "name": sacco.name,
         "status": sacco.status,
-        # Optionally include email/phone/website if needed
         "email": sacco.email,
         "phone": sacco.phone,
         "website": sacco.website,
+        "address": sacco.address,
+        "registration_no": sacco.registration_no,
+        "created_at": sacco.created_at.isoformat() if sacco.created_at else None,
     }
 
 
-def serialize_user(user: User) -> dict | None:
+def serialize_user(user: User) -> Dict[str, Any] | None:
     """Convert User ORM object to safe dict for templates"""
     if not user:
         return None
@@ -43,9 +45,13 @@ def serialize_user(user: User) -> dict | None:
         "role": str(user.role) if user.role else None,
         "is_admin": user.is_admin,
         "dashboard_url": user.get_dashboard_url,
+        "sacco_id": user.sacco_id,
+        "linked_member_account_id": user.linked_member_account_id,
+        "linked_admin_id": user.linked_admin_id,
     }
 
 
+@router.head("/", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def index(
     request: Request,
@@ -58,21 +64,21 @@ async def index(
         logger.info(f"Rendering index for user: {current_user.email if current_user else 'Anonymous'}")
 
         # Fetch data
-        # saccos: List[Sacco] = db.query(Sacco).order_by(Sacco.name).all()
+        saccos: List[Sacco] = db.query(Sacco).order_by(Sacco.name).all()
 
         # Serialize ORM objects safely
-        # safe_saccos = [serialize_sacco(s) for s in saccos]
-        # sacco_dict = {s["id"]: s for s in safe_saccos}
-        # safe_user = serialize_user(current_user)
+        safe_saccos = [serialize_sacco(s) for s in saccos]
+        sacco_dict = {s["id"]: s for s in safe_saccos}
+        safe_user = serialize_user(current_user)
 
         # Build context for Jinja2 (no ORM objects, only dicts, lists, strings, numbers)
         context = {
             "request": request,
-            # "saccos": sacco_dict,
-            # "user": safe_user,
-            # "show_admin_controls": safe_user["is_admin"] if safe_user else False,
+            "saccos": sacco_dict,
+            "user": safe_user,
+            "show_admin_controls": safe_user["is_admin"] if safe_user else False,
             "now": datetime.utcnow(),
-            # Safe helpers
+            # Safe helpers (can be replaced with global filters later)
             "money": lambda amount: format_money(amount),
             "local_time": lambda dt: format_local_time(dt),
             "date": lambda dt: format_date(dt),

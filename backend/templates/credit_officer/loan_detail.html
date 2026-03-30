@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Loan #{{ loan.id }} Details - Credit Officer{% endblock %}
+{% block title %}Loan #{{ loan["id"] }} Details - Credit Officer{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2>Loan Details</h2>
-            <p class="text-muted">Loan #{{ loan.id }} | {{ loan.status|upper }}</p>
+            <p class="text-muted">Loan #{{ loan["id"] }} | {{ loan["status"]|upper }}</p>
         </div>
         <div>
             <a href="/credit-officer/loans" class="btn btn-outline-secondary">
@@ -27,51 +27,51 @@
                     <table class="table table-sm">
                         <tr>
                             <th>Amount:</th>
-                            <td>{{ money(loan.amount) }}</td>
+                            <td>{{ money(loan["amount"]) }}</td>
                         </tr>
                         <tr>
                             <th>Interest Rate:</th>
-                            <td>{{ loan.interest_rate }}%</td>
+                            <td>{{ loan["interest_rate"] }}%</td>
                         </tr>
                         <tr>
                             <th>Term:</th>
-                            <td>{{ loan.term }} months</td>
+                            <td>{{ loan["term"] }} months</td>
                         </tr>
                         <tr>
                             <th>Total Interest:</th>
-                            <td>{{ money(loan.total_interest) }}</td>
+                            <td>{{ money(loan["total_interest"]) }}</td>
                         </tr>
                         <tr>
                             <th>Total Payable:</th>
-                            <td><strong>{{ money(loan.total_payable) }}</strong></td>
+                            <td><strong>{{ money(loan["total_payable"]) }}</strong></td>
                         </tr>
                         <tr>
                             <th>Purpose:</th>
-                            <td>{{ loan.purpose or 'Not specified' }}</td>
+                            <td>{{ loan["purpose"] or 'Not specified' }}</td>
                         </tr>
                         <tr>
                             <th>Status:</th>
                             <td>
-                                {% if loan.status == 'approved' %}
+                                {% if loan["status"] == 'approved' %}
                                 <span class="badge bg-success">Active</span>
-                                {% elif loan.status == 'pending' %}
+                                {% elif loan["status"] == 'pending' %}
                                 <span class="badge bg-warning">Pending</span>
-                                {% elif loan.status == 'completed' %}
+                                {% elif loan["status"] == 'completed' %}
                                 <span class="badge bg-info">Completed</span>
-                                {% elif loan.status == 'overdue' %}
+                                {% elif loan["status"] == 'overdue' %}
                                 <span class="badge bg-danger">Overdue</span>
                                 {% else %}
-                                <span class="badge bg-secondary">{{ loan.status }}</span>
+                                <span class="badge bg-secondary">{{ loan["status"] }}</span>
                                 {% endif %}
                             </td>
                         </tr>
                         <tr>
                             <th>Approved By:</th>
-                            <td>{{ loan.approver.full_name or loan.approver.email if loan.approver else 'Not approved' }}</td>
+                            <td>{{ loan["approver"].full_name or loan["approver"].email if loan["approver"] else 'Not approved' }}</td>
                         </tr>
                         <tr>
                             <th>Approved At:</th>
-                            <td>{{ local_time(loan.approved_at) if loan.approved_at else 'Not approved' }}</td>
+                            <td>{{ local_time(loan["approved_at"]) if loan["approved_at"] else 'Not approved' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -88,24 +88,24 @@
                     <table class="table table-sm">
                         <tr>
                             <th>Name:</th>
-                            <td>{{ member.full_name or 'Not provided' }}</td>
+                            <td>{{ member["full_name"] or 'Not provided' }}</td>
                         </tr>
                         <tr>
                             <th>Email:</th>
-                            <td>{{ member.email }}</td>
+                            <td>{{ member["email"] }}</td>
                         </tr>
                         <tr>
                             <th>Phone:</th>
-                            <td>{{ member.phone or 'Not provided' }}</td>
+                            <td>{{ member["phone"] or 'Not provided' }}</td>
                         </tr>
                         <tr>
                             <th>Member Since:</th>
-                            <td>{{ local_time(member.created_at) }}</td>
+                            <td>{{ local_time(member["created_at"]) }}</td>
                         </tr>
                         <tr>
                             <th>Status:</th>
                             <td>
-                                {% if member.is_active %}
+                                {% if member["is_active"] %}
                                 <span class="badge bg-success">Active</span>
                                 {% else %}
                                 <span class="badge bg-danger">Inactive</span>
@@ -140,7 +140,7 @@
                     <table class="table table-sm">
                         <tr>
                             <th>Monthly Payment:</th>
-                            <td>{{ money(loan.calculate_monthly_payment) }}</td>
+                            <td>{{ money(loan["calculate_monthly_payment"]) }}</td>
                         </tr>
                         <tr>
                             <th>Next Payment Date:</th>
@@ -244,7 +244,7 @@
                                 {% for reminder in reminders %}
                                 <tr>
                                     <td>{{ local_time(reminder.timestamp) }}</td>
-                                    <td>{{ reminder.user.email }}</td>
+                                    <td>{{ reminder.user["email"]}}</td>
                                     <td>{{ reminder.details }}</td>
                                 </tr>
                                 {% endfor %}
@@ -264,7 +264,7 @@
 <div class="modal fade" id="sendReminderModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="/credit-officer/loan/{{ loan.id }}/send-reminder" method="post">
+            <form action="/credit-officer/loan/{{ loan["id"] }}/send-reminder" method="post">
                 <div class="modal-header">
                     <h5 class="modal-title">Send Reminder</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -296,7 +296,7 @@
 <div class="modal fade" id="recordPaymentModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="/credit-officer/loan/{{ loan.id }}/record-payment" method="post">
+            <form action="/credit-officer/loan/{{ loan["id"] }}/record-payment" method="post">
                 <div class="modal-header">
                     <h5 class="modal-title">Record Payment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -341,7 +341,7 @@
 <div class="modal fade" id="sendOverdueModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="/credit-officer/loan/{{ loan.id }}/send-reminder" method="post">
+            <form action="/credit-officer/loan/{{ loan["id"] }}/send-reminder" method="post">
                 <div class="modal-header bg-warning">
                     <h5 class="modal-title">Send Overdue Notice</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

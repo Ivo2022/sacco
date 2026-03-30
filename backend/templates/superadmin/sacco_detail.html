@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ sacco.name }} - Super Admin{% endblock %}
+{% block title %}{{ sacco["name"] }} - Super Admin{% endblock %}
 {% block content %}
 
 <div class="container mt-4">
@@ -8,7 +8,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="/superadmin/dashboard">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="/superadmin/saccos">SACCOs</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{{ sacco.name }}</li>
+            <li class="breadcrumb-item active" aria-current="page">{{ sacco["name"] }}</li>
         </ol>
     </nav>
 
@@ -16,12 +16,12 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2>
-                <i class="bi bi-building"></i> {{ sacco.name }}
+                <i class="bi bi-building"></i> {{ sacco["name"] }}
             </h2>
             <p class="text-muted">SACCO Details and Management</p>
         </div>
         <div>
-            <a href="/superadmin/sacco/{{ sacco.id }}/edit" class="btn btn-outline-primary">
+            <a href="/superadmin/sacco/{{ sacco["id"] }}/edit" class="btn btn-outline-primary">
                 <i class="bi bi-pencil"></i> Edit SACCO
             </a>
             <a href="/superadmin/saccos" class="btn btn-outline-secondary ms-2">
@@ -32,14 +32,14 @@
 
     <!-- SACCO Status Badge -->
     <div class="mb-4">
-        {% if sacco.status == 'active' %}
+        {% if sacco["status"] == 'active' %}
             <span class="badge bg-success px-3 py-2">Active</span>
-        {% elif sacco.status == 'inactive' %}
+        {% elif sacco["status"] == 'inactive' %}
             <span class="badge bg-secondary px-3 py-2">Inactive</span>
-        {% elif sacco.status == 'suspended' %}
+        {% elif sacco["status"] == 'suspended' %}
             <span class="badge bg-danger px-3 py-2">Suspended</span>
         {% else %}
-            <span class="badge bg-info px-3 py-2">{{ sacco.status }}</span>
+            <span class="badge bg-info px-3 py-2">{{ sacco["status"] }}</span>
         {% endif %}
     </div>
 
@@ -55,35 +55,35 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <strong><i class="bi bi-tag"></i> Name:</strong><br>
-                        {{ sacco.name }}
+                        {{ sacco["name"] }}
                     </div>
                     <div class="mb-3">
                         <strong><i class="bi bi-envelope"></i> Email:</strong><br>
-                        {{ sacco.email or 'Not provided' }}
+                        {{ sacco["email"] or 'Not provided' }}
                     </div>
                     <div class="mb-3">
                         <strong><i class="bi bi-telephone"></i> Phone:</strong><br>
-                        {{ sacco.phone or 'Not provided' }}
+                        {{ sacco["phone"] or 'Not provided' }}
                     </div>
                     <div class="mb-3">
                         <strong><i class="bi bi-geo-alt"></i> Address:</strong><br>
-                        {{ sacco.address or 'Not provided' }}
+                        {{ sacco["address"] or 'Not provided' }}
                     </div>
                     <div class="mb-3">
                         <strong><i class="bi bi-card-text"></i> Registration No:</strong><br>
-                        {{ sacco.registration_no or 'Not provided' }}
+                        {{ sacco["registration_no"] or 'Not provided' }}
                     </div>
                     <div class="mb-3">
                         <strong><i class="bi bi-globe"></i> Website:</strong><br>
-                        {% if sacco.website %}
-                            <a href="{{ sacco.website }}" target="_blank">{{ sacco.website }}</a>
+                        {% if sacco["website"] %}
+                            <a href="{{ sacco["website"] }}" target="_blank">{{ sacco["website"] }}</a>
                         {% else %}
                             Not provided
                         {% endif %}
                     </div>
                     <div class="mb-3">
                         <strong><i class="bi bi-calendar3"></i> Created:</strong><br>
-                        {{ local_time(sacco.created_at) }}
+                        {{ local_time(sacco["created_at"]) }}
                     </div>
                 </div>
             </div>
@@ -187,9 +187,9 @@
                                 <tbody>
                                     {% for member in staff %}
                                     <tr>
-                                        <td>{{ member.full_name or member.email }}</td>
+                                        <td>{{ member["full_name"] or member["email"] }}</td>
                                         <td>
-                                            {% if member.role.name == 'ACCOUNTANT' %}
+                                            {% if member["role"].name == 'ACCOUNTANT' %}
                                                 <span class="badge bg-success">
                                                     <i class="bi bi-calculator"></i> Accountant
                                                 </span>
@@ -200,15 +200,15 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            {% if member.is_active %}
+                                            {% if member["is_active"] %}
                                                 <span class="badge bg-success">Active</span>
                                             {% else %}
                                                 <span class="badge bg-danger">Inactive</span>
                                             {% endif %}
                                         </td>
-                                        <td class="small">{{ local_time(member.created_at) }}</td>
+                                        <td class="small">{{ local_time(member["created_at"]) }}</td>
                                         <td>
-                                            <a href="/superadmin/staff/{{ member.id }}" class="btn btn-sm btn-outline-primary">
+                                            <a href="/superadmin/staff/{{ member["id"] }}" class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                         </td>

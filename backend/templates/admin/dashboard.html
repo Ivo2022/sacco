@@ -3,14 +3,14 @@
 {% block content %}
 
 <!-- In admin/dashboard.html, add the switching link -->
-{% if user.linked_member_id %}
+{% if user["linked_member_id"]%}
 <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
     <div class="d-flex align-items-center justify-content-between">
         <div>
             <i class="bi bi-info-circle-fill me-2"></i>
             <strong>Dual Account Access:</strong> You have a linked member account for personal savings and loans.
         </div>
-        <a href="/switch-to-member?as_member={{ user.linked_member_id }}" class="btn btn-sm btn-outline-primary">
+        <a href="/switch-to-member?as_member={{ user["linked_member_id"]}}" class="btn btn-sm btn-outline-primary">
             <i class="bi bi-box-arrow-right me-1"></i> Switch to Member View
         </a>
     </div>
@@ -24,7 +24,7 @@
     <h2 class="fw-bold mb-1">Admin Console</h2>
     {% if sacco is defined and sacco %}
       <p class="text-muted mb-0">
-        <i class="bi bi-building me-1"></i>{{ sacco.name }} — Overview & management
+        <i class="bi bi-building me-1"></i>{{ sacco["name"] }} — Overview & management
       </p>
     {% elif user and user.role.name == 'SUPER_ADMIN' %}
       <p class="text-muted mb-0">
@@ -230,27 +230,27 @@
               <div class="list-group-item px-0 py-3 border-0 border-bottom">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                   <div>
-                    <h6 class="fw-bold mb-1">{{ '%.2f'|format(loan.amount) }}</h6>
+                    <h6 class="fw-bold mb-1">{{ '%.2f'|format(loan["amount"]) }}</h6>
                     <div class="d-flex align-items-center">
-                      <small class="text-muted me-2">{{ loan.username if loan.username is defined else 'Unknown' }}</small>
-                      <span class="badge bg-{{ 'warning' if loan.status == 'pending' else 'success' if loan.status == 'approved' else 'secondary' }} bg-opacity-10 text-{{ 'warning' if loan.status == 'pending' else 'success' if loan.status == 'approved' else 'secondary' }} rounded-pill">
-                        {{ loan.status }}
+                      <small class="text-muted me-2">{{ loan["username"] if loan["username"] is defined else 'Unknown' }}</small>
+                      <span class="badge bg-{{ 'warning' if loan["status"] == 'pending' else 'success' if loan["status"] == 'approved' else 'secondary' }} bg-opacity-10 text-{{ 'warning' if loan["status"] == 'pending' else 'success' if loan["status"] == 'approved' else 'secondary' }} rounded-pill">
+                        {{ loan["status"] }}
                       </span>
                     </div>
                   </div>
-                  <small class="text-muted">{{ loan.timestamp }}</small>
+                  <small class="text-muted">{{ loan["timestamp"] }}</small>
                 </div>
                 
-                {% if loan.status == 'pending' %}
+                {% if loan["status"] == 'pending' %}
                   <div class="d-flex gap-2 mt-2">
-                    <a href="/sacco/loan/{{ loan.id }}/approve" class="btn btn-sm btn-success flex-grow-1">
+                    <a href="/sacco/loan/{{ loan["id"] }}/approve" class="btn btn-sm btn-success flex-grow-1">
                       <i class="bi bi-check-circle me-1"></i>Approve
                     </a>
-                    <a href="/sacco/loan/{{ loan.id }}/reject" class="btn btn-sm btn-outline-danger flex-grow-1">
+                    <a href="/sacco/loan/{{ loan["id"] }}/reject" class="btn btn-sm btn-outline-danger flex-grow-1">
                       <i class="bi bi-x-circle me-1"></i>Reject
                     </a>
                   </div>
-                {% elif loan.status == 'approved' %}
+                {% elif loan["status"] == 'approved' %}
                   <div class="progress mt-2" style="height: 6px;">
                     <div class="progress-bar bg-success" role="progressbar" style="width: 60%;" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
                   </div>

@@ -10,9 +10,9 @@
                 <div class="card-body text-center p-4">
                     <!-- Profile Picture -->
                     <div class="position-relative d-inline-block mb-3">
-                        {% if user.profile_picture %}
-                            <img src="/static/uploads/profiles/{{ user.profile_picture }}" 
-                                 alt="{{ user.full_name }}" 
+                        {% if user["profile_picture"]%}
+                            <img src="/static/uploads/profiles/{{ user["profile_picture"]}}" 
+                                 alt="{{ user["full_name"]}}" 
                                  class="rounded-circle img-thumbnail"
                                  style="width: 150px; height: 150px; object-fit: cover;">
                         {% else %}
@@ -28,9 +28,9 @@
                         </div>
                     </div>
                     
-                    <h4 class="fw-bold mb-1">{{ user.full_name or user.email }}</h4>
+                    <h4 class="fw-bold mb-1">{{ user["full_name"]or user["email"]}}</h4>
                     <p class="text-muted small mb-2">
-                        <i class="bi bi-envelope me-1"></i>{{ user.email }}
+                        <i class="bi bi-envelope me-1"></i>{{ user["email"]}}
                     </p>
                     <p class="text-muted small mb-3">
                         <i class="bi bi-calendar-check me-1"></i>Member since {{ member_since }}
@@ -89,7 +89,7 @@
                                 <input type="text" 
                                        class="form-control" 
                                        name="full_name" 
-                                       value="{{ user.full_name or '' }}"
+                                       value="{{ user["full_name"]or '' }}"
                                        placeholder="Enter your full name">
                             </div>
                             
@@ -98,7 +98,7 @@
                                 <input type="email" 
                                        class="form-control" 
                                        name="email" 
-                                       value="{{ user.email }}"
+                                       value="{{ user["email"]}}"
                                        required>
                             </div>
                             
@@ -107,7 +107,7 @@
                                 <input type="tel" 
                                        class="form-control" 
                                        name="phone" 
-                                       value="{{ user.phone or '' }}"
+                                       value="{{ user["phone"]or '' }}"
                                        placeholder="+256 XXX XXX XXX">
                             </div>
                             
@@ -116,7 +116,7 @@
                                 <input type="text" 
                                        class="form-control" 
                                        name="national_id" 
-                                       value="{{ user.national_id or '' }}"
+                                       value="{{ user["national_id"]or '' }}"
                                        placeholder="National ID Number">
                             </div>
                             <div class="col-md-6">
@@ -124,7 +124,7 @@
                                 <input type="text" 
                                        class="form-control" 
                                        name="username" 
-                                       value="{{ user.username or '' }}"
+                                       value="{{ user["username"]or '' }}"
                                        placeholder="Username">
                             </div>
 							
@@ -133,7 +133,7 @@
                                 <input type="date" 
                                        class="form-control" 
                                        name="date_of_birth" 
-                                       value="{{ user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '' }}">
+                                       value="{{ user.date_of_birth.strftime('%Y-%m-%d') if user["date_of_birth"]else '' }}">
                             </div>
                             
                             <div class="col-md-12">
@@ -141,7 +141,7 @@
                                 <textarea class="form-control" 
                                           name="address" 
                                           rows="2" 
-                                          placeholder="Your address">{{ user.address or '' }}</textarea>
+                                          placeholder="Your address">{{ user["address"]or '' }}</textarea>
                             </div>
                             
                             <div class="col-md-12">

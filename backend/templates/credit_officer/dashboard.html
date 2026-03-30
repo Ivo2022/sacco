@@ -4,7 +4,7 @@
 
 <div class="container mt-4">
     <h2>Credit Officer Dashboard</h2>
-    <p>Welcome, {{ user.full_name or user.email }}</p>
+    <p>Welcome, {{ user["full_name"]or user["email"]}}</p>
 
     <!-- Overdue Loans Alert -->
     {% if overdue_loans_list %}
@@ -23,15 +23,15 @@
                     <tbody>
                         {% for loan in overdue_loans_list %}
                         <tr>
-                            <td>{{ loan.user.full_name or loan.user.email }}</td>
-                            <td>{{ money(loan.outstanding) }}</td>
-                            <td>{{ loan.next_payment_date }}</td>
-                            <td class="text-danger">{{ loan.days_overdue }} days</td>
+                            <td>{{ loan["user"]["full_name"]or loan["user"]["email"]}}</td>
+                            <td>{{ money(loan["outstanding"]) }}</td>
+                            <td>{{ loan["next_payment_date"] }}</td>
+                            <td class="text-danger">{{ loan["days_overdue"] }} days</td>
                             <td>
-                                <button class="btn btn-sm btn-warning" onclick="sendReminder({{ loan.id }})">
+                                <button class="btn btn-sm btn-warning" onclick="sendReminder({{ loan["id"] }})">
                                     <i class="bi bi-envelope"></i> Send Reminder
                                 </button>
-                                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#contactModal{{ loan.id }}">
+                                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#contactModal{{ loan["id"] }}">
                                     <i class="bi bi-telephone"></i> Contact
                                 </button>
                             </td>
@@ -63,12 +63,12 @@
                         <tbody>
                             {% for loan in upcoming_payments %}
                             <tr>
-                                <td>{{ loan.user.full_name or loan.user.email }}</td>
-                                <td>{{ money(loan.amount) }}</td>
-                                <td>{{ money(loan.monthly_payment) }}</td>
-                                <td>{{ loan.next_payment_date }}</td>
+                                <td>{{ loan["user"]["full_name"]or loan["user"]["email"]}}</td>
+                                <td>{{ money(loan["amount"]) }}</td>
+                                <td>{{ money(loan["monthly_payment"]) }}</td>
+                                <td>{{ loan["next_payment_date"] }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary" onclick="sendReminder({{ loan.id }})">
+                                    <button class="btn btn-sm btn-primary" onclick="sendReminder({{ loan["id"] }})">
                                         <i class="bi bi-bell"></i> Send Reminder
                                     </button>
                                 </td>
@@ -103,19 +103,19 @@
                         <tbody>
                             {% for loan in active_loans %}
                             <tr>
-                                <td>{{ loan.user.full_name or loan.user.email }}</td>
-                                <td>{{ money(loan.amount) }}</td>
-                                <td class="text-success">{{ money(loan.total_paid) }}</td>
-                                <td class="text-warning">{{ money(loan.outstanding) }}</td>
+                                <td>{{ loan["user"]["full_name"]or loan["user"]["email"]}}</td>
+                                <td>{{ money(loan["amount"]) }}</td>
+                                <td class="text-success">{{ money(loan["total_paid"]) }}</td>
+                                <td class="text-warning">{{ money(loan["outstanding"]) }}</td>
                                 <td>
-                                    {% if loan.status == 'approved' %}
+                                    {% if loan["status"] == 'approved' %}
                                     <span class="badge bg-success">On Track</span>
-                                    {% elif loan.status == 'partial' %}
+                                    {% elif loan["status"] == 'partial' %}
                                     <span class="badge bg-info">Partially Paid</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-info" onclick="viewLoanDetails({{ loan.id }})">
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewLoanDetails({{ loan["id"] }})">
                                         View Details
                                     </button>
                                 </td>

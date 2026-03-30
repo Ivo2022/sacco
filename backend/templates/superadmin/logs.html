@@ -169,37 +169,37 @@
                         <tbody>
                             {% for log in logs %}
                             <tr>
-                                <td class="ps-3"><small>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</small></td>
+                                <td class="ps-3"><small>{{ log["timestamp"].strftime('%Y-%m-%d %H:%M:%S') }}</small></td>
                                 <td>
-                                    {% if log.user %}
-                                    <span class="fw-semibold">{{ log.user.email }}</span>
+                                    {% if log["user"] %}
+                                    <span class="fw-semibold">{{ log["user"]["email"]}}</span>
                                     {% else %}
                                     <span class="text-muted">System</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if log.sacco %}
-                                    {{ log.sacco.name }}
+                                    {% if log["sacco"] %}
+                                    {{ log["sacco"]["name"] }}
                                     {% else %}
                                     <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if 'APPROVED' in log.action %}
-                                    <span class="badge bg-success">{{ log.action }}</span>
-                                    {% elif 'REJECTED' in log.action %}
-                                    <span class="badge bg-danger">{{ log.action }}</span>
-                                    {% elif 'CREATED' in log.action %}
-                                    <span class="badge bg-primary">{{ log.action }}</span>
-                                    {% elif 'LOGIN' in log.action or 'LOGOUT' in log.action %}
-                                    <span class="badge bg-info">{{ log.action }}</span>
+                                    {% if 'APPROVED' in log["action"] %}
+                                    <span class="badge bg-success">{{ log["action"] }}</span>
+                                    {% elif 'REJECTED' in log["action"] %}
+                                    <span class="badge bg-danger">{{ log["action"] }}</span>
+                                    {% elif 'CREATED' in log["action"] %}
+                                    <span class="badge bg-primary">{{ log["action"] }}</span>
+                                    {% elif 'LOGIN' in log["action"] or 'LOGOUT' in log["action"] %}
+                                    <span class="badge bg-info">{{ log["action"] }}</span>
                                     {% else %}
-                                    <span class="badge bg-secondary">{{ log.action }}</span>
+                                    <span class="badge bg-secondary">{{ log["action"] }}</span>
                                     {% endif %}
                                 </td>
-                                <td><small class="text-muted">{{ log.details|truncate(80) }}</small></td>
-                                <td><small>{{ log.ip_address or '-' }}</small></td>
-                                <td class="pe-3"><small class="text-muted">#{{ log.id }}</small></td>
+                                <td><small class="text-muted">{{ log["details"]|truncate(80) }}</small></td>
+                                <td><small>{{ log["ip_address"] or '-' }}</small></td>
+                                <td class="pe-3"><small class="text-muted">#{{ log["id"] }}</small></td>
                             </tr>
                             {% endfor %}
                         </tbody>

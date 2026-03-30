@@ -68,21 +68,21 @@
                             <tbody>
                                 {% for loan in overdue_loans %}
                                 <tr>
-                                    <td><input type="checkbox" class="loan-checkbox overdue-checkbox" value="{{ loan.id }}"></td>
-                                    <td>#{{ loan.id }}</td>
+                                    <td><input type="checkbox" class="loan-checkbox overdue-checkbox" value="{{ loan["id"] }}"></td>
+                                    <td>#{{ loan["id"] }}</td>
                                     <td>
-                                        <strong>{{ loan.member.full_name or loan.member.email }}</strong>
+                                        <strong>{{ loan["member"].full_name or loan["member"].email }}</strong>
                                     </td>
-                                    <td>{{ loan.member.phone or 'Not provided' }}</td>
-                                    <td class="text-danger fw-bold">{{ money(loan.outstanding) }}</td>
+                                    <td>{{ loan["member"].phone or 'Not provided' }}</td>
+                                    <td class="text-danger fw-bold">{{ money(loan["outstanding"]) }}</td>
                                     <td>
-                                        <span class="badge bg-danger">{{ loan.days_overdue }} days</span>
+                                        <span class="badge bg-danger">{{ loan["days_overdue"] }} days</span>
                                     </td>
-                                    <td>{{ money(loan.monthly_payment) }}</td>
+                                    <td>{{ money(loan["monthly_payment"]) }}</td>
                                     <td>
                                         <button class="btn btn-sm btn-warning send-single-reminder" 
-                                                data-loan-id="{{ loan.id }}"
-                                                data-member-name="{{ loan.member.full_name or loan.member.email }}"
+                                                data-loan-id="{{ loan["id"] }}"
+                                                data-member-name="{{ loan["member"].full_name or loan["member"].email }}"
                                                 data-reminder-type="overdue">
                                             <i class="bi bi-envelope"></i> Send Reminder
                                         </button>
@@ -134,18 +134,18 @@
                             <tbody>
                                 {% for loan in upcoming_loans %}
                                 <tr>
-                                    <td><input type="checkbox" class="loan-checkbox upcoming-checkbox" value="{{ loan.id }}"></td>
-                                    <td>#{{ loan.id }}</td>
+                                    <td><input type="checkbox" class="loan-checkbox upcoming-checkbox" value="{{ loan["id"] }}"></td>
+                                    <td>#{{ loan["id"] }}</td>
                                     <td>
-                                        <strong>{{ loan.member.full_name or loan.member.email }}</strong>
+                                        <strong>{{ loan["member"].full_name or loan["member"].email }}</strong>
                                     </td>
-                                    <td>{{ loan.member.phone or 'Not provided' }}</td>
-                                    <td>{{ datetime(loan.next_payment_date) }}</td>
-                                    <td>{{ money(loan.monthly_payment) }}</td>
+                                    <td>{{ loan["member"].phone or 'Not provided' }}</td>
+                                    <td>{{ datetime(loan["next_payment_date"]) }}</td>
+                                    <td>{{ money(loan["monthly_payment"]) }}</td>
                                     <td>
                                         <button class="btn btn-sm btn-primary send-single-reminder" 
-                                                data-loan-id="{{ loan.id }}"
-                                                data-member-name="{{ loan.member.full_name or loan.member.email }}"
+                                                data-loan-id="{{ loan["id"] }}"
+                                                data-member-name="{{ loan["member"].full_name or loan["member"].email }}"
                                                 data-reminder-type="payment">
                                             <i class="bi bi-envelope"></i> Send Reminder
                                         </button>

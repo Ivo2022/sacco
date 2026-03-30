@@ -27,12 +27,12 @@
                     {% if member_summary %}
                     <div class="list-group list-group-flush">
                         {% for item in member_summary %}
-                        <a href="/accountant/savings?member_id={{ item.member.id }}" 
-                           class="list-group-item list-group-item-action {% if selected_member == item.member.id %}active{% endif %}">
+                        <a href="/accountant/savings?member_id={{ item.member["id"] }}" 
+                           class="list-group-item list-group-item-action {% if selected_member == item.member["id"] %}active{% endif %}">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <div class="fw-semibold">{{ item.member.full_name or item.member.email }}</div>
-                                    <small class="text-muted">{{ item.member.phone or 'No phone' }}</small>
+                                    <div class="fw-semibold">{{ item.member["full_name"] or item.member["email"] }}</div>
+                                    <small class="text-muted">{{ item.member["phone"] or 'No phone' }}</small>
                                 </div>
                                 <div class="text-end">
                                     <div class="fw-bold text-primary">{{ money(item.balance) }}</div>
@@ -64,7 +64,7 @@
                     <h6 class="mb-0">
                         <i class="bi bi-list-ul"></i> 
                         {% if selected_member %}
-                            Transactions for {{ member_summary|selectattr('member.id', 'equalto', selected_member)|first|attr('member.full_name')|default('Member') }}
+                            Transactions for {{ member_summary|selectattr('member["id"]', 'equalto', selected_member)|first|attr('member["full_name"]')|default('Member') }}
                         {% else %}
                             Recent Transactions
                         {% endif %}

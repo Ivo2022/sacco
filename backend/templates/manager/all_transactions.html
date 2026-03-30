@@ -87,8 +87,8 @@
                     <select name="member_id" class="form-select form-select-sm">
                         <option value="">All Members</option>
                         {% for member in members %}
-                        <option value="{{ member.id }}" {% if selected_member == member.id %}selected{% endif %}>
-                            {{ member.full_name or member.email }}
+                        <option value="{{ member["id"] }}" {% if selected_member == member["id"] %}selected{% endif %}>
+                            {{ member["full_name"] or member["email"] }}
                         </option>
                         {% endfor %}
                     </select>
@@ -130,8 +130,8 @@
                             <tr>
                                 <td class="ps-3"><small>{{ local_time(tx.timestamp) }}</small>
                                 <td>
-                                    <div class="fw-semibold small">{{ tx.member.full_name or tx.member.email }}</div>
-                                    <small class="text-muted">{{ tx.member.phone or '' }}</small>
+                                    <div class="fw-semibold small">{{ tx.member["full_name"] or tx.member["email"] }}</div>
+                                    <small class="text-muted">{{ tx.member["phone"] or '' }}</small>
                                 </td>
                                 <td>
                                     {% if tx.type == 'deposit' %}

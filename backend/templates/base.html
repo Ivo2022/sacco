@@ -107,7 +107,7 @@
     </header>
 
     <!-- SACCO Status Alert -->
-		{% if user and user.sacco_id %}
+		{% if user and user["sacco_id"]%}
 			{% set user_sacco = saccos.get(user.sacco_id) %}
 			{% if user_sacco %}
 				{% if user_sacco.status == 'inactive' %}

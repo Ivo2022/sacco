@@ -66,7 +66,7 @@
                         <div class="mb-2">
                             <strong><i class="bi bi-building"></i> SACCO:</strong><br>
                             {% if sacco %}
-                                <a href="/superadmin/sacco/{{ sacco.id }}">{{ sacco.name }}</a>
+                                <a href="/superadmin/sacco/{{ sacco["id"] }}">{{ sacco["name"] }}</a>
                             {% else %}
                                 <span class="text-muted">Not Assigned</span>
                             {% endif %}

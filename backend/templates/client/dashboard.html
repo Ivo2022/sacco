@@ -3,14 +3,14 @@
 {% block content %}
 
 <!-- In member/dashboard.html, add the switching link -->
-{% if user.linked_admin_id %}
+{% if user["linked_admin_id"]%}
 <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
     <div class="d-flex align-items-center justify-content-between">
         <div>
             <i class="bi bi-building me-2"></i>
             <strong>Admin Access:</strong> You have admin privileges for this SACCO.
         </div>
-        <a href="/switch-to-admin?as_admin={{ user.linked_admin_id }}" class="btn btn-sm btn-outline-primary">
+        <a href="/switch-to-admin?as_admin={{ user["linked_admin_id"]}}" class="btn btn-sm btn-outline-primary">
             <i class="bi bi-box-arrow-right me-1"></i> Switch to Admin View
         </a>
     </div>
@@ -22,18 +22,18 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
   <div>
     <h2 class="fw-bold mb-1">
-      Welcome {{ user.username if user.username else user.full_name }},
+      Welcome {{ user["username"]if user["username"]else user["full_name"]}},
       <span class="wave">👋</span>
     </h2>
     {% if sacco is defined and sacco %}
       <p class="text-muted mb-0">
-        <i class="bi bi-building me-1"></i>{{ sacco.name }} • 
-        <span class="small">Member since {{ user.created_at.strftime('%B %Y') if user.created_at is defined else '2026' }}</span>
+        <i class="bi bi-building me-1"></i>{{ sacco["name"] }} • 
+        <span class="small">Member since {{ user.created_at.strftime('%B %Y') if user["created_at"]is defined else '2026' }}</span>
       </p>
     {% else %}
       <p class="text-muted mb-0">
-        <i class="bi bi-person-badge me-1"></i>Member ID: {{ user.id }} • 
-        <span class="small">{{ user.email }}</span>
+        <i class="bi bi-person-badge me-1"></i>Member ID: {{ user["id"]}} • 
+        <span class="small">{{ user["email"]}}</span>
       </p>
     {% endif %}
   </div>
@@ -92,8 +92,8 @@
       <!-- Calculate total outstanding balance -->
       {% set total_outstanding = 0 %}
       {% for loan in active_loans_list %}
-        {% set repaid = loan.repaid if loan.repaid is defined else 0 %}
-        {% set total_outstanding = total_outstanding + (loan.amount - repaid) %}
+        {% set repaid = loan["repaid"] if loan["repaid"] is defined else 0 %}
+        {% set total_outstanding = total_outstanding + (loan["amount"] - repaid) %}
       {% endfor %}
       
       <div class="d-flex align-items-center mb-3">

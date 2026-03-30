@@ -64,60 +64,60 @@
                                 <tbody>
                                     {% for loan in loans %}
                                     <tr>
-                                        <td>#{{ loan.id }}</td>
+                                        <td>#{{ loan["id"] }}</td>
                                         <td>
-                                            <strong>{{ loan.requester_name }}</strong><br>
-                                            <small class="text-muted">{{ loan.requester_email }}</small>
+                                            <strong>{{ loan["requester_name"] }}</strong><br>
+                                            <small class="text-muted">{{ loan["requester_email"] }}</small>
                                         </td>
-                                        <td class="fw-bold">UGX {{ "%.2f"|format(loan.amount) }}</td>
-                                        <td>{{ loan.term }} months</td>
-                                        <td>{{ loan.purpose or 'Not specified' }}</td>
+                                        <td class="fw-bold">UGX {{ "%.2f"|format(loan["amount"]) }}</td>
+                                        <td>{{ loan["term"] }} months</td>
+                                        <td>{{ loan["purpose"] or 'Not specified' }}</td>
                                         <td>
-                                            {% if loan.status == 'pending' %}
+                                            {% if loan["status"] == 'pending' %}
                                                 <span class="badge bg-warning">Pending</span>
-                                            {% elif loan.status == 'approved' %}
+                                            {% elif loan["status"] == 'approved' %}
                                                 <span class="badge bg-success">Approved</span>
-                                            {% elif loan.status == 'rejected' %}
+                                            {% elif loan["status"] == 'rejected' %}
                                                 <span class="badge bg-danger">Rejected</span>
-                                            {% elif loan.status == 'partial' %}
+                                            {% elif loan["status"] == 'partial' %}
                                                 <span class="badge bg-info">Partial</span>
-                                            {% elif loan.status == 'completed' %}
+                                            {% elif loan["status"] == 'completed' %}
                                                 <span class="badge bg-secondary">Completed</span>
                                             {% endif %}
                                         </td>
-                                        <td class="small text-muted">{{ loan.timestamp.strftime('%Y-%m-%d') if loan.timestamp else 'N/A' }}</td>
+                                        <td class="small text-muted">{{ loan["timestamp"].strftime('%Y-%m-%d') if loan["timestamp"] else 'N/A' }}</td>
                                         <td class="small">
-                                            {% if loan.approver_name %}
-                                                {{ loan.approver_name }}<br>
-                                                <small>{{ loan.approved_at.strftime('%Y-%m-%d') if loan.approved_at }}</small>
+                                            {% if loan["approver_name"] %}
+                                                {{ loan["approver_name"] }}<br>
+                                                <small>{{ loan["approved_at"].strftime('%Y-%m-%d') if loan["approved_at"] }}</small>
                                             {% else %}
                                                 <span class="text-muted">—</span>
                                             {% endif %}
                                         </td>
                                         <td>
-                                            {% if loan.status == 'pending' %}
+                                            {% if loan["status"] == 'pending' %}
                                                 <div class="btn-group btn-group-sm">
-                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ loan.id }}">
+                                                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ loan["id"] }}">
                                                         <i class="bi bi-check"></i> Approve
                                                     </button>
-                                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ loan.id }}">
+                                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ loan["id"] }}">
                                                         <i class="bi bi-x"></i> Reject
                                                     </button>
                                                 </div>
 
                                                 <!-- Approve Modal -->
-                                                <div class="modal fade" id="approveModal{{ loan.id }}" tabindex="-1">
+                                                <div class="modal fade" id="approveModal{{ loan["id"] }}" tabindex="-1">
                                                     <div class="modal-dialog">
-                                                        <form method="post" action="/sacco/loan/{{ loan.id }}/approve">
+                                                        <form method="post" action="/sacco/loan/{{ loan["id"] }}/approve">
                                                             <div class="modal-content">
                                                                 <div class="modal-header">
                                                                     <h5 class="modal-title">Approve Loan Request</h5>
                                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                                 </div>
                                                                 <div class="modal-body">
-                                                                    <p><strong>Member:</strong> {{ loan.requester_name }}</p>
-                                                                    <p><strong>Amount:</strong> UGX {{ "%.2f"|format(loan.amount) }}</p>
-                                                                    <p><strong>Term:</strong> {{ loan.term }} months</p>
+                                                                    <p><strong>Member:</strong> {{ loan["requester_name"] }}</p>
+                                                                    <p><strong>Amount:</strong> UGX {{ "%.2f"|format(loan["amount"]) }}</p>
+                                                                    <p><strong>Term:</strong> {{ loan["term"] }} months</p>
                                                                     <div class="mb-3">
                                                                         <label class="form-label">Approval Notes (Optional)</label>
                                                                         <textarea name="notes" class="form-control" rows="2" placeholder="Add any notes about this approval..."></textarea>
@@ -133,17 +133,17 @@
                                                 </div>
 
                                                 <!-- Reject Modal -->
-                                                <div class="modal fade" id="rejectModal{{ loan.id }}" tabindex="-1">
+                                                <div class="modal fade" id="rejectModal{{ loan["id"] }}" tabindex="-1">
                                                     <div class="modal-dialog">
-                                                        <form method="post" action="/sacco/loan/{{ loan.id }}/reject">
+                                                        <form method="post" action="/sacco/loan/{{ loan["id"] }}/reject">
                                                             <div class="modal-content">
                                                                 <div class="modal-header">
                                                                     <h5 class="modal-title">Reject Loan Request</h5>
                                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                                 </div>
                                                                 <div class="modal-body">
-                                                                    <p><strong>Member:</strong> {{ loan.requester_name }}</p>
-                                                                    <p><strong>Amount:</strong> UGX {{ "%.2f"|format(loan.amount) }}</p>
+                                                                    <p><strong>Member:</strong> {{ loan["requester_name"] }}</p>
+                                                                    <p><strong>Amount:</strong> UGX {{ "%.2f"|format(loan["amount"]) }}</p>
                                                                     <div class="mb-3">
                                                                         <label class="form-label">Reason for Rejection</label>
                                                                         <textarea name="notes" class="form-control" rows="2" placeholder="Please provide reason for rejection..."></textarea>
@@ -157,12 +157,12 @@
                                                         </form>
                                                     </div>
                                                 </div>
-                                            {% elif loan.status == 'approved' %}
+                                            {% elif loan["status"] == 'approved' %}
                                                 <span class="text-success small">
                                                     <i class="bi bi-check-circle"></i> 
-                                                    Approved by {{ loan.approver_name or 'System' }}
+                                                    Approved by {{ loan["approver_name"] or 'System' }}
                                                 </span>
-                                            {% elif loan.status == 'rejected' %}
+                                            {% elif loan["status"] == 'rejected' %}
                                                 <span class="text-danger small">
                                                     <i class="bi bi-x-circle"></i> 
                                                     Rejected
@@ -598,9 +598,9 @@
                                 <option value="">-- Select Guarantor --</option>
                                 {% if members and members|length > 0 %}
                                     {% for member in members %}
-                                        <option value="{{ member.id }}" data-balance="{{ member.savings_balance }}">
-                                            {{ member.full_name or member.email }} 
-                                            (Savings: UGX {{ "%.2f"|format(member.savings_balance) }})
+                                        <option value="{{ member["id"] }}" data-balance="{{ member["savings_balance"] }}">
+                                            {{ member["full_name"] or member["email"] }} 
+                                            (Savings: UGX {{ "%.2f"|format(member["savings_balance"]) }})
                                         </option>
                                     {% endfor %}
                                 {% else %}

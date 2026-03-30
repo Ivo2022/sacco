@@ -56,34 +56,34 @@
                         <tbody>
                             {% for loan in loans %}
                             <tr>
-                                <td class="ps-3">#{{ loan.id }}</td>
+                                <td class="ps-3">#{{ loan["id"] }}</td>
                                 <td>
-                                    <div class="fw-semibold">{{ loan.user.full_name or loan.user.email }}</div>
-                                    <small class="text-muted">{{ loan.user.phone or 'No phone' }}</small>
+                                    <div class="fw-semibold">{{ loan["user"]["full_name"]or loan["user"]["email"]}}</div>
+                                    <small class="text-muted">{{ loan["user"]["phone"]or 'No phone' }}</small>
                                 </td>
-                                <td class="fw-bold text-primary">{{ money(loan.amount) }}</td>
-                                <td>{{ loan.term }} months</td>
-                                <td>{{ loan.purpose or 'Not specified' }}</td>
-                                <td>{{ money(loan.calculate_monthly_payment()) }}</td>
-                                <td><small>{{ local_time(loan.timestamp) }}</small></td>
+                                <td class="fw-bold text-primary">{{ money(loan["amount"]) }}</td>
+                                <td>{{ loan["term"] }} months</td>
+                                <td>{{ loan["purpose"] or 'Not specified' }}</td>
+                                <td>{{ money(loan["calculate_monthly_payment"]()) }}</td>
+                                <td><small>{{ local_time(loan["timestamp"]) }}</small></td>
                                 <td class="pe-3">
-                                    <a href="/manager/loan/{{ loan.id }}/review" class="btn btn-sm btn-primary me-1">
+                                    <a href="/manager/loan/{{ loan["id"] }}/review" class="btn btn-sm btn-primary me-1">
                                         <i class="bi bi-eye"></i> Review
                                     </a>
-                                    <button class="btn btn-sm btn-success me-1" data-bs-toggle="modal" data-bs-target="#approveModal{{ loan.id }}">
+                                    <button class="btn btn-sm btn-success me-1" data-bs-toggle="modal" data-bs-target="#approveModal{{ loan["id"] }}">
                                         <i class="bi bi-check"></i> Approve
                                     </button>
-                                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ loan.id }}">
+                                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ loan["id"] }}">
                                         <i class="bi bi-x"></i> Reject
                                     </button>
                                 </td>
                             </tr>
 
                             <!-- Approve Modal -->
-                            <div class="modal fade" id="approveModal{{ loan.id }}" tabindex="-1">
+                            <div class="modal fade" id="approveModal{{ loan["id"] }}" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
-                                        <form action="/manager/loan/{{ loan.id }}/approve" method="post">
+                                        <form action="/manager/loan/{{ loan["id"] }}/approve" method="post">
                                             <div class="modal-header bg-success text-white">
                                                 <h5 class="modal-title">Approve Loan</h5>
                                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -92,10 +92,10 @@
                                                 <div class="mb-3">
                                                     <label class="form-label">Loan Details</label>
                                                     <div class="alert alert-info">
-                                                        <strong>Member:</strong> {{ loan.user.full_name or loan.user.email }}<br>
-                                                        <strong>Amount:</strong> {{ money(loan.amount) }}<br>
-                                                        <strong>Term:</strong> {{ loan.term }} months<br>
-                                                        <strong>Monthly Payment:</strong> {{ money(loan.calculate_monthly_payment()) }}
+                                                        <strong>Member:</strong> {{ loan["user"]["full_name"]or loan["user"]["email"]}}<br>
+                                                        <strong>Amount:</strong> {{ money(loan["amount"]) }}<br>
+                                                        <strong>Term:</strong> {{ loan["term"] }} months<br>
+                                                        <strong>Monthly Payment:</strong> {{ money(loan["calculate_monthly_payment"]()) }}
                                                     </div>
                                                 </div>
                                                 <div class="mb-3">
@@ -113,10 +113,10 @@
                             </div>
 
                             <!-- Reject Modal -->
-                            <div class="modal fade" id="rejectModal{{ loan.id }}" tabindex="-1">
+                            <div class="modal fade" id="rejectModal{{ loan["id"] }}" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
-                                        <form action="/manager/loan/{{ loan.id }}/reject" method="post">
+                                        <form action="/manager/loan/{{ loan["id"] }}/reject" method="post">
                                             <div class="modal-header bg-danger text-white">
                                                 <h5 class="modal-title">Reject Loan</h5>
                                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>

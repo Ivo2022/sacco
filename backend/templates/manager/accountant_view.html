@@ -76,7 +76,7 @@
                         <div class="list-group-item border-0 py-3 px-4">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="fw-semibold">{{ deposit.user.full_name or deposit.user.email }}</div>
+                                    <div class="fw-semibold">{{ deposit.user["full_name"]or deposit.user["email"]}}</div>
                                     <small class="text-muted">{{ deposit.payment_method|replace('_', ' ') }} • {{ local_time(deposit.timestamp) }}</small>
                                 </div>
                                 <div class="text-end">
@@ -122,7 +122,7 @@
                                         <i class="bi bi-{% if tx.type == 'deposit' %}arrow-down{% else %}arrow-up{% endif %} text-{% if tx.type == 'deposit' %}success{% else %}warning{% endif %}"></i>
                                     </div>
                                     <div>
-                                        <div class="fw-semibold">{{ tx.member.full_name or tx.member.email|truncate(30) }}</div>
+                                        <div class="fw-semibold">{{ tx.member["full_name"] or tx.member["email"]|truncate(30) }}</div>
                                         <small class="text-muted">{{ local_time(tx.timestamp) }}</small>
                                     </div>
                                 </div>

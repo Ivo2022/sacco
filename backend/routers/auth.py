@@ -7,6 +7,7 @@ from pathlib import Path
 import logging
 from typing import Optional, cast
 import re
+
 from ..core import get_db, get_current_user
 from ..services.user_service import authenticate_user, create_user
 from ..models import RoleEnum, User, Sacco
@@ -16,60 +17,71 @@ from ..utils import create_log
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Templates will be set from main.py
-templates = None
+
+# ================= SERIALIZERS =================
+
+def serialize_user(user: User) -> dict | None:
+    if not user:
+        return None
+    return {
+        "id": user.id,
+        "email": user.email,
+        "username": user.username,
+        "full_name": user.full_name,
+        "role": user.role.value if user.role else None,
+        "is_active": user.is_active,
+        "is_admin": user.is_admin,
+    }
+
+def serialize_sacco(sacco: Sacco) -> dict:
+    return {
+        "id": sacco.id,
+        "name": sacco.name,
+        "status": sacco.status,
+    }
+
+# ================= TEMPLATE HANDLER =================
 
 def get_templates(request: Request):
-    """Helper function to get templates from app state"""
     if hasattr(request.app.state, 'templates'):
         return request.app.state.templates
-    # Fallback
     templates_dir = Path(__file__).parent.parent / "templates"
     return Jinja2Templates(directory=str(templates_dir))
 
-def set_templates(templates_obj: Jinja2Templates):
-    """Set templates for the router"""
-    global templates
-    templates = templates_obj
 
-
-# ============ LOGIN ROUTES ============
+# ================= LOGIN =================
 
 @router.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
-    """Display login page"""
     templates = get_templates(request)
     return templates.TemplateResponse("login.html", {"request": request})
 
-
 @router.post("/login")
 def login_post(
-    request: Request, 
-    email: str = Form(...), 
-    password: str = Form(...), 
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    """Process login"""
     templates = get_templates(request)
+
     user = authenticate_user(db, email=email, password=password)
-    
+
     if not user:
         return templates.TemplateResponse(
-            "login.html", 
+            "login.html",
             {"request": request, "error": "Invalid credentials"}
         )
-    
-    # Check if user is active
+
     if not user.is_active:
         return templates.TemplateResponse(
-            "login.html", 
-            {"request": request, "error": "Account is deactivated. Please contact administrator."}
+            "login.html",
+            {"request": request, "error": "Account is deactivated"}
         )
-    
-    # Store user in session
+
+    # Session
     request.session["user_id"] = user.id
-    
-    # Log login
+
     create_log(
         db,
         action="USER_LOGIN",
@@ -77,9 +89,7 @@ def login_post(
         sacco_id=user.sacco_id,
         details=f"User {user.email} logged in"
     )
-    
-    # Redirect based on role
-    user_role = cast(RoleEnum, user.role)
+
     role_redirects = {
         RoleEnum.SUPER_ADMIN: "/superadmin/dashboard",
         RoleEnum.MANAGER: "/manager/dashboard",
@@ -87,34 +97,33 @@ def login_post(
         RoleEnum.CREDIT_OFFICER: "/credit-officer/dashboard",
         RoleEnum.MEMBER: "/member/dashboard",
     }
-    
-    redirect_url = role_redirects.get(user_role, "/member/dashboard")
-    return RedirectResponse(url=redirect_url, status_code=303)
+
+    return RedirectResponse(
+        url=role_redirects.get(user.role, "/member/dashboard"),
+        status_code=303
+    )
 
 
-# ============ REGISTRATION ROUTES ============
+# ================= REGISTER =================
 
 @router.get("/register", response_class=HTMLResponse)
 def register_form(
-    request: Request, 
+    request: Request,
     referral_code: Optional[str] = None,
     staff_registration: bool = False,
     db: Session = Depends(get_db)
 ):
-    """
-    Show registration form
-    
-    - Regular users: self-register as members
-    - Staff with staff_registration=true: can create accounts for members
-    """
     templates = get_templates(request)
-    
-    # Get active SACCOs for dropdown
-    saccos = db.query(Sacco).filter(Sacco.status == 'active').order_by(Sacco.name).all()
-    
+
+    saccos = db.query(Sacco).filter(
+        Sacco.status == 'active'
+    ).order_by(Sacco.name).all()
+
+    safe_saccos = [serialize_sacco(s) for s in saccos]
+
     return templates.TemplateResponse("register.html", {
-        "request": request, 
-        "saccos": saccos,
+        "request": request,
+        "saccos": safe_saccos,
         "referral_code": referral_code,
         "staff_registration": staff_registration
     })
@@ -133,12 +142,8 @@ async def register_post(
     staff_registration: bool = Form(False),
     db: Session = Depends(get_db)
 ):
-    """
-    Register a new member with proper error handling
-    """
     templates = get_templates(request)
-    
-    # Collect form data for re-rendering
+
     form_data = {
         "email": email,
         "username": username,
@@ -148,160 +153,73 @@ async def register_post(
         "sacco_id": sacco_id,
         "staff_registration": staff_registration
     }
-    
-    # Validation errors list
+
     errors = []
-    
-    # Validate required fields
-    if not email:
-        errors.append("Email address is required")
-    elif not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-        errors.append("Please enter a valid email address")
-    
-    if not password:
-        errors.append("Password is required")
-    elif len(password) < 6:
-        errors.append("Password must be at least 6 characters long")
-    
-    if not username:
-        errors.append("Username is required")
-    elif len(username) < 3:
-        errors.append("Username must be at least 3 characters long")
-    
+
+    # Validation
+    if not email or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        errors.append("Valid email required")
+
+    if not password or len(password) < 6:
+        errors.append("Password must be at least 6 characters")
+
+    if not username or len(username) < 3:
+        errors.append("Username too short")
+
     if not sacco_id:
-        errors.append("Please select a SACCO to register under")
-    
-    # Check if user already exists
-    if email and not errors:
-        existing_user = db.query(User).filter(User.email == email).first()
-        if existing_user:
-            errors.append(f"Email '{email}' is already registered. Please use a different email or login.")
-    
-    if username and not errors:
-        existing_username = db.query(User).filter(User.username == username).first()
-        if existing_username:
-            errors.append(f"Username '{username}' is already taken. Please choose a different username.")
-    
-    # Validate SACCO exists and is active
-    if sacco_id and not errors:
-        sacco = db.query(Sacco).filter(
-            Sacco.id == sacco_id,
-            Sacco.status == 'active'
-        ).first()
-        
-        if not sacco:
-            errors.append("Selected SACCO is not available for registration")
-    
-    # If there are validation errors, re-render form with error messages
+        errors.append("Select a SACCO")
+
+    # If errors
     if errors:
-        saccos = db.query(Sacco).filter(Sacco.status == 'active').order_by(Sacco.name).all()
-        
-        # Format errors for display
-        error_messages = "<br>".join(errors)
-        
+        saccos = db.query(Sacco).filter(Sacco.status == 'active').all()
+        safe_saccos = [serialize_sacco(s) for s in saccos]
+
         return templates.TemplateResponse("register.html", {
             "request": request,
-            "error": error_messages,
-            "saccos": saccos,
-            **form_data
-        })
-    
-    try:
-        # Determine if member needs approval
-        requires_approval = not staff_registration
-        
-        # Create the new member
-        user = create_user(
-            db, 
-            full_name=full_name, 
-            username=username, 
-            email=email, 
-            password=password, 
-            role=RoleEnum.MEMBER, 
-            sacco_id=sacco_id,
-            phone=phone,
-            is_active=staff_registration,  # Staff-created accounts are active immediately
-            requires_approval_for_loans=True
-        )
-        
-        # Generate referral codes
-        user.member_referral_code = ReferralService.generate_referral_code(user, "member")
-        user.sacco_referral_code = ReferralService.generate_referral_code(user, "sacco")
-        db.commit()
-        
-        # Process referral if provided
-        referrer_info = None
-        if referral_code:
-            referral_result = ReferralService.apply_member_referral(db, user, referral_code)
-            
-            if referral_result["success"]:
-                referrer = db.query(User).filter(User.id == referral_result["referrer_id"]).first()
-                referrer_info = {
-                    "referrer_name": referrer.full_name or referrer.email,
-                    "current_tier": referral_result["current_tier"]
-                }
-                
-                create_log(
-                    db,
-                    action="MEMBER_REFERRAL_APPLIED",
-                    user_id=referrer.id,
-                    sacco_id=user.sacco_id,
-                    details=f"User {user.email} referred by {referrer.email}"
-                )
-        
-        # Set success message
-        if staff_registration:
-            request.session["flash_message"] = (
-                f"✓ Member {full_name or email} created successfully!\n"
-                f"They can now log in with: {email}"
-            )
-            request.session["flash_type"] = "success"
-            return RedirectResponse(url="/manager/staff", status_code=303)
-        else:
-            if requires_approval:
-                request.session["flash_message"] = (
-                    "✓ Registration successful! Your account requires approval.\n"
-                    "You will be notified once your account is activated."
-                )
-            else:
-                request.session["flash_message"] = "✓ Registration successful! Please login."
-            
-            request.session["flash_type"] = "success"
-            
-            if referrer_info:
-                request.session["flash_message"] += f"\n\n🎉 You were referred by {referrer_info['referrer_name']}!"
-            
-            return RedirectResponse(url="/auth/login", status_code=303)
-        
-    except ValueError as e:
-        # Handle validation errors from service layer
-        saccos = db.query(Sacco).filter(Sacco.status == 'active').order_by(Sacco.name).all()
-        return templates.TemplateResponse("register.html", {
-            "request": request,
-            "error": str(e),
-            "saccos": saccos,
-            **form_data
-        })
-        
-    except Exception as e:
-        logger.error(f"Registration error: {e}")
-        saccos = db.query(Sacco).filter(Sacco.status == 'active').order_by(Sacco.name).all()
-        return templates.TemplateResponse("register.html", {
-            "request": request,
-            "error": "Registration failed. Please try again or contact support.",
-            "saccos": saccos,
+            "error": "<br>".join(errors),
+            "saccos": safe_saccos,
             **form_data
         })
 
-# ============ LOGOUT ROUTE ============
+    try:
+        user = create_user(
+            db,
+            full_name=full_name,
+            username=username,
+            email=email,
+            password=password,
+            role=RoleEnum.MEMBER,
+            sacco_id=sacco_id,
+            phone=phone,
+            is_active=staff_registration
+        )
+
+        request.session["flash_message"] = "Registration successful"
+        request.session["flash_type"] = "success"
+
+        return RedirectResponse("/auth/login", status_code=303)
+
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+
+        saccos = db.query(Sacco).filter(Sacco.status == 'active').all()
+        safe_saccos = [serialize_sacco(s) for s in saccos]
+
+        return templates.TemplateResponse("register.html", {
+            "request": request,
+            "error": "Registration failed",
+            "saccos": safe_saccos,
+            **form_data
+        })
+
+
+# ================= LOGOUT =================
 
 @router.get("/logout")
 def logout(request: Request, db: Session = Depends(get_db)):
-    """Logout user"""
     user_id = request.session.get("user_id")
-    
+
     if user_id:
-        # Log logout
         create_log(
             db,
             action="USER_LOGOUT",
@@ -309,7 +227,7 @@ def logout(request: Request, db: Session = Depends(get_db)):
             sacco_id=None,
             details="User logged out"
         )
-    
+
     request.session.clear()
     return RedirectResponse(url="/", status_code=303)
 

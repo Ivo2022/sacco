@@ -144,35 +144,35 @@
                     <tbody>
                         {% for loan in loans %}
                         <tr>
-                            <td>#{{ loan.id }}</td>
+                            <td>#{{ loan["id"] }}</td>
                             <td>
-                                <strong>{{ loan.member.full_name or loan.member.email }}</strong><br>
-                                <small class="text-muted">{{ loan.member.phone or 'No phone' }}</small>
+                                <strong>{{ loan["member"].full_name or loan["member"].email }}</strong><br>
+                                <small class="text-muted">{{ loan["member"].phone or 'No phone' }}</small>
                              </td>
-                            <td>{{ money(loan.amount) }}</td>
-                            <td class="text-success">{{ money(loan.total_paid) }}</td>
-                            <td class="text-danger">{{ money(loan.outstanding) }}</td>
+                            <td>{{ money(loan["amount"]) }}</td>
+                            <td class="text-success">{{ money(loan["total_paid"]) }}</td>
+                            <td class="text-danger">{{ money(loan["outstanding"]) }}</td>
                             <td>
-                                {% if loan.status == 'approved' %}
+                                {% if loan["status"] == 'approved' %}
                                 <span class="badge bg-success">Active</span>
-                                {% elif loan.status == 'overdue' %}
+                                {% elif loan["status"] == 'overdue' %}
                                 <span class="badge bg-danger">Overdue</span>
-                                {% elif loan.status == 'completed' %}
+                                {% elif loan["status"] == 'completed' %}
                                 <span class="badge bg-info">Completed</span>
-                                {% elif loan.status == 'pending' %}
+                                {% elif loan["status"] == 'pending' %}
                                 <span class="badge bg-warning">Pending</span>
                                 {% else %}
-                                <span class="badge bg-secondary">{{ loan.status }}</span>
+                                <span class="badge bg-secondary">{{ loan["status"] }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ local_time(loan.approved_at) if loan.approved_at else '-' }}</td>
+                            <td>{{ local_time(loan["approved_at"]) if loan["approved_at"] else '-' }}</td>
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="progress flex-grow-1 me-2" style="height: 8px;">
                                         <div class="progress-bar bg-success" 
-                                             style="width: {{ loan.payment_percentage }}%"></div>
+                                             style="width: {{ loan["payment_percentage"] }}%"></div>
                                     </div>
-                                    <span>{{ "%.1f"|format(loan.payment_percentage) }}%</span>
+                                    <span>{{ "%.1f"|format(loan["payment_percentage"]) }}%</span>
                                 </div>
                             </td>
                         </tr>

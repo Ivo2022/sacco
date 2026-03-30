@@ -22,7 +22,7 @@
                             {% for ref in sacco_referrals %}
                             发展
                                 <td>{{ ref.referrer.full_name }}</td>
-                                <td>{{ ref.sacco.name }}</td>
+                                <td>{{ ref.sacco["name"] }}</td>
                                 <td>{{ ref.amount|money }}</td>
                                 <td>
                                     {% if ref.status == 'pending' %}
@@ -71,7 +71,7 @@
                             {% for ref in sacco_referrals %}
                             发展
                                 <td>{{ ref.referrer.full_name }}</td>
-                                <td>{{ ref.sacco.name }}</td>
+                                <td>{{ ref.sacco["name"] }}</td>
                                 <td>{{ ref.amount|money }}</td>
                                 <td>
                                     {% if ref.status == 'pending' %}

@@ -187,10 +187,10 @@
                                 {% for item in top_loans %}
                                 <tr>
                                     <td class="ps-3">
-                                        <div class="fw-semibold small">{{ item.member.full_name or item.member.email|truncate(20) }}</div>
-                                        <small class="text-muted">{{ item.member.phone or '' }}</small>
+                                        <div class="fw-semibold small">{{ item.member["full_name"] or item.member["email"]|truncate(20) }}</div>
+                                        <small class="text-muted">{{ item.member["phone"] or '' }}</small>
                                     </td>
-                                    <td class="small">{{ money(item.loan.amount) }}</td>
+                                    <td class="small">{{ money(item.loan["amount"]) }}</td>
                                     <td class="small">{{ money(item.paid) }}</td>
                                     <td class="pe-3" style="min-width: 100px;">
                                         <div class="d-flex align-items-center">
@@ -236,8 +236,8 @@
                                 {% for item in upcoming_payments[:5] %}
                                 <tr>
                                     <td class="ps-3">
-                                        <div class="fw-semibold small">{{ item.loan.user.full_name or item.loan.user.email|truncate(20) }}</div>
-                                        <small class="text-muted">Loan #{{ item.loan.id }}</small>
+                                        <div class="fw-semibold small">{{ item.loan["user"]["full_name"]or item.loan["user"].email|truncate(20) }}</div>
+                                        <small class="text-muted">Loan #{{ item.loan["id"] }}</small>
                                     </td>
                                     <td class="small">
                                         <div>{{ money(item.amount_due) }}</div>

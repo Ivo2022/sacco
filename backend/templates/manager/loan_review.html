@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Review Loan #{{ loan.id }} - Manager{% endblock %}
+{% block title %}Review Loan #{{ loan["id"] }} - Manager{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2>Loan Application Review</h2>
-            <p class="text-muted">Loan #{{ loan.id }} | Applied {{ local_time(loan.timestamp) }}</p>
+            <p class="text-muted">Loan #{{ loan["id"] }} | Applied {{ local_time(loan["timestamp"]) }}</p>
         </div>
         <div>
             <a href="/manager/loans/pending" class="btn btn-outline-secondary">
@@ -27,31 +27,31 @@
                     <table class="table table-sm">
                         <tr>
                             <th>Amount:</th>
-                            <td>{{ money(loan.amount) }}</td>
+                            <td>{{ money(loan["amount"]) }}</td>
                         </tr>
                         <tr>
                             <th>Term:</th>
-                            <td>{{ loan.term }} months</td>
+                            <td>{{ loan["term"] }} months</td>
                         </tr>
                         <tr>
                             <th>Interest Rate:</th>
-                            <td>{{ loan.interest_rate }}%</td>
+                            <td>{{ loan["interest_rate"] }}%</td>
                         </tr>
                         <tr>
                             <th>Total Interest:</th>
-                            <td>{{ money(loan.total_interest) }}</td>
+                            <td>{{ money(loan["total_interest"]) }}</td>
                         </tr>
                         <tr>
                             <th>Total Payable:</th>
-                            <td><strong>{{ money(loan.total_payable) }}</strong></td>
+                            <td><strong>{{ money(loan["total_payable"]) }}</strong></td>
                         </tr>
                         <tr>
                             <th>Monthly Payment:</th>
-                            <td>{{ money(loan.calculate_monthly_payment()) }}</td>
+                            <td>{{ money(loan["calculate_monthly_payment"]()) }}</td>
                         </tr>
                         <tr>
                             <th>Purpose:</th>
-                            <td>{{ loan.purpose or 'Not specified' }}</td>
+                            <td>{{ loan["purpose"] or 'Not specified' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -68,19 +68,19 @@
                     <table class="table table-sm">
                         <tr>
                             <th>Name:</th>
-                            <td>{{ member.full_name or 'Not provided' }}</td>
+                            <td>{{ member["full_name"] or 'Not provided' }}</td>
                         </tr>
                         <tr>
                             <th>Email:</th>
-                            <td>{{ member.email }}</td>
+                            <td>{{ member["email"] }}</td>
                         </tr>
                         <tr>
                             <th>Phone:</th>
-                            <td>{{ member.phone or 'Not provided' }}</td>
+                            <td>{{ member["phone"] or 'Not provided' }}</td>
                         </tr>
                         <tr>
                             <th>Member Since:</th>
-                            <td>{{ local_time(member.created_at) }}</td>
+                            <td>{{ local_time(member["created_at"]) }}</td>
                         </tr>
                     </table>
                 </div>
@@ -110,15 +110,15 @@
 <div class="modal fade" id="approveModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="/manager/loan/{{ loan.id }}/approve" method="post">
+            <form action="/manager/loan/{{ loan["id"] }}/approve" method="post">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title">Approve Loan</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info">
-                        <strong>Loan Amount:</strong> {{ money(loan.amount) }}<br>
-                        <strong>Member:</strong> {{ member.full_name or member.email }}
+                        <strong>Loan Amount:</strong> {{ money(loan["amount"]) }}<br>
+                        <strong>Member:</strong> {{ member["full_name"] or member["email"] }}
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Approval Notes (Optional)</label>
@@ -138,7 +138,7 @@
 <div class="modal fade" id="rejectModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form action="/manager/loan/{{ loan.id }}/reject" method="post">
+            <form action="/manager/loan/{{ loan["id"] }}/reject" method="post">
                 <div class="modal-header bg-danger text-white">
                     <h5 class="modal-title">Reject Loan</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>

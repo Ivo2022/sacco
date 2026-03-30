@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h4 class="mb-0">Accountant Dashboard</h4>
-            <small class="text-muted">Welcome back, {{ user.full_name or user.email }}</small>
+            <small class="text-muted">Welcome back, {{ user["full_name"]or user["email"]}}</small>
         </div>
         <div>
             <a href="/accountant/deposits/pending" class="btn btn-primary btn-sm">
@@ -101,7 +101,7 @@
                             {% for deposit in pending_deposits[:5] %}
                             <tr>
                                 <td class="ps-3">
-                                    <div class="small fw-semibold">{{ deposit.user.full_name or deposit.user.email|truncate(25) }}</div>
+                                    <div class="small fw-semibold">{{ deposit.user["full_name"]or deposit.user.email|truncate(25) }}</div>
                                 </td>
                                 <td class="fw-bold text-primary">{{ money(deposit.amount) }}</td>
                                 <td><small>{{ local_time(deposit.timestamp) }}</small></td>
@@ -181,7 +181,7 @@
                                 {% for tx in recent_transactions %}
                                 <tr>
                                     <td class="ps-3"><small>{{ local_time(tx.timestamp) }}</small></td>
-                                    <td><small>{{ tx.user.full_name or tx.user.email|truncate(20) }}</small></td>
+                                    <td><small>{{ tx.user["full_name"]or tx.user.email|truncate(20) }}</small></td>
                                     <td>
                                         {% if tx.type == 'deposit' %}
                                         <span class="badge bg-success">Deposit</span>

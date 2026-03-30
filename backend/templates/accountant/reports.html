@@ -144,8 +144,8 @@
                             <tr>
                                 <td class="ps-3 fw-bold">#{{ loop.index }}</td>
                                 <td>
-                                    <div class="fw-semibold">{{ depositor.member.full_name or depositor.member.email }}</div>
-                                    <small class="text-muted">{{ depositor.member.phone or '' }}</small>
+                                    <div class="fw-semibold">{{ depositor.member["full_name"] or depositor.member["email"] }}</div>
+                                    <small class="text-muted">{{ depositor.member["phone"] or '' }}</small>
                                 </td>
                                 <td class="fw-bold text-success">{{ money(depositor.total) }}</td>
                                 <td class="pe-3">
@@ -190,7 +190,7 @@
                                 {% for tx in transactions[:10] %}
                                 <tr>
                                     <td class="ps-3"><small>{{ local_time(tx.timestamp) }}</small></td>
-                                    <td><small>{{ tx.member.full_name or tx.member.email|truncate(25) }}</small></td>
+                                    <td><small>{{ tx.member["full_name"] or tx.member["email"]|truncate(25) }}</small></td>
                                     <td>
                                         {% if tx.type == 'deposit' %}
                                         <span class="badge bg-success">Deposit</span>

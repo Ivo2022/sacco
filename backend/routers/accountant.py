@@ -1,79 +1,167 @@
+# backend/routers/accountant.py
+
 from fastapi import APIRouter, Depends, Request, HTTPException, Form, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
-from fastapi.templating import Jinja2Templates
 from datetime import datetime, timedelta
 import logging
-from ..core.dependencies import get_db, require_accountant_or_manager 
+
+from ..core.dependencies import get_db, require_accountant_or_manager
 from ..models import RoleEnum, PendingDeposit, Saving, User, Sacco
 from ..utils.helpers import get_template_helpers, check_sacco_status
 from ..utils import create_log
-from ..services.user_service import get_user
 
 router = APIRouter()
-templates = Jinja2Templates(directory="backend/templates")
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# SERIALIZERS (JSON-safe dictionaries for templates)
+# =============================================================================
+
+def serialize_user_basic(user: User) -> dict:
+    """Basic user info (no sensitive data)"""
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "username": user.username,
+        "role": str(user.role) if user.role else None,
+        "is_active": user.is_active,
+        "is_approved": user.is_approved,
+        "sacco_id": user.sacco_id,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "phone": user.phone,
+    }
+
+
+def serialize_user_full(user: User) -> dict:
+    """Full user info including computed properties"""
+    base = serialize_user_basic(user)
+    base.update({
+        "linked_member_account_id": user.linked_member_account_id,
+        "linked_admin_id": user.linked_admin_id,
+        "dashboard_url": user.get_dashboard_url,
+        "is_admin": user.is_admin,
+    })
+    return base
+
+
+def serialize_saving(saving: Saving) -> dict:
+    """Convert Saving ORM object to safe dict"""
+    return {
+        "id": saving.id,
+        "amount": saving.amount,
+        "type": saving.type,
+        "payment_method": saving.payment_method.value if hasattr(saving.payment_method, 'value') else str(saving.payment_method),
+        "description": saving.description,
+        "reference_number": saving.reference_number,
+        "timestamp": saving.timestamp.isoformat() if saving.timestamp else None,
+        "user_id": saving.user_id,
+        "sacco_id": saving.sacco_id,
+        "approved_by": saving.approved_by,
+        "approved_at": saving.approved_at.isoformat() if saving.approved_at else None,
+    }
+
+
+def serialize_pending_deposit(deposit: PendingDeposit) -> dict:
+    """Convert PendingDeposit ORM object to safe dict"""
+    return {
+        "id": deposit.id,
+        "amount": deposit.amount,
+        "payment_method": deposit.payment_method,
+        "description": deposit.description,
+        "reference_number": deposit.reference_number,
+        "status": deposit.status,
+        "timestamp": deposit.timestamp.isoformat() if deposit.timestamp else None,
+        "user_id": deposit.user_id,
+        "sacco_id": deposit.sacco_id,
+        "member_name": deposit.user.full_name if deposit.user else None,
+        "member_email": deposit.user.email if deposit.user else None,
+    }
+
+
+def serialize_sacco(sacco: Sacco) -> dict:
+    """Convert Sacco ORM object to safe dict"""
+    return {
+        "id": sacco.id,
+        "name": sacco.name,
+        "email": sacco.email,
+        "phone": sacco.phone,
+        "address": sacco.address,
+        "registration_no": sacco.registration_no,
+        "website": sacco.website,
+        "status": sacco.status,
+        "created_at": sacco.created_at.isoformat() if sacco.created_at else None,
+    }
+
+
+# =============================================================================
+# ROUTES
+# =============================================================================
 
 @router.get("/accountant/dashboard")
 def accountant_dashboard(
-    request: Request, 
-    db: Session = Depends(get_db), 
+    request: Request,
+    db: Session = Depends(get_db),
     user=Depends(require_accountant_or_manager)
 ):
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-    
-    # Get pending deposits count
+
+    templates = request.app.state.templates
+
+    # Get pending deposits
     pending_count = db.query(PendingDeposit).filter(
         PendingDeposit.sacco_id == user.sacco_id,
         PendingDeposit.status == "pending"
     ).count()
-    
-    # Get pending deposits list
-    pending_deposits = db.query(PendingDeposit).filter(
+
+    pending_deposits_orm = db.query(PendingDeposit).filter(
         PendingDeposit.sacco_id == user.sacco_id,
         PendingDeposit.status == "pending"
     ).order_by(PendingDeposit.timestamp.desc()).limit(10).all()
-    
+    pending_deposits = [serialize_pending_deposit(d) for d in pending_deposits_orm]
+
     # Get recent transactions
-    recent_transactions = db.query(Saving).filter(
+    recent_transactions_orm = db.query(Saving).filter(
         Saving.sacco_id == user.sacco_id
     ).order_by(Saving.timestamp.desc()).limit(10).all()
-    
-    # Get summary statistics
+    recent_transactions = [serialize_saving(t) for t in recent_transactions_orm]
+
+    # Summary statistics
     total_savings = db.query(func.sum(Saving.amount)).filter(
         Saving.sacco_id == user.sacco_id
     ).scalar() or 0
-    
-    # Get today's collections
+
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     today_collections = db.query(func.sum(Saving.amount)).filter(
         Saving.sacco_id == user.sacco_id,
         Saving.timestamp >= today_start
     ).scalar() or 0
-    
-    # Get this month's collections
+
     month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     month_collections = db.query(func.sum(Saving.amount)).filter(
         Saving.sacco_id == user.sacco_id,
         Saving.timestamp >= month_start
     ).scalar() or 0
-    
+
     helpers = get_template_helpers()
-    
-    return templates.TemplateResponse("accountant/dashboard.html", {
+    context = {
         "request": request,
-        "user": user,
+        "user": serialize_user_full(user),
         "pending_count": pending_count,
         "pending_deposits": pending_deposits,
         "recent_transactions": recent_transactions,
         "total_savings": total_savings,
         "today_collections": today_collections,
         "month_collections": month_collections,
-        **helpers
-    })
+        **helpers,
+    }
+    return templates.TemplateResponse("accountant/dashboard.html", context)
+
 
 @router.get("/accountant/deposits/pending")
 def pending_deposits_page(
@@ -85,25 +173,25 @@ def pending_deposits_page(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-    
-    pending_deposits = db.query(PendingDeposit).filter(
+
+    templates = request.app.state.templates
+
+    pending_deposits_orm = db.query(PendingDeposit).filter(
         PendingDeposit.sacco_id == user.sacco_id,
         PendingDeposit.status == "pending"
     ).order_by(PendingDeposit.timestamp.desc()).all()
-    
-    # Get member info for each deposit
-    for deposit in pending_deposits:
-        deposit.member = db.query(User).filter(User.id == deposit.user_id).first()
-    
+    pending_deposits = [serialize_pending_deposit(d) for d in pending_deposits_orm]
+
     helpers = get_template_helpers()
-    
-    return templates.TemplateResponse("accountant/pending_deposits.html", {
+    context = {
         "request": request,
-        "user": user,
+        "user": serialize_user_full(user),
         "pending_deposits": pending_deposits,
         "pending_count": len(pending_deposits),
-        **helpers
-    })
+        **helpers,
+    }
+    return templates.TemplateResponse("accountant/pending_deposits.html", context)
+
 
 @router.post("/accountant/deposit/{deposit_id}/approve")
 async def approve_deposit(
@@ -117,18 +205,18 @@ async def approve_deposit(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-    
+
     pending = db.query(PendingDeposit).filter(
         PendingDeposit.id == deposit_id,
         PendingDeposit.sacco_id == user.sacco_id
     ).first()
-    
+
     if not pending:
         raise HTTPException(status_code=404, detail="Deposit not found")
-    
+
     if pending.status != "pending":
         raise HTTPException(status_code=400, detail="Deposit already processed")
-    
+
     # Create savings record
     saving = Saving(
         sacco_id=pending.sacco_id,
@@ -143,15 +231,15 @@ async def approve_deposit(
         pending_deposit_id=pending.id
     )
     db.add(saving)
-    
+
     # Update pending deposit
     pending.status = "approved"
     pending.approved_by = user.id
     pending.approved_at = datetime.utcnow()
     pending.approval_notes = notes
-    
+
     db.commit()
-    
+
     # Create log entry
     member = db.query(User).filter(User.id == pending.user_id).first()
     create_log(
@@ -161,11 +249,12 @@ async def approve_deposit(
         user.sacco_id,
         f"Deposit of UGX {pending.amount:,.2f} approved for {member.email} by {user.email}"
     )
-    
+
     request.session["flash_message"] = f"✓ Deposit of UGX {pending.amount:,.2f} approved successfully!"
     request.session["flash_type"] = "success"
-    
+
     return RedirectResponse(url="/accountant/deposits/pending", status_code=303)
+
 
 @router.post("/accountant/deposit/{deposit_id}/reject")
 async def reject_deposit(
@@ -179,26 +268,26 @@ async def reject_deposit(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-    
+
     pending = db.query(PendingDeposit).filter(
         PendingDeposit.id == deposit_id,
         PendingDeposit.sacco_id == user.sacco_id
     ).first()
-    
+
     if not pending:
         raise HTTPException(status_code=404, detail="Deposit not found")
-    
+
     if pending.status != "pending":
         raise HTTPException(status_code=400, detail="Deposit already processed")
-    
+
     # Update pending deposit
     pending.status = "rejected"
     pending.approved_by = user.id
     pending.approved_at = datetime.utcnow()
     pending.rejection_reason = reason
-    
+
     db.commit()
-    
+
     # Create log entry
     member = db.query(User).filter(User.id == pending.user_id).first()
     create_log(
@@ -208,11 +297,12 @@ async def reject_deposit(
         user.sacco_id,
         f"Deposit of UGX {pending.amount:,.2f} rejected for {member.email} by {user.email}. Reason: {reason}"
     )
-    
+
     request.session["flash_message"] = f"✓ Deposit of UGX {pending.amount:,.2f} rejected."
     request.session["flash_type"] = "warning"
-    
+
     return RedirectResponse(url="/accountant/deposits/pending", status_code=303)
+
 
 @router.get("/accountant/transactions")
 def transactions_page(
@@ -229,47 +319,46 @@ def transactions_page(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-    
-    # Build query
+
+    templates = request.app.state.templates
+
     query = db.query(Saving).filter(Saving.sacco_id == user.sacco_id)
-    
-    # Apply filters
+
     if transaction_type:
         query = query.filter(Saving.type == transaction_type)
-    
+
     if start_date:
         start = datetime.strptime(start_date, "%Y-%m-%d")
         query = query.filter(Saving.timestamp >= start)
-    
+
     if end_date:
         end = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
         query = query.filter(Saving.timestamp <= end)
-    
-    # Pagination
+
     total = query.count()
     offset = (page - 1) * per_page
-    transactions = query.order_by(Saving.timestamp.desc()).offset(offset).limit(per_page).all()
-    
+    transactions_orm = query.order_by(Saving.timestamp.desc()).offset(offset).limit(per_page).all()
+    transactions = [serialize_saving(t) for t in transactions_orm]
+
     # Get member info for each transaction
-    for transaction in transactions:
-        transaction.member = db.query(User).filter(User.id == transaction.user_id).first()
-    
-    # Get summary statistics
+    for tx in transactions:
+        member = db.query(User).filter(User.id == tx["user_id"]).first()
+        tx["member"] = serialize_user_basic(member) if member else None
+
     total_deposits = db.query(func.sum(Saving.amount)).filter(
         Saving.sacco_id == user.sacco_id,
         Saving.type == "deposit"
     ).scalar() or 0
-    
+
     total_withdrawals = db.query(func.sum(Saving.amount)).filter(
         Saving.sacco_id == user.sacco_id,
         Saving.type == "withdrawal"
     ).scalar() or 0
-    
+
     helpers = get_template_helpers()
-    
-    return templates.TemplateResponse("accountant/transactions.html", {
+    context = {
         "request": request,
-        "user": user,
+        "user": serialize_user_full(user),
         "transactions": transactions,
         "transaction_type": transaction_type,
         "start_date": start_date,
@@ -280,8 +369,10 @@ def transactions_page(
         "total_pages": (total + per_page - 1) // per_page,
         "total_deposits": total_deposits,
         "total_withdrawals": total_withdrawals,
-        **helpers
-    })
+        **helpers,
+    }
+    return templates.TemplateResponse("accountant/transactions.html", context)
+
 
 @router.get("/accountant/savings")
 def savings_page(
@@ -298,65 +389,63 @@ def savings_page(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-    
-    # Build query for savings transactions
+
+    templates = request.app.state.templates
+
     query = db.query(Saving).filter(Saving.sacco_id == user.sacco_id)
-    
-    # Apply filters
+
     if member_id:
         query = query.filter(Saving.user_id == member_id)
-    
+
     if start_date:
         start = datetime.strptime(start_date, "%Y-%m-%d")
         query = query.filter(Saving.timestamp >= start)
-    
+
     if end_date:
         end = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
         query = query.filter(Saving.timestamp <= end)
-    
-    # Pagination
+
     total = query.count()
     offset = (page - 1) * per_page
-    transactions = query.order_by(Saving.timestamp.desc()).offset(offset).limit(per_page).all()
-    
-    # Get member info for each transaction
-    for transaction in transactions:
-        transaction.member = db.query(User).filter(User.id == transaction.user_id).first()
-    
-    # Get list of members for filter
-    members = db.query(User).filter(
+    transactions_orm = query.order_by(Saving.timestamp.desc()).offset(offset).limit(per_page).all()
+    transactions = [serialize_saving(t) for t in transactions_orm]
+
+    for tx in transactions:
+        member = db.query(User).filter(User.id == tx["user_id"]).first()
+        tx["member"] = serialize_user_basic(member) if member else None
+
+    # List of members for filter
+    members_orm = db.query(User).filter(
         User.sacco_id == user.sacco_id,
         User.role == RoleEnum.MEMBER
     ).order_by(User.full_name).all()
-    
-    # Get member savings summary
+    members = [serialize_user_basic(m) for m in members_orm]
+
+    # Member savings summary
     member_summary = []
-    for member in members:
+    for m in members_orm:
         total = db.query(func.sum(Saving.amount)).filter(
-            Saving.user_id == member.id,
+            Saving.user_id == m.id,
             Saving.type == "deposit"
         ).scalar() or 0
-        
         withdrawals = db.query(func.sum(Saving.amount)).filter(
-            Saving.user_id == member.id,
+            Saving.user_id == m.id,
             Saving.type == "withdrawal"
         ).scalar() or 0
-        
+        balance = total - withdrawals
         member_summary.append({
-            "member": member,
+            "member": serialize_user_basic(m),
             "total_savings": total,
             "total_withdrawals": withdrawals,
-            "balance": total - withdrawals
+            "balance": balance
         })
-    
-    # Sort by balance descending
+
     member_summary.sort(key=lambda x: x["balance"], reverse=True)
-    
+
     helpers = get_template_helpers()
-    
-    return templates.TemplateResponse("accountant/savings.html", {
+    context = {
         "request": request,
-        "user": user,
+        "user": serialize_user_full(user),
         "transactions": transactions,
         "member_summary": member_summary,
         "selected_member": member_id,
@@ -366,8 +455,10 @@ def savings_page(
         "per_page": per_page,
         "total": total,
         "total_pages": (total + per_page - 1) // per_page,
-        **helpers
-    })
+        **helpers,
+    }
+    return templates.TemplateResponse("accountant/savings.html", context)
+
 
 @router.get("/accountant/reports")
 def accountant_reports(
@@ -382,10 +473,10 @@ def accountant_reports(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-    
-    # Set date range based on report type
+
+    templates = request.app.state.templates
     now = datetime.utcnow()
-    
+
     if report_type == "daily":
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         end = start + timedelta(days=1)
@@ -401,44 +492,33 @@ def accountant_reports(
         start = datetime.strptime(start_date, "%Y-%m-%d")
         end = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)
     else:
-        # Default to last 30 days
         start = now - timedelta(days=30)
         end = now
-    
+
     # Get transactions for period
-    transactions = db.query(Saving).filter(
+    transactions_orm = db.query(Saving).filter(
         Saving.sacco_id == user.sacco_id,
         Saving.timestamp >= start,
         Saving.timestamp <= end
     ).order_by(Saving.timestamp.desc()).all()
-    
-    # Get member info for transactions and convert to dict
+
     transactions_data = []
-    for transaction in transactions[:100]:  # Limit to 100 for display
-        member = db.query(User).filter(User.id == transaction.user_id).first()
-        transactions_data.append({
-            "id": transaction.id,
-            "timestamp": transaction.timestamp.isoformat(),
-            "type": transaction.type,
-            "amount": transaction.amount,
-            "payment_method": transaction.payment_method,
-            "reference_number": transaction.reference_number,
-            "member": {
-                "full_name": member.full_name if member else None,
-                "email": member.email if member else None,
-                "phone": member.phone if member else None
-            },
-            "approver": {
-                "email": transaction.approver.email if transaction.approver else None
-            } if transaction.approver else None
-        })
-    
-    # Calculate totals
-    total_deposits = sum(t.amount for t in transactions if t.type == "deposit")
-    total_withdrawals = sum(t.amount for t in transactions if t.type == "withdrawal")
+    for t in transactions_orm[:100]:  # Limit to 100 for display
+        member = db.query(User).filter(User.id == t.user_id).first()
+        member_dict = serialize_user_basic(member) if member else None
+        tx_dict = serialize_saving(t)
+        tx_dict["member"] = member_dict
+        if t.approver:
+            tx_dict["approver"] = {"email": t.approver.email} if t.approver else None
+        else:
+            tx_dict["approver"] = None
+        transactions_data.append(tx_dict)
+
+    total_deposits = sum(t.amount for t in transactions_orm if t.type == "deposit")
+    total_withdrawals = sum(t.amount for t in transactions_orm if t.type == "withdrawal")
     net_flow = total_deposits - total_withdrawals
-    
-    # Get daily breakdown - Convert to dict
+
+    # Daily breakdown
     daily_query = db.query(
         func.date(Saving.timestamp).label("date"),
         func.sum(Saving.amount).filter(Saving.type == "deposit").label("deposits"),
@@ -448,8 +528,7 @@ def accountant_reports(
         Saving.timestamp >= start,
         Saving.timestamp <= end
     ).group_by(func.date(Saving.timestamp)).order_by("date").all()
-    
-    # Convert daily data to JSON serializable format
+
     daily_data = []
     for row in daily_query:
         daily_data.append({
@@ -457,8 +536,8 @@ def accountant_reports(
             "deposits": float(row.deposits) if row.deposits else 0,
             "withdrawals": float(row.withdrawals) if row.withdrawals else 0
         })
-    
-    # Get payment method breakdown - Convert to dict
+
+    # Payment method breakdown
     payment_query = db.query(
         Saving.payment_method,
         func.sum(Saving.amount).label("total"),
@@ -468,8 +547,7 @@ def accountant_reports(
         Saving.timestamp >= start,
         Saving.timestamp <= end
     ).group_by(Saving.payment_method).all()
-    
-    # Convert payment data to JSON serializable format
+
     payment_methods = []
     for row in payment_query:
         payment_methods.append({
@@ -477,8 +555,8 @@ def accountant_reports(
             "total": float(row.total) if row.total else 0,
             "count": row.count
         })
-    
-    # Get top depositors - Convert to dict
+
+    # Top depositors
     top_depositors_query = db.query(
         Saving.user_id,
         func.sum(Saving.amount).label("total")
@@ -488,40 +566,36 @@ def accountant_reports(
         Saving.timestamp >= start,
         Saving.timestamp <= end
     ).group_by(Saving.user_id).order_by(func.sum(Saving.amount).desc()).limit(10).all()
-    
-    # Convert top depositors to JSON serializable format
+
     top_depositors = []
     for row in top_depositors_query:
         member = db.query(User).filter(User.id == row.user_id).first()
         top_depositors.append({
             "user_id": row.user_id,
             "total": float(row.total) if row.total else 0,
-            "member": {
-                "full_name": member.full_name if member else None,
-                "email": member.email if member else None,
-                "phone": member.phone if member else None
-            }
+            "member": serialize_user_basic(member) if member else None
         })
-    
+
     helpers = get_template_helpers()
-    
-    return templates.TemplateResponse("accountant/reports.html", {
+    context = {
         "request": request,
-        "user": user,
+        "user": serialize_user_full(user),
         "report_type": report_type,
         "start_date": start.strftime("%Y-%m-%d"),
         "end_date": (end - timedelta(days=1)).strftime("%Y-%m-%d") if end else "",
         "transactions": transactions_data,
-        "total_transactions": len(transactions),
+        "total_transactions": len(transactions_orm),
         "total_deposits": total_deposits,
         "total_withdrawals": total_withdrawals,
         "net_flow": net_flow,
         "daily_data": daily_data,
         "payment_methods": payment_methods,
         "top_depositors": top_depositors,
-        **helpers
-    })
-	
+        **helpers,
+    }
+    return templates.TemplateResponse("accountant/reports.html", context)
+
+
 @router.get("/accountant/member/{member_id}")
 def member_savings_detail(
     request: Request,
@@ -533,35 +607,38 @@ def member_savings_detail(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-    
-    member = db.query(User).filter(
+
+    templates = request.app.state.templates
+
+    member_orm = db.query(User).filter(
         User.id == member_id,
         User.sacco_id == user.sacco_id
     ).first()
-    
-    if not member:
+
+    if not member_orm:
         raise HTTPException(status_code=404, detail="Member not found")
-    
-    # Get all savings transactions for this member
-    transactions = db.query(Saving).filter(
+
+    member = serialize_user_full(member_orm)
+
+    transactions_orm = db.query(Saving).filter(
         Saving.user_id == member_id,
         Saving.sacco_id == user.sacco_id
     ).order_by(Saving.timestamp.desc()).all()
-    
-    # Calculate totals
-    total_deposits = sum(t.amount for t in transactions if t.type == "deposit")
-    total_withdrawals = sum(t.amount for t in transactions if t.type == "withdrawal")
+    transactions = [serialize_saving(t) for t in transactions_orm]
+
+    total_deposits = sum(t.amount for t in transactions_orm if t.type == "deposit")
+    total_withdrawals = sum(t.amount for t in transactions_orm if t.type == "withdrawal")
     current_balance = total_deposits - total_withdrawals
-    
+
     helpers = get_template_helpers()
-    
-    return templates.TemplateResponse("accountant/member_savings.html", {
+    context = {
         "request": request,
-        "user": user,
+        "user": serialize_user_full(user),
         "member": member,
         "transactions": transactions,
         "total_deposits": total_deposits,
         "total_withdrawals": total_withdrawals,
         "current_balance": current_balance,
-        **helpers
-    })
+        **helpers,
+    }
+    return templates.TemplateResponse("accountant/member_savings.html", context)

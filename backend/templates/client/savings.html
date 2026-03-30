@@ -82,7 +82,7 @@
               </div>
               <div class="flex-grow-1 ms-3">
                 <small class="text-muted d-block">Account Age</small>
-                <span class="fw-bold">{{ (now - user.created_at).days if user.created_at is defined else '—' }} days</span>
+                <span class="fw-bold">{{ (now - user.created_at).days if user["created_at"]is defined else '—' }} days</span>
               </div>
             </div>
           </div>
