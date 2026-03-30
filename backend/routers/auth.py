@@ -40,20 +40,11 @@ def serialize_sacco(sacco: Sacco) -> dict:
         "status": sacco.status,
     }
 
-# ================= TEMPLATE HANDLER =================
-
-def get_templates(request: Request):
-    if hasattr(request.app.state, 'templates'):
-        return request.app.state.templates
-    templates_dir = Path(__file__).parent.parent / "templates"
-    return Jinja2Templates(directory=str(templates_dir))
-
-
 # ================= LOGIN =================
 @router.head("/login", response_class=HTMLResponse)
 @router.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
-    templates = get_templates(request)
+    templates = request.app.state.templates
     context = {"request": request}
     return templates.TemplateResponse(request, "login.html", context)
 
@@ -64,18 +55,20 @@ def login_post(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    templates = get_templates(request)
+    templates = request.app.state.templates
 
     user = authenticate_user(db, email=email, password=password)
 
     if not user:
         return templates.TemplateResponse(
+            request,
             "login.html",
             {"request": request, "error": "Invalid credentials"}
         )
 
     if not user.is_active:
         return templates.TemplateResponse(
+		     request,
             "login.html",
             {"request": request, "error": "Account is deactivated"}
         )
@@ -114,7 +107,7 @@ def register_form(
     staff_registration: bool = False,
     db: Session = Depends(get_db)
 ):
-    templates = get_templates(request)
+    templates = request.app.state.templates
 
     saccos = db.query(Sacco).filter(
         Sacco.status == 'active'
@@ -143,7 +136,7 @@ async def register_post(
     staff_registration: bool = Form(False),
     db: Session = Depends(get_db)
 ):
-    templates = get_templates(request)
+    templates = request.app.state.templates
 
     form_data = {
         "email": email,
@@ -242,6 +235,7 @@ def switch_to_member(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
+    templates = request.app.state.templates
     """Switch from staff account to linked member account"""
     
     if not user:
