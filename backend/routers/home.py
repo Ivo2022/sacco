@@ -12,8 +12,6 @@ from datetime import datetime
 
 from ..core import get_db, get_current_user
 from ..models import Sacco, User
-# from ..core.template_helpers import format_money, format_local_time, format_date
-from ..utils.helpers import get_template_helpers
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -68,11 +66,11 @@ async def index(
 
         # Serialize ORM objects safely
         safe_saccos = [serialize_sacco(s) for s in saccos]
-        sacco_dict: Dict[Any, Dict[str, Any]] = {s["id"]: s for s in safe_saccos}
+        sacco_dict = {s["id"]: s for s in safe_saccos}
         safe_user = serialize_user(current_user)
 
         # Build context for Jinja2 (no ORM objects, only dicts, lists, strings, numbers)
-        helpers = get_template_helpers()
+
         context = {
             "request": request,
             "saccos": sacco_dict,
@@ -82,7 +80,6 @@ async def index(
             # Safe helpers (can be replaced with global filters later)
             "error": None,  # base.html checks for error
             "message": None,  # base.html checks for message
-            **helpers
         }
 
         return templates.TemplateResponse("test_index.html", context)
