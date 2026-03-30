@@ -13,10 +13,10 @@ cd "$SCRIPT_DIR"
 echo "Starting app from $SCRIPT_DIR (module=$APP_MODULE host=$APP_HOST port=$APP_PORT)"
 
 if [ -z "$VENV_PATH" ]; then
-  if [ -f "$SCRIPT_DIR/venv/bin/activate" ]; then
-    VENV_PATH="$SCRIPT_DIR/venv"
-  elif [ -f "$SCRIPT_DIR/backend/venv/bin/activate" ]; then
-    VENV_PATH="$SCRIPT_DIR/backend/venv"
+  if [ -f "$SCRIPT_DIR/env/bin/activate" ]; then
+    VENV_PATH="$SCRIPT_DIR/env"
+  elif [ -f "$SCRIPT_DIR/backend/env/bin/activate" ]; then
+    VENV_PATH="$SCRIPT_DIR/backend/env"
   fi
 fi
 
