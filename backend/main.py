@@ -118,24 +118,8 @@ logger.info(f"Template files found: {[f.name for f in template_files]}")
 templates = Jinja2Templates(directory=str(templates_dir))
 
 # Production settings
-templates.env.cache_size = 400  # Cache up to 400 templates in production
+templates.env.cache = None  # Disable Cache for now.
 templates.env.auto_reload = settings.DEBUG  # Only auto-reload in debug mode
-
-# Clean up template globals to prevent hash key errors
-clean_globals = {}
-invalid_keys_removed = 0
-
-for k, v in templates.env.globals.items():
-    if isinstance(k, str):
-        clean_globals[k] = v
-    else:
-        invalid_keys_removed += 1
-        logger.warning(f"Removed invalid global key: {k} (type: {type(k).__name__})")
-
-templates.env.globals = clean_globals
-
-if invalid_keys_removed > 0:
-    logger.info(f"Removed {invalid_keys_removed} invalid global keys from template environment")
 
 # Store templates in app state
 app.state.templates = templates
