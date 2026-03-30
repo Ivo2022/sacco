@@ -84,7 +84,7 @@ async def index(
         print("GLOBALS:", templates.env.globals)
         print("FILTERS:", templates.env.filters)
         
-        return templates.TemplateResponse("index.html", context)
+        return templates.TemplateResponse(name="index.html", context=context)
 
     except Exception as e:
         logger.error(f"Error in index route: {e}", exc_info=True)
