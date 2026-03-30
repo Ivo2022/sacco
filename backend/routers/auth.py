@@ -50,11 +50,12 @@ def get_templates(request: Request):
 
 
 # ================= LOGIN =================
-
+@router.head("/login", response_class=HTMLResponse)
 @router.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
     templates = get_templates(request)
-    return templates.TemplateResponse("login.html", {"request": request})
+    context = {"request": request}
+    return templates.TemplateResponse(request, "login.html", context)
 
 @router.post("/login")
 def login_post(
@@ -105,7 +106,7 @@ def login_post(
 
 
 # ================= REGISTER =================
-
+@router.head("/register", response_class=HTMLResponse)
 @router.get("/register", response_class=HTMLResponse)
 def register_form(
     request: Request,
@@ -121,13 +122,13 @@ def register_form(
 
     safe_saccos = [serialize_sacco(s) for s in saccos]
 
-    return templates.TemplateResponse("register.html", {
+    context = {
         "request": request,
         "saccos": safe_saccos,
         "referral_code": referral_code,
         "staff_registration": staff_registration
-    })
-
+        }
+    return templates.TemplateResponse(request, "register.html", context)
 
 @router.post("/register", response_class=HTMLResponse)
 async def register_post(
