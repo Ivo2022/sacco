@@ -72,17 +72,22 @@ def login_post(
             "login.html",
              context
         )
-
+    print("👉 About to set session")
     # Set Session
     request.session["user_id"] = user.id
-
+    print("✅ Session set successfully")
+	
+    ip_address = None
+    if request.client:
+        ip_address = getattr(request.client, "host", None)
+		
     create_log(
         db,
         action="USER_LOGIN",
         user_id=user.id,
         sacco_id=user.sacco_id,
         details=f"User {user.email} logged in",
-		ip_address=request.client.host if request.client else None
+		ip_address=ip_address
     )
 
     role_redirects = {
