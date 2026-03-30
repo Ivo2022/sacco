@@ -15,16 +15,32 @@
     User Dashboard URL: {{ user.dashboard_url if user else 'No user' }}
 </div>
 <body class="bg-light">
+    <!-- Debug: Check all variables used in template -->
     <header class="mb-4">
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm rounded">
+<div style="background: yellow; padding: 10px; margin: 10px; border: 1px solid red;">
+    <h3>DEBUG INFO:</h3>
+    <p>User exists: {{ user is not none }}</p>
+    <p>Saccos type: {{ saccos.__class__.__name__ if saccos else 'None' }}</p>
+    <p>Saccos keys: {{ saccos.keys()|list if saccos else 'None' }}</p>
+    <p>Saccos values types: 
+    {% if saccos %}
+        {% for key, value in saccos.items() %}
+            Key {{ key }} (type: {{ key.__class__.__name__ }}) -> Value type: {{ value.__class__.__name__ }}<br>
+        {% endfor %}
+    {% endif %}
+    </p>
+</div>
             <div class="container-fluid">
-                {% if user and (user.role in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER']) %}
+                {% if user and user.role %}
+                    {% if user.role in ['MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] %}                
                 <a class="navbar-brand d-flex align-items-center" href="/{{ user['role'].lower() }}/dashboard">
-                {% elif user and user.role == 'SUPER_ADMIN' %}
+                {% elif user.role == 'SUPER_ADMIN' %}
                 <a class="navbar-brand d-flex align-items-center" href="/superadmin/dashboard">
-                {% elif user and user.role == 'MEMBER' %}
+                {% elif user.role == 'MEMBER' %}
                 <a class="navbar-brand d-flex align-items-center" href="/member/dashboard">
-                {% else %}
+                {% endif %}
+               {% else %}
                 <a class="navbar-brand d-flex align-items-center" href="/">
                 {% endif %}
                     <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#0052cc,#00b894);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;margin-right:.6rem">S</div>
@@ -147,15 +163,16 @@
     {% endif %}
 
     <main class="container">
-        {% if request.session.flash_message %}
-        <div class="alert alert-{{ request.session.flash_type }} alert-dismissible fade show" role="alert">
-            {{ request.session.flash_message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        {% set _ = request.session.pop('flash_message', None) %}
-        {% set _ = request.session.pop('flash_type', None) %}
-        {% endif %}
-
+    <!-- Flash messages - TEMPORARILY DISABLED 
+    {% if request.session.flash_message %}
+    <div class="alert alert-{{ request.session.flash_type }} alert-dismissible fade show" role="alert">
+        {{ request.session.flash_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% set _ = request.session.pop('flash_message', None) %}
+    {% set _ = request.session.pop('flash_type', None) %}
+    {% endif %}
+    -->
         {% if error %}
         <div class="alert alert-danger alert-dismissible fade show">{{ error }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
