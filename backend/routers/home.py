@@ -82,7 +82,7 @@ async def index(
 	    }
 
         # return templates.TemplateResponse("index.html", context)
-        return templates.TemplateResponse("superadmin/dashboard.html", context)
+        return templates.TemplateResponse(request, "superadmin/dashboard.html", context)
 
     except Exception as e:
         logger.error(f"Error in index route: {e}", exc_info=True)
