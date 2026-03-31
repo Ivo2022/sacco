@@ -1,5 +1,4 @@
 # backend/routers/superadmin.py
-
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session

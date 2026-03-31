@@ -57,52 +57,72 @@ def login_post(
 ):
     templates = request.app.state.templates
 
-    user = authenticate_user(db, email=email, password=password)
-    context = {"request": request, "error": "Invalid credentials"}
-    if not user:
+    try:
+        print("LOGIN HIT")  # <-- Add this
+
+        user = authenticate_user(db, email=email, password=password)
+        print("USER:", user)
+
+        if not user:
+            return templates.TemplateResponse(
+                request,
+                "login.html",
+                {"request": request, "error": "Invalid credentials"}
+            )
+
+        if not user.is_active:
+            return templates.TemplateResponse(
+                request,
+                "login.html",
+                {"request": request, "error": "Account is deactivated"}
+            )
+
+        # SAFE session write
+        if not hasattr(request, "session"):
+            raise Exception("Session middleware not working")
+
+        request.session["user_id"] = user.id
+
+        # SAFE logging
+        ip = None
+        if request.client and hasattr(request.client, "host"):
+            ip = request.client.host
+
+        create_log(
+            db,
+            action="USER_LOGIN",
+            user_id=user.id,
+            sacco_id=user.sacco_id,
+            details=f"User {user.email} logged in",
+            ip_address=ip
+        )
+
+        role_redirects = {
+            RoleEnum.SUPER_ADMIN: "/superadmin/dashboard",
+            RoleEnum.MANAGER: "/manager/dashboard",
+            RoleEnum.ACCOUNTANT: "/accountant/dashboard",
+            RoleEnum.CREDIT_OFFICER: "/credit-officer/dashboard",
+            RoleEnum.MEMBER: "/member/dashboard",
+        }
+
+        return RedirectResponse(
+            url=role_redirects.get(user.role, "/member/dashboard"),
+            status_code=303
+        )
+
+    except Exception as e:
+        print("LOGIN ERROR:", str(e))
+        import traceback
+        traceback.print_exc()
+
         return templates.TemplateResponse(
             request,
             "login.html",
-            context
+            {
+                "request": request,
+                "error": f"Server error: {str(e)}"
+            }
         )
-    context = {"request": request, "error": "Account is deactivated"}
-    if not user.is_active:
-        return templates.TemplateResponse(
-		     request,
-            "login.html",
-             context
-        )
-    print("👉 About to set session")
-    # Set Session
-    request.session["user_id"] = user.id
-    print("✅ Session set successfully")
-	
-    ip_address = None
-    if request.client:
-        ip_address = getattr(request.client, "host", None)
-		
-    create_log(
-        db,
-        action="USER_LOGIN",
-        user_id=user.id,
-        sacco_id=user.sacco_id,
-        details=f"User {user.email} logged in",
-		ip_address=ip_address
-    )
-
-    role_redirects = {
-        RoleEnum.SUPER_ADMIN: "/superadmin/dashboard",
-        RoleEnum.MANAGER: "/manager/dashboard",
-        RoleEnum.ACCOUNTANT: "/accountant/dashboard",
-        RoleEnum.CREDIT_OFFICER: "/credit-officer/dashboard",
-        RoleEnum.MEMBER: "/member/dashboard",
-    }
-
-    return RedirectResponse(
-        url=role_redirects.get(user.role, "/member/dashboard"),
-        status_code=303
-    )
-
 
 # ================= REGISTER =================
 @router.head("/register", response_class=HTMLResponse)
