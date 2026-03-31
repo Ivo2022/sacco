@@ -25,7 +25,7 @@ from .core import (
     init_db,
     SACCOStatusMiddleware,
 )
-from .core.database import get_db_session
+from .core.database import engine, get_db_session, SessionLocal
 
 # Import models and schemas
 from .models import User
@@ -61,8 +61,8 @@ app = FastAPI(
 # MIDDLEWARE CONFIGURATION
 # =============================================================================
 
-# CORS configuration
-origins = [
+# CORS configuration - Use settings for production
+origins = settings.BACKEND_CORS_ORIGINS if settings.BACKEND_CORS_ORIGINS else [
     "https://www.api.cheontec.com",
     "https://api.cheontec.com",
     "http://localhost:8000",
@@ -77,13 +77,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Session middleware
+# Session middleware with environment-aware settings
 app.add_middleware(
     SessionMiddleware,
-    secret_key=settings.SECRET_KEY,
+    secret_key=settings.SESSION_SECRET_KEY or settings.SECRET_KEY,
     max_age=settings.SESSION_MAX_AGE,
-    same_site="lax",          # important
-    https_only=True           # 🔥 REQUIRED on Render (HTTPS)
+    same_site="strict" if settings.is_production else "lax",
+    https_only=settings.is_production,  # Only enforce HTTPS in production
 )
 
 # SACCO status middleware
@@ -149,18 +149,49 @@ app.include_router(home.router, tags=["Home"])
 async def startup_event():
     """Initialize application on startup"""
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}")
+    logger.info(f"Environment: {settings.ENVIRONMENT}")
+    logger.info(f"Database: {'PostgreSQL' if 'postgresql' in settings.DATABASE_URL else 'SQLite'}")
     
-    # Initialize database
+    # Validate production environment
+    if settings.is_production:
+        logger.info("Running in PRODUCTION mode - safety checks enabled")
+        
+        # Verify secrets are set
+        if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 32:
+            logger.error("SECRET_KEY must be at least 32 characters in production!")
+            raise ValueError("Invalid SECRET_KEY for production")
+        
+        if settings.DEBUG:
+            logger.warning("DEBUG=True in production - this is a security risk!")
+    
+    # Initialize database tables (only if needed)
     try:
-        init_db()
-        logger.info("Database initialized successfully")
+        # Import SQLAlchemy inspect
+        from sqlalchemy import inspect
+        
+        # Check if tables exist
+        inspector = inspect(engine)
+        existing_tables = inspector.get_table_names()
+        
+        if not existing_tables:
+            logger.info("No tables found, initializing database...")
+            init_db()
+        else:
+            logger.info(f"Database already initialized with {len(existing_tables)} tables: {existing_tables}")
+            
+            # In production, warn about missing migrations
+            if settings.is_production:
+                logger.info("Using existing database schema - ensure migrations are applied")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
-        raise
+        if settings.is_production:
+            raise
+        else:
+            logger.warning("Continuing despite database error in development")
     
     # Check for superadmin existence
     try:
-        db = get_db_session()
+        db = SessionLocal()
         try:
             superadmin_count = db.query(User).filter(
                 User.role == RoleEnum.SUPER_ADMIN
@@ -177,21 +208,8 @@ async def startup_event():
             db.close()
     except Exception as e:
         logger.error(f"Error checking superadmin: {e}")
-    
-    # Auto-backup daily for SQLite only
-    if settings.DATABASE_URL.startswith("sqlite:///"):
-        try:
-            backup_dir = Path("backups")
-            backup_dir.mkdir(exist_ok=True)
-            
-            backup_file = backup_dir / f"auto_backup_{date.today()}.db"
-            db_path = settings.DATABASE_URL.replace("sqlite:///", "")
-            
-            if not backup_file.exists() and os.path.exists(db_path):
-                shutil.copy2(db_path, backup_file)
-                logger.info(f"Daily backup created: {backup_file}")
-        except Exception as e:
-            logger.warning(f"Failed to create daily backup: {e}")
+        if not settings.is_production:
+            logger.warning("Superadmin check failed in development - continuing")
     
     logger.info("Application startup complete")
 
@@ -209,14 +227,35 @@ async def shutdown_event():
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
-    return {
-        "status": "healthy",
-        "project": settings.PROJECT_NAME,
-        "version": settings.VERSION,
-        "debug": settings.DEBUG,
-        "database": "sqlite" if settings.DATABASE_URL.startswith("sqlite:///") else "postgresql",
-        "templates_loaded": len(template_files)
-    }
+    try:
+        # Check database connectivity
+        db = SessionLocal()
+        try:
+            db.execute("SELECT 1")
+            db_status = "connected"
+        except Exception as e:
+            db_status = f"error: {str(e)}"
+        finally:
+            db.close()
+        
+        return {
+            "status": "healthy",
+            "project": settings.PROJECT_NAME,
+            "version": settings.VERSION,
+            "environment": settings.ENVIRONMENT,
+            "debug": settings.DEBUG,
+            "database": {
+                "type": "sqlite" if "sqlite" in settings.DATABASE_URL else "postgresql",
+                "status": db_status
+            },
+            "templates_loaded": len(template_files)
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "error": str(e)
+        }
 
 
 @app.get("/debug/templates")

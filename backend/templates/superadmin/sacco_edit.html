@@ -1,0 +1,170 @@
+<!-- templates/superadmin/sacco_edit.html -->
+{% extends "base.html" %}
+
+{% block title %}
+    {% if sacco %}
+        Edit SACCO: {{ sacco.name }}
+    {% else %}
+        Create New SACCO
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        {% if sacco %}
+                            Edit SACCO: {{ sacco.name }}
+                        {% else %}
+                            Create New SACCO
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Form action matches your route pattern -->
+                    <form method="POST" 
+                          action="{% if sacco %}/superadmin/sacco/{{ sacco.id }}/edit{% else %}/superadmin/sacco/create{% endif %}">
+                        
+                        <!-- CSRF Token (if available) -->
+                        {% if csrf_token %}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">SACCO Name *</label>
+                            <input type="text" 
+                                   class="form-control {% if errors and errors.name %}is-invalid{% endif %}" 
+                                   id="name" 
+                                   name="name" 
+                                   value="{{ sacco.name if sacco else request_form.get('name', '') }}"
+                                   required>
+                            {% if errors and errors.name %}
+                                <div class="invalid-feedback">{{ errors.name }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="code" class="form-label">SACCO Code *</label>
+                            <input type="text" 
+                                   class="form-control {% if errors and errors.code %}is-invalid{% endif %}" 
+                                   id="code" 
+                                   name="code" 
+                                   value="{{ sacco.code if sacco else request_form.get('code', '') }}"
+                                   required>
+                            <div class="form-text">Unique identifier for the SACCO (e.g., "SACCO001")</div>
+                            {% if errors and errors.code %}
+                                <div class="invalid-feedback">{{ errors.code }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address *</label>
+                            <input type="email" 
+                                   class="form-control {% if errors and errors.email %}is-invalid{% endif %}" 
+                                   id="email" 
+                                   name="email" 
+                                   value="{{ sacco.email if sacco else request_form.get('email', '') }}"
+                                   required>
+                            {% if errors and errors.email %}
+                                <div class="invalid-feedback">{{ errors.email }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone Number *</label>
+                            <input type="tel" 
+                                   class="form-control {% if errors and errors.phone %}is-invalid{% endif %}" 
+                                   id="phone" 
+                                   name="phone" 
+                                   value="{{ sacco.phone if sacco else request_form.get('phone', '') }}"
+                                   required>
+                            {% if errors and errors.phone %}
+                                <div class="invalid-feedback">{{ errors.phone }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" 
+                                      id="address" 
+                                      name="address" 
+                                      rows="3">{{ sacco.address if sacco else request_form.get('address', '') }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="registration_no" class="form-label">Registration Number</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="registration_no" 
+                                   name="registration_no" 
+                                   value="{{ sacco.registration_no if sacco else request_form.get('registration_no', '') }}">
+                            <div class="form-text">Official registration number of the SACCO</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="website" class="form-label">Website</label>
+                            <input type="url" 
+                                   class="form-control" 
+                                   id="website" 
+                                   name="website" 
+                                   value="{{ sacco.website if sacco else request_form.get('website', '') }}"
+                                   placeholder="https://example.com">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-control" id="status" name="status">
+                                <option value="active" {% if sacco and sacco.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if sacco and sacco.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                                <option value="suspended" {% if sacco and sacco.status == 'suspended' %}selected{% endif %}>Suspended</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" 
+                                       class="form-check-input" 
+                                       id="is_active" 
+                                       name="is_active" 
+                                       value="true" 
+                                       {% if sacco and sacco.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">Active</label>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                {% if sacco %}
+                                    Update SACCO
+                                {% else %}
+                                    Create SACCO
+                                {% endif %}
+                            </button>
+                            <a href="/superadmin/saccos" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-generate code from name (for new SACCOs)
+    const nameField = document.getElementById('name');
+    const codeField = document.getElementById('code');
+    
+    if (nameField && codeField && !codeField.value) {
+        nameField.addEventListener('input', function(e) {
+            let code = e.target.value.toUpperCase().replace(/\s+/g, '');
+            code = code.substring(0, 10);
+            codeField.value = code;
+        });
+    }
+</script>
+{% endblock %}

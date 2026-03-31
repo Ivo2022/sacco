@@ -1,8 +1,10 @@
+# backend/core/database.py
 from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from typing import Generator
 import logging
+from pathlib import Path
 
 from .config import settings
 
@@ -19,6 +21,16 @@ def is_postgresql(url: str) -> bool:
     return url.startswith("postgresql://") or url.startswith("postgres://")
 
 
+def ensure_sqlite_directory(db_url: str) -> None:
+    """Ensure the directory for SQLite database exists"""
+    if is_sqlite(db_url):
+        db_path = db_url.replace("sqlite:///", "")
+        db_dir = Path(db_path).parent
+        if db_dir:
+            db_dir.mkdir(parents=True, exist_ok=True)
+            logger.debug(f"Ensured SQLite directory exists: {db_dir}")
+
+
 def configure_sqlite_for_production(engine):
     """Configure SQLite for production-like performance"""
     
@@ -26,15 +38,10 @@ def configure_sqlite_for_production(engine):
     def set_sqlite_pragma(dbapi_connection, connection_record):
         try:
             cursor = dbapi_connection.cursor()
-            # Enable foreign keys
             cursor.execute("PRAGMA foreign_keys=ON")
-            # Set journal mode for better reliability
             cursor.execute("PRAGMA journal_mode=WAL")
-            # Set cache size (negative = KB)
             cursor.execute("PRAGMA cache_size=-20000")
-            # Set synchronous mode (NORMAL is good balance)
             cursor.execute("PRAGMA synchronous=NORMAL")
-            # Set temp store to memory for speed
             cursor.execute("PRAGMA temp_store=MEMORY")
             cursor.close()
             logger.debug("SQLite pragmas configured")
@@ -45,6 +52,9 @@ def configure_sqlite_for_production(engine):
 def create_db_engine():
     """Create database engine with appropriate settings"""
     database_url = settings.DATABASE_URL
+    
+    # Ensure database directory exists for SQLite
+    ensure_sqlite_directory(database_url)
     
     if is_sqlite(database_url):
         engine = create_engine(
@@ -61,17 +71,16 @@ def create_db_engine():
     elif is_postgresql(database_url):
         engine = create_engine(
             database_url,
-            pool_size=settings.DB_POOL_SIZE if hasattr(settings, 'DB_POOL_SIZE') else 5,
-            max_overflow=settings.DB_MAX_OVERFLOW if hasattr(settings, 'DB_MAX_OVERFLOW') else 10,
-            pool_timeout=settings.DB_POOL_TIMEOUT if hasattr(settings, 'DB_POOL_TIMEOUT') else 30,
-            pool_recycle=settings.DB_POOL_RECYCLE if hasattr(settings, 'DB_POOL_RECYCLE') else 3600,
+            pool_size=settings.DB_POOL_SIZE,
+            max_overflow=settings.DB_MAX_OVERFLOW,
+            pool_timeout=settings.DB_POOL_TIMEOUT,
+            pool_recycle=settings.DB_POOL_RECYCLE,
             pool_pre_ping=True,
             echo=settings.DEBUG
         )
-        logger.info(f"PostgreSQL engine created")
+        logger.info(f"PostgreSQL engine created with pool size {settings.DB_POOL_SIZE}")
         
     else:
-        # Fallback for other databases
         engine = create_engine(
             database_url,
             echo=settings.DEBUG
@@ -92,7 +101,14 @@ Base = declarative_base()
 
 
 def init_db() -> None:
-    """Initialize database - create all tables"""
+    """
+    Initialize database - create all tables.
+    WARNING: In production, use Alembic migrations instead.
+    """
+    if settings.is_production:
+        logger.warning("Running init_db() in production - this should only be used for initial setup!")
+        logger.warning("Consider using Alembic migrations for schema changes")
+    
     try:
         # Import models inside function to avoid circular imports
         from ..models import (

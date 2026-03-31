@@ -588,6 +588,7 @@ def edit_sacco_form(
     db: Session = Depends(get_db),
     user: User = Depends(require_superadmin)
 ):
+    csrf_token = request.cookies.get("csrf_token")
     """Display form to edit SACCO details"""
     templates = request.app.state.templates
 
@@ -601,7 +602,9 @@ def edit_sacco_form(
         "request": request,
         "user": serialize_user_full(user),
         "sacco": sacco,
+		"csrf_token": csrf_token,
         "show_admin_controls": True,
+		"errors":{}
     }
     return templates.TemplateResponse(request,"superadmin/sacco_edit.html", context)
 
@@ -628,8 +631,7 @@ def edit_sacco(
         existing = db.query(Sacco).filter(Sacco.name == name).first()
         if existing:
             raise HTTPException(status_code=400, detail="SACCO name already exists")
-        sacco.name = name
-
+    sacco.name = name
     sacco.email = email
     sacco.phone = phone
     sacco.address = address

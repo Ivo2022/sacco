@@ -1,39 +1,60 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# start.sh - Production-safe startup script
 
-set -euo pipefail
+set -e
 
-: ${APP_MODULE:=backend.main:app}
-: ${APP_HOST:=0.0.0.0}
-: ${APP_PORT:=${PORT:-10000}}
-: ${VENV_PATH:=}
+echo "Starting SACCO Management System..."
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+# Check environment
+ENV=${ENVIRONMENT:-development}
+echo "Environment: $ENV"
 
-echo "Starting app from $SCRIPT_DIR (module=$APP_MODULE host=$APP_HOST port=$APP_PORT)"
-
-if [ -z "$VENV_PATH" ]; then
-  if [ -f "$SCRIPT_DIR/env/bin/activate" ]; then
-    VENV_PATH="$SCRIPT_DIR/env"
-  elif [ -f "$SCRIPT_DIR/backend/env/bin/activate" ]; then
-    VENV_PATH="$SCRIPT_DIR/backend/env"
-  fi
+# Validate required environment variables in production
+if [ "$ENV" = "production" ]; then
+    echo "Validating production environment..."
+    
+    # Check required secrets
+    if [ -z "$SECRET_KEY" ] || [ ${#SECRET_KEY} -lt 32 ]; then
+        echo "ERROR: SECRET_KEY must be set to at least 32 characters in production"
+        exit 1
+    fi
+    
+    if [ -z "$SESSION_SECRET_KEY" ] || [ ${#SESSION_SECRET_KEY} -lt 32 ]; then
+        echo "ERROR: SESSION_SECRET_KEY must be set to at least 32 characters in production"
+        exit 1
+    fi
+    
+    if [ -z "$DATABASE_URL" ]; then
+        echo "ERROR: DATABASE_URL must be set in production"
+        exit 1
+    fi
+    
+    # Don't run with debug in production
+    if [ "$DEBUG" = "True" ] || [ "$DEBUG" = "true" ]; then
+        echo "WARNING: DEBUG is enabled in production!"
+    fi
+    
+    echo "✅ Production validation passed"
 fi
 
-if [ -n "$VENV_PATH" ] && [ -f "$VENV_PATH/bin/activate" ]; then
-  echo "Activating virtualenv at $VENV_PATH"
-  . "$VENV_PATH/bin/activate"
-fi
+# Run database migrations (if using Alembic)
+# alembic upgrade head
 
-if command -v gunicorn >/dev/null 2>&1 && python -c "import uvicorn" >/dev/null 2>&1; then
-  echo "Launching with gunicorn + uvicorn worker"
-  exec gunicorn -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$APP_PORT "$APP_MODULE"
+# Start the application - use gunicorn in production
+if [ "$ENV" = "production" ]; then
+    echo "Starting with gunicorn (production)..."
+    exec gunicorn backend.main:app \
+        --workers 4 \
+        --worker-class uvicorn.workers.UvicornWorker \
+        --bind 0.0.0.0:8000 \
+        --timeout 120 \
+        --access-logfile - \
+        --error-logfile -
+else
+    echo "Starting with uvicorn (development)..."
+    exec uvicorn backend.main:app \
+        --host 0.0.0.0 \
+        --port 8000 \
+        --reload \
+        --log-level debug
 fi
-
-if command -v uvicorn >/dev/null 2>&1; then
-  echo "Launching with uvicorn"
-  exec uvicorn "$APP_MODULE" --host $APP_HOST --port $APP_PORT
-fi
-
-echo "Error: neither gunicorn nor uvicorn found."
-exit 1
