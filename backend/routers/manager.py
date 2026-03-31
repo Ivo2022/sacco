@@ -420,7 +420,7 @@ def review_loan(
         "member": member,
         **helpers,
     }
-    return templates.TemplateResponse("manager/loan_review.html", context)
+    return templates.TemplateResponse(request,"manager/loan_review.html", context)
 
 
 @router.post("/manager/loan/{loan_id}/approve")

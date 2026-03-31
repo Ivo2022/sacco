@@ -66,25 +66,25 @@
                                     {% endif %}
                                 </td>
                                 <td class="pe-3">
-                                    <form action="/manager/member/{{ member["id"] }}/approve" method="post" style="display: inline-block;">
+                                    <form action="/manager/member/{{ member['id'] }}/approve" method="post" style="display: inline-block;">
                                         <button type="submit" class="btn btn-sm btn-success me-1" 
-                                                onclick="return confirm('Approve {{ member["full_name"] or member["email"] }}?')">
+                                                onclick="return confirm('Approve {{ member['full_name'] or member['email'] }}?')">
                                             <i class="bi bi-check-lg"></i> Approve
                                         </button>
                                     </form>
                                     <button type="button" class="btn btn-sm btn-danger" 
                                             data-bs-toggle="modal" 
-                                            data-bs-target="#rejectModal{{ member["id"] }}">
+                                            data-bs-target="#rejectModal{{ member['id'] }}">
                                         <i class="bi bi-x-lg"></i> Reject
                                     </button>
                                 </td>
                              </tr>
                             
                             <!-- Reject Modal -->
-                            <div class="modal fade" id="rejectModal{{ member["id"] }}" tabindex="-1">
+                            <div class="modal fade" id="rejectModal{{ member['id'] }}" tabindex="-1">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
-                                        <form action="/manager/member/{{ member["id"] }}/reject" method="post">
+                                        <form action="/manager/member/{{ member['id'] }}/reject" method="post">
                                             <div class="modal-header bg-danger text-white">
                                                 <h5 class="modal-title">Reject Member Registration</h5>
                                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
