@@ -160,7 +160,7 @@ def dashboard(request: Request, user=Depends(require_superadmin), db: Session = 
         "show_admin_controls": True,
         **helpers,
     }
-    return templates.TemplateResponse("superadmin/dashboard.html", context)
+    return templates.TemplateResponse(request, "superadmin/dashboard.html", context)
 
 
 @router.post("/superadmin/sacco/create")

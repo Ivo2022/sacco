@@ -62,7 +62,7 @@
           </div>
           <div class="flex-grow-1 ms-3">
             <h6 class="text-muted mb-1">SACCO Admins</h6>
-            <h3 class="fw-bold mb-0">{{ users|selectattr('role.name', 'equalto', 'SACCO_ADMIN')|list|length if users else 0 }}</h3>
+            <h3 class="fw-bold mb-0">{{ users|selectattr('role', 'equalto', 'SACCO_ADMIN')|list|length if users else 0 }}</h3>
           </div>
         </div>
       </div>
@@ -171,7 +171,7 @@
                       <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" 
                            style="width: 40px; height: 40px;">
                         <span class="fw-bold text-primary">
-                          {{ (u.full_name or u.email)[:2].upper() }}
+                          {{ (u.full_name or u.email or '')[:2].upper() }}
                         </span>
                       </div>
                     </div>
@@ -181,8 +181,8 @@
                         <small class="text-muted me-2">
                           <i class="bi bi-envelope me-1"></i>{{ u.email }}
                         </small>
-                        <span class="badge bg-{{ 'warning' if u.role.name == 'SACCO_ADMIN' else 'info' }} bg-opacity-10 text-{{ 'warning' if u.role.name == 'SACCO_ADMIN' else 'info' }} rounded-pill">
-                          {{ u.role.replace('_', ' ') }}
+                        <span class="badge bg-{{ 'warning' if u.role == 'SACCO_ADMIN' else 'info' }} bg-opacity-10 text-{{ 'warning' if u.role == 'SACCO_ADMIN' else 'info' }} rounded-pill">
+                          {{ u.role.replace('_', ' ') if u.role else '' }}
                         </span>
                       </div>
                     </div>
