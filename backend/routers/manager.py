@@ -116,7 +116,8 @@ def serialize_loan_payment(payment: LoanPayment) -> dict:
     }
 
 # Routes
-@router.get("/manager/dashboard")
+@router.head("/manager/dashboard", response_class=HTMLResponse)
+@router.get("/manager/dashboard", response_class=HTMLResponse)
 def manager_dashboard(
     request: Request,
     db: Session = Depends(get_db),
@@ -270,7 +271,7 @@ def manager_dashboard(
         **helpers,
     }
 
-    return templates.TemplateResponse("manager/dashboard.html", context)
+    return templates.TemplateResponse(request, "manager/dashboard.html", context)
 
 
 @router.get("/manager/pending-members")

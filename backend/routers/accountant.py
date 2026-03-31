@@ -100,8 +100,8 @@ def serialize_sacco(sacco: Sacco) -> dict:
 # =============================================================================
 # ROUTES
 # =============================================================================
-
-@router.get("/accountant/dashboard")
+@router.head("/accountant/dashboard", response_class=HTMLResponse)
+@router.get("/accountant/dashboard", response_class=HTMLResponse)
 def accountant_dashboard(
     request: Request,
     db: Session = Depends(get_db),
@@ -160,7 +160,7 @@ def accountant_dashboard(
         "month_collections": month_collections,
         **helpers,
     }
-    return templates.TemplateResponse("accountant/dashboard.html", context)
+    return templates.TemplateResponse(request, "accountant/dashboard.html", context)
 
 
 @router.get("/accountant/deposits/pending")

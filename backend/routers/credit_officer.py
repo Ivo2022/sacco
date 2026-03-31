@@ -332,8 +332,8 @@ def get_payment_method_distribution(db: Session, sacco_id: int):
 # =============================================================================
 # ROUTES
 # =============================================================================
-
-@router.get("/credit-officer/dashboard")
+@router.head("/credit-officer/dashboard", response_class=HTMLResponse)
+@router.get("/credit-officer/dashboard", response_class=HTMLResponse)
 def credit_officer_dashboard(
     request: Request,
     db: Session = Depends(get_db),
@@ -407,7 +407,7 @@ def credit_officer_dashboard(
         "upcoming_count": len(upcoming_payments),
         **helpers,
     }
-    return templates.TemplateResponse("credit_officer/dashboard.html", context)
+    return templates.TemplateResponse(request, "credit_officer/dashboard.html", context)
 
 
 @router.get("/credit-officer/loan/{loan_id}")

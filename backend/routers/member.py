@@ -174,7 +174,7 @@ def get_user_loans_with_repayment(db: Session, user_id: int):
 # =============================================================================
 # ROUTES
 # =============================================================================
-
+@router.head("/member/dashboard", response_class=HTMLResponse)
 @router.get("/member/dashboard", response_class=HTMLResponse)
 def member_dashboard(
     request: Request,
@@ -237,7 +237,7 @@ def member_dashboard(
         },
         **helpers,
     }
-    return templates.TemplateResponse("client/dashboard.html", context)
+    return templates.TemplateResponse(request, "client/dashboard.html", context)
 
 
 @router.get("/member/profile", response_class=HTMLResponse)
