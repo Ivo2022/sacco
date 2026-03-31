@@ -9,18 +9,33 @@ from passlib.context import CryptContext
 from typing import Optional, cast
 from datetime import datetime
 from .. import models
+import hashlib
+import bcrypt
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
 def get_password_hash(password: str) -> str:
-    """Hash a password using bcrypt"""
-    return pwd_context.hash(password)
+    # Step 1: Normalize length
+    hashed = hashlib.sha256(password.encode()).digest()
+
+    # Step 2: bcrypt
+    return bcrypt.hashpw(hashed, bcrypt.gensalt()).decode()
 
 
-def verify_password(plain: str, hashed: str) -> bool:
-    """Verify a password against its hash"""
-    return pwd_context.verify(plain, hashed)
+def verify_password(password: str, hashed: str) -> bool:
+    try:
+        # NEW method
+        sha = hashlib.sha256(password.encode()).digest()
+        if bcrypt.checkpw(sha, hashed.encode()):
+            return True
+    except Exception:
+        pass
+
+    try:
+        # OLD method fallback
+        return bcrypt.checkpw(password.encode(), hashed.encode())
+    except Exception:
+        return False
 
 
 def create_user(
