@@ -222,7 +222,7 @@ def list_managers(
         "show_admin_controls": True,
         **helpers,
     }
-    return templates.TemplateResponse("superadmin/managers.html", context)
+    return templates.TemplateResponse(request,"superadmin/managers.html", context)
 
 
 @router.post("/superadmin/sacco/create-manager")
@@ -465,7 +465,7 @@ def view_manager(
         "show_admin_controls": True,
         **helpers,
     }
-    return templates.TemplateResponse("superadmin/manager_detail.html", context)
+    return templates.TemplateResponse(request,"superadmin/manager_detail.html", context)
 
 @router.head("/superadmin/sacco/{sacco_id}", response_class=HTMLResponse)
 @router.get("/superadmin/sacco/{sacco_id}", response_class=HTMLResponse)
@@ -525,7 +525,7 @@ def view_sacco(
         "show_admin_controls": True,
         **helpers,
     }
-    return templates.TemplateResponse("superadmin/sacco_detail.html", context)
+    return templates.TemplateResponse(request,"superadmin/sacco_detail.html", context)
 
 @router.head("/superadmin/saccos", response_class=HTMLResponse)
 @router.get("/superadmin/saccos", response_class=HTMLResponse)
@@ -557,7 +557,7 @@ def manage_saccos(request: Request, user=Depends(require_superadmin), db: Sessio
         "show_admin_controls": True,
         **helpers
     }
-    return templates.TemplateResponse("superadmin/saccos.html", context)
+    return templates.TemplateResponse(request,"superadmin/saccos.html", context)
 
 @router.head("/superadmin/staff", response_class=HTMLResponse)
 @router.get("/superadmin/staff", response_class=HTMLResponse)
@@ -578,7 +578,7 @@ def manage_staff(request: Request, user=Depends(require_superadmin), db: Session
         "credit_officers": credit_officers,
         "show_admin_controls": True,
     }
-    return templates.TemplateResponse("superadmin/staff.html", context)
+    return templates.TemplateResponse(request,"superadmin/staff.html", context)
 
 @router.head("/superadmin/sacco/{sacco_id}/edit", response_class=HTMLResponse)
 @router.get("/superadmin/sacco/{sacco_id}/edit", response_class=HTMLResponse)
@@ -603,7 +603,7 @@ def edit_sacco_form(
         "sacco": sacco,
         "show_admin_controls": True,
     }
-    return templates.TemplateResponse("superadmin/sacco_edit.html", context)
+    return templates.TemplateResponse(request,"superadmin/sacco_edit.html", context)
 
 
 @router.post("/superadmin/sacco/{sacco_id}/edit")
@@ -762,7 +762,7 @@ def superadmin_logs(
         "recent_actions": recent_actions,
         **helpers,
     }
-    return templates.TemplateResponse("superadmin/logs.html", context)
+    return templates.TemplateResponse(request,"superadmin/logs.html", context)
 
 @router.head("/superadmin/logs/export", response_class=HTMLResponse)
 @router.get("/superadmin/logs/export")

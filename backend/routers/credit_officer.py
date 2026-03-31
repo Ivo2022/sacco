@@ -1,7 +1,7 @@
 # backend/routers/credit_officer.py
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Form, Query
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from datetime import datetime, timedelta
@@ -475,7 +475,7 @@ def view_loan(
         "reminders": reminders,
         **helpers,
     }
-    return templates.TemplateResponse("credit_officer/loan_detail.html", context)
+    return templates.TemplateResponse(request,"credit_officer/loan_detail.html", context)
 
 
 @router.post("/credit-officer/loan/{loan_id}/send-reminder")
@@ -638,7 +638,7 @@ def list_loans(
         "status_filter": status,
         **helpers,
     }
-    return templates.TemplateResponse("credit_officer/loans.html", context)
+    return templates.TemplateResponse(request,"credit_officer/loans.html", context)
 
 
 @router.get("/credit-officer/reminders")
@@ -685,7 +685,7 @@ def reminders_page(
         "reminder_history": enhanced_history,
         **helpers,
     }
-    return templates.TemplateResponse("credit_officer/reminders.html", context)
+    return templates.TemplateResponse(request,"credit_officer/reminders.html", context)
 
 
 @router.post("/credit-officer/reminders/bulk-send")
@@ -816,7 +816,7 @@ def loan_reports(
         "export_filename": export_filename,
         **helpers,
     }
-    return templates.TemplateResponse("credit_officer/reports.html", context)
+    return templates.TemplateResponse(request,"credit_officer/reports.html", context)
 
 
 @router.get("/credit-officer/analytics")
@@ -877,4 +877,4 @@ def loan_analytics(
         "payment_methods": payment_methods,
         **helpers,
     }
-    return templates.TemplateResponse("credit_officer/analytics.html", context)
+    return templates.TemplateResponse(request,"credit_officer/analytics.html", context)

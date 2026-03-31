@@ -1,7 +1,7 @@
 # backend/routers/accountant.py
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Form, Query
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from datetime import datetime, timedelta
@@ -190,7 +190,7 @@ def pending_deposits_page(
         "pending_count": len(pending_deposits),
         **helpers,
     }
-    return templates.TemplateResponse("accountant/pending_deposits.html", context)
+    return templates.TemplateResponse(request,"accountant/pending_deposits.html", context)
 
 
 @router.post("/accountant/deposit/{deposit_id}/approve")
@@ -371,7 +371,7 @@ def transactions_page(
         "total_withdrawals": total_withdrawals,
         **helpers,
     }
-    return templates.TemplateResponse("accountant/transactions.html", context)
+    return templates.TemplateResponse(request,"accountant/transactions.html", context)
 
 
 @router.get("/accountant/savings")
@@ -457,7 +457,7 @@ def savings_page(
         "total_pages": (total + per_page - 1) // per_page,
         **helpers,
     }
-    return templates.TemplateResponse("accountant/savings.html", context)
+    return templates.TemplateResponse(request,"accountant/savings.html", context)
 
 
 @router.get("/accountant/reports")
@@ -593,7 +593,7 @@ def accountant_reports(
         "top_depositors": top_depositors,
         **helpers,
     }
-    return templates.TemplateResponse("accountant/reports.html", context)
+    return templates.TemplateResponse(request,"accountant/reports.html", context)
 
 
 @router.get("/accountant/member/{member_id}")
@@ -641,4 +641,4 @@ def member_savings_detail(
         "current_balance": current_balance,
         **helpers,
     }
-    return templates.TemplateResponse("accountant/member_savings.html", context)
+    return templates.TemplateResponse(request,"accountant/member_savings.html", context)

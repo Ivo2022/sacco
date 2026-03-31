@@ -284,7 +284,7 @@ def view_profile(
         "member_since": member_since,
         **helpers,
     }
-    return templates.TemplateResponse("client/profile.html", context)
+    return templates.TemplateResponse(request,"client/profile.html", context)
 
 
 @router.post("/member/profile/update")
@@ -359,7 +359,7 @@ async def update_profile(
                     "success": None,
                     **helpers,
                 }
-                return templates.TemplateResponse("client/profile.html", context)
+                return templates.TemplateResponse(request,"client/profile.html", context)
             user.email = email
 
         if profile_picture and profile_picture.filename:
@@ -377,7 +377,7 @@ async def update_profile(
                     "success": None,
                     **helpers,
                 }
-                return templates.TemplateResponse("client/profile.html", context)
+                return templates.TemplateResponse(request,"client/profile.html", context)
 
             file_extension = profile_picture.filename.split('.')[-1]
             filename = f"user_{user.id}_{uuid.uuid4().hex[:8]}.{file_extension}"
@@ -408,7 +408,7 @@ async def update_profile(
             "error": None,
             **helpers,
         }
-        return templates.TemplateResponse("client/profile.html", context)
+        return templates.TemplateResponse(request,"client/profile.html", context)
 
     except Exception as e:
         db.rollback()
@@ -424,7 +424,7 @@ async def update_profile(
             "success": None,
             **helpers,
         }
-        return templates.TemplateResponse("client/profile.html", context)
+        return templates.TemplateResponse(request,"client/profile.html", context)
 
 
 @router.post("/member/profile/change-password")
@@ -451,7 +451,7 @@ def change_password(
             "success": None,
             **helpers,
         }
-        return templates.TemplateResponse("client/profile.html", context)
+        return templates.TemplateResponse(request,"client/profile.html", context)
 
     if len(new_password) < 6:
         helpers = get_template_helpers()
@@ -462,7 +462,7 @@ def change_password(
             "success": None,
             **helpers,
         }
-        return templates.TemplateResponse("client/profile.html", context)
+        return templates.TemplateResponse(request,"client/profile.html", context)
 
     if new_password != confirm_password:
         helpers = get_template_helpers()
@@ -473,7 +473,7 @@ def change_password(
             "success": None,
             **helpers,
         }
-        return templates.TemplateResponse("client/profile.html", context)
+        return templates.TemplateResponse(request,"client/profile.html", context)
 
     user.password_hash = pwd_context.hash(new_password)
     user.password_reset_required = False
@@ -487,7 +487,7 @@ def change_password(
         "success": None,
         **helpers,
     }
-    return templates.TemplateResponse("client/profile.html", context)
+    return templates.TemplateResponse(request,"client/profile.html", context)
 
 
 @router.get("/member/savings", response_class=HTMLResponse)
@@ -538,7 +538,7 @@ def view_savings(
         "session": request.session,
         **helpers,
     }
-    return templates.TemplateResponse("client/savings.html", context)
+    return templates.TemplateResponse(request,"client/savings.html", context)
 
 
 @router.post("/member/savings/deposit/initiate")
@@ -804,7 +804,7 @@ def view_loans(
         "recent_transactions": recent_transactions,
         **helpers,
     }
-    return templates.TemplateResponse("client/loans.html", context)
+    return templates.TemplateResponse(request,"client/loans.html", context)
 
 
 @router.post("/member/loan/request")
@@ -1002,7 +1002,7 @@ def inactive_page(request: Request, user: User = Depends(get_current_user), db: 
         "user": serialize_user_full(user),
         "sacco": sacco
     }
-    return templates.TemplateResponse("member/inactive.html", context)
+    return templates.TemplateResponse(request,"member/inactive.html", context)
 
 
 @router.get("/member/suspended", response_class=HTMLResponse)
@@ -1017,4 +1017,4 @@ def suspended_page(request: Request, user: User = Depends(get_current_user), db:
         "user": serialize_user_full(user),
         "sacco": sacco
     }
-    return templates.TemplateResponse("member/suspended.html", context)
+    return templates.TemplateResponse(request,"member/suspended.html", context)

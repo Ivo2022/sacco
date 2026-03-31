@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, Query
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from ..core.dependencies import get_db, require_role
@@ -302,7 +302,7 @@ def pending_members(
         "pending_count": len(pending_members),
         **helpers,
     }
-    return templates.TemplateResponse("manager/pending_members.html", context)
+    return templates.TemplateResponse(request,"manager/pending_members.html", context)
 
 
 @router.post("/manager/member/{member_id}/approve")
@@ -534,7 +534,7 @@ def pending_loans(
         "pending_count": len(loans),
         **helpers,
     }
-    return templates.TemplateResponse("manager/pending_loans.html", context)
+    return templates.TemplateResponse(request,"manager/pending_loans.html", context)
 
 
 @router.get("/manager/staff")
@@ -561,7 +561,7 @@ def manage_staff(
         "staff": staff,
         **helpers,
     }
-    return templates.TemplateResponse("manager/staff.html", context)
+    return templates.TemplateResponse(request,"manager/staff.html", context)
 
 
 @router.post("/manager/staff/create")
@@ -715,7 +715,7 @@ def reports(
         "overdue_loans": overdue_loans,
         **helpers,
     }
-    return templates.TemplateResponse("manager/reports.html", context)
+    return templates.TemplateResponse(request,"manager/reports.html", context)
 
 
 @router.get("/manager/members")
@@ -837,7 +837,7 @@ def manage_members(
         "total_pages": total_pages,
         **helpers,
     }
-    return templates.TemplateResponse("manager/members.html", context)
+    return templates.TemplateResponse(request,"manager/members.html", context)
 
 
 @router.get("/manager/member/{member_id}")
@@ -901,7 +901,7 @@ def view_member_detail(
         "active_loans_count": len(active_loans),
         **helpers,
     }
-    return templates.TemplateResponse("manager/member_detail.html", context)
+    return templates.TemplateResponse(request,"manager/member_detail.html", context)
 
 
 @router.get("/manager/staff-activity")
@@ -954,7 +954,7 @@ def staff_activity(
         "selected_role": role,
         **helpers,
     }
-    return templates.TemplateResponse("manager/staff_activity.html", context)
+    return templates.TemplateResponse(request,"manager/staff_activity.html", context)
 
 
 @router.get("/manager/accountant-dashboard")
@@ -1006,7 +1006,7 @@ def view_accountant_dashboard(
         "pending_count": len(pending_deposits),
         **helpers,
     }
-    return templates.TemplateResponse("manager/accountant_view.html", context)
+    return templates.TemplateResponse(request,"manager/accountant_view.html", context)
 
 
 @router.get("/manager/credit-officer-dashboard")
@@ -1074,7 +1074,7 @@ def view_credit_officer_dashboard(
         "overdue_count": len(overdue_loans),
         **helpers,
     }
-    return templates.TemplateResponse("manager/credit_officer_view.html", context)
+    return templates.TemplateResponse(request,"manager/credit_officer_view.html", context)
 
 
 @router.get("/manager/all-transactions")
@@ -1135,7 +1135,7 @@ def all_transactions(
         "total_withdrawals": total_withdrawals,
         **helpers,
     }
-    return templates.TemplateResponse("manager/all_transactions.html", context)
+    return templates.TemplateResponse(request,"manager/all_transactions.html", context)
 
 
 @router.get("/manager/all-loans")
@@ -1246,4 +1246,4 @@ def all_loans(
         "total_outstanding": total_outstanding,
         **helpers,
     }
-    return templates.TemplateResponse("manager/all_loans.html", context)
+    return templates.TemplateResponse(request,"manager/all_loans.html", context)
