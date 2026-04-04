@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SACCO Management System – Prospectus | Mobile Responsive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            color: #1e2a3e;
+            background: #f9fafb;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+        }
+
+        /* responsive spacing */
+        @media (max-width: 640px) {
+            body {
+                padding: 0.5rem;
+            }
+            .container {
+                padding: 1rem;
+                border-radius: 20px;
+            }
+        }
+
+        /* header flex becomes column on phones */
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        @media (max-width: 550px) {
+            .header-flex {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header-badge {
+                text-align: left !important;
+                align-self: flex-start;
+            }
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 7vw, 2.5rem);
+            color: #0052cc;
+            margin-bottom: 0.25rem;
+            line-height: 1.2;
+        }
+
+        .subhead {
+            font-size: clamp(0.95rem, 4vw, 1.2rem);
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        h2 {
+            font-size: clamp(1.4rem, 5vw, 1.8rem);
+            margin-top: 1.8rem;
+            margin-bottom: 1rem;
+            border-left: 5px solid #00b894;
+            padding-left: 0.9rem;
+            color: #1e2a3e;
+            word-break: break-word;
+        }
+
+        h3 {
+            font-size: clamp(1.2rem, 4.5vw, 1.4rem);
+            margin-top: 1.4rem;
+            margin-bottom: 0.7rem;
+            color: #0052cc;
+        }
+
+        h4 {
+            font-size: clamp(1.05rem, 4vw, 1.2rem);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .badge {
+            background-color: #0052cc;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: inline-block;
+            letter-spacing: 0.3px;
+        }
+
+        /* responsive tables: horizontal scroll on small screens */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin: 1rem 0;
+            border-radius: 16px;
+            border: 1px solid #e9eef3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            min-width: 500px;
+        }
+
+        @media (max-width: 600px) {
+            table {
+                font-size: 0.85rem;
+                min-width: 480px;
+            }
+            th, td {
+                padding: 0.65rem 0.75rem;
+            }
+        }
+
+        th, td {
+            border: 1px solid #cbd5e1;
+            padding: 0.8rem;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        /* lists with proper spacing */
+        ul, ol {
+            margin: 0.75rem 0 0.75rem 1.2rem;
+            padding-left: 0.2rem;
+        }
+        li {
+            margin: 0.5rem 0;
+            line-height: 1.45;
+        }
+
+        /* contact card */
+        .contact {
+            background-color: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+            border: 1px solid #e2edf2;
+        }
+        .contact p {
+            word-break: break-word;
+        }
+
+        .footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .highlight {
+            color: #00b894;
+            font-weight: bold;
+        }
+
+        .tier-table td:first-child {
+            font-weight: 600;
+        }
+
+        /* card style for small screens readability */
+        @media (max-width: 480px) {
+            .contact {
+                padding: 1.2rem;
+            }
+            .badge {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* print adjustments */
+        @media print {
+            body {
+                background: white;
+                padding: 0.2in;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+            .table-wrapper {
+                overflow: visible;
+            }
+            .contact, .badge {
+                break-inside: avoid;
+            }
+        }
+
+        /* better touch targets */
+        a, .badge {
+            cursor: default;
+        }
+        strong {
+            color: #0c4e8c;
+        }
+        hr {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header - responsive flex wrap -->
+    <div class="header-flex">
+        <div>
+            <h1>SACCO Management System</h1>
+            <div class="subhead">Empowering Cooperatives with Digital Excellence</div>
+        </div>
+        <div class="header-badge" style="text-align: right;">
+            <div class="badge">Prospectus 2026</div>
+        </div>
+    </div>
+
+    <!-- 1. Executive Summary -->
+    <h2>1. Executive Summary</h2>
+    <p><strong>SACCO Management System</strong> is a complete, cloud‑based platform that digitises and automates all core operations of a Savings and Credit Cooperative Organisation (SACCO). Built for scalability and security, it serves everyone – from members who want 24/7 access to their accounts, to managers who need real‑time oversight, to super‑administrators who run multiple SACCOs.</p>
+    <p>Our system eliminates paperwork, reduces processing time, and brings total transparency to every transaction.</p>
+
+    <!-- 2. Who Is This For? (responsive table) -->
+    <h2>2. Who Is This For?</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr><th>Role</th><th>Primary Needs</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Members</td><td>Check balances, request loans, make deposits, view transaction history, refer friends (feature to be included)</td></tr>
+                <tr><td>SACCO Managers</td><td>Approve loans, manage staff (accountants, credit officers), generate reports</td></tr>
+                <tr><td>Accountants</td><td>Approve member deposits, reconcile accounts, produce financial statements</td></tr>
+                <tr><td>Credit Officers</td><td>Monitor loan repayments, track overdue accounts</td></tr>
+                <tr><td>External Borrowers</td><td>Apply for loans with collateral and a member guarantor</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. Key Features by Module -->
+    <h2>3. Key Features by Module</h2>
+    <h3>3.1 Member Portal (Self‑Service)</h3>
+    <div class="table-wrapper">
+        <table>
+            <thead><tr><th>Feature</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td>Dashboard</td><td>At‑a‑glance balance, active loans, recent transactions</td></tr>
+                <tr><td>Savings Account</td><td>View balance, see pending deposits, download statement</td></tr>
+                <tr><td>Deposit Initiation</td><td>Request a cash deposit; funds appear after admin approval of received funds</td></tr>
+                <tr><td>Loan Request</td><td>Apply for a loan, see eligibility (max 3x savings), track status</td></tr>
+                <tr><td>Loan Repayment</td><td>Pay from savings balance, cash or mobile money to be added soon.</td></tr>
+                <tr><td>Transaction History</td><td>Full audit trail of deposits, withdrawals, loan payments</td></tr>
+                <tr><td>Profile Management</td><td>Update personal details, change password, upload photo</td></tr>
+                <tr><td>Referral Program</td><td>To be added to enable member to get a unique referral code; earn commissions on referred members’ deposits</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>3.2 Manager & Staff Portals</h3>
+    <h4>Manager Dashboard</h4>
+    <ul>
+        <li>Overview of SACCO health (total members, savings, loans outstanding)</li>
+        <li>Approve or reject loan requests (with notes)</li>
+        <li>Create and manage staff accounts (Accountant, Credit Officer)</li>
+        <li>View system‑wide reports</li>
+        <li>Deactivate/reactivate members</li>
+    </ul>
+    <h4>Accountant Dashboard</h4>
+    <ul>
+        <li>Approve member deposit requests (cash only for now)</li>
+        <li>View all approved and pending transactions</li>
+        <li>Reconcile daily collections</li>
+        <li>Generate financial reports for key KPIs.</li>
+    </ul>
+    <h4>Credit Officer Dashboard</h4>
+    <ul>
+        <li>Monitor active loans</li>
+        <li>Track overdue loans and contact borrowers</li>
+        <li>View repayment history</li>
+    </ul>
+
+    <h3>3.3 External Loan Management</h3>
+    <ul>
+        <li>Register non‑member borrowers (name, contact, national ID)</li>
+        <li>Capture collateral details (description, estimated value)</li>
+        <li>Select a member guarantor (must have savings balance)</li>
+        <li>Admin approves/rejects; payments recorded manually</li>
+        <li>Full payment history with method tracking (cash, bank, mobile money)</li>
+    </ul>
+
+    <h3>3.4 Dual‑Account System (Staff as Members)</h3>
+    <ul>
+        <li>Staff can have a separate <strong>member account</strong> for personal savings/loans</li>
+        <li>Linked accounts prevent conflict of interest (staff cannot approve their own or linked member’s loans)</li>
+        <li>One‑click switching between admin and member views</li>
+    </ul>
+
+    <h3>3.5 Security & Audit</h3>
+    <ul>
+        <li>All passwords hashed (bcrypt)</li>
+        <li>Session management with secure cookies</li>
+        <li>Role‑based access control (RBAC)</li>
+        <li>Every action logged (who, when, IP address)</li>
+    </ul>
+
+    <h3>3.6 Mobile Responsive & User Friendly</h3>
+    <ul>
+        <li>Works on any device (phone, tablet, desktop)</li>
+        <li>Clean Bootstrap 5 interface with icons (ready for future integration)</li>
+    </ul>
+
+    <!-- 4. Benefits for Your SACCO -->
+    <h2>4. Benefits for Your SACCO</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead><tr><th>Challenge</th><th>Our Solution</th></tr></thead>
+            <tbody>
+                <tr><td>Long queues at the office</td><td>Members deposit/request loans from their phone</td></tr>
+                <tr><td>Paper‑based records</td><td>Fully digital, searchable transaction history</td></tr>
+                <tr><td>Delayed loan approvals</td><td>Manager approves in one click from dashboard</td></tr>
+                <tr><td>Difficulty tracking overdue loans</td><td>Credit officer dashboard shows overdue payments and sends reminders</td></tr>
+                <tr><td>No transparency for members</td><td>Real‑time balance and transaction history</td></tr>
+                <tr><td>Staff conflict of interest</td><td>Dual‑account system with self‑approval prevention</td></tr>
+                <tr><td>Limited growth</td><td>Referral program helps members bring in new members; super admin can add unlimited SACCOs</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 5. Pricing Model (simplified, responsive) -->
+    <h2>5. Pricing Model</h2>
+    <p>We offer a <strong>tiered monthly subscription</strong> based on the number of members. No hidden fees, no per‑transaction charges.</p>
+    <div class="table-wrapper">
+        <table class="tier-table">
+            <thead><tr><th>Tier</th><th>Member Limit</th><th>Monthly Fee (UGX)</th></tr></thead>
+            <tbody>
+                <tr><td>🥉 Bronze</td><td>Up to 200</td><td>50,000</td></tr>
+                <tr><td>🥈 Silver</td><td>201 – 1,000</td><td>100,000</td></tr>
+                <tr><td>🥇 Gold</td><td>1,001 – 5,000</td><td>200,000</td></tr>
+                <tr><td>💎 Platinum</td><td>5,000+</td><td>Custom</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p><em>*First 5 SACCOs receive free setup (waived UGX 150,000 onboarding fee).</em></p>
+    <h4>Optional Add‑ons (coming soon)</h4>
+    <ul>
+        <li>SMS / Email notification integration</li>
+        <li>Mobile money / bank transfer gateway integration</li>
+        <li>API access for third‑party integration</li>
+    </ul>
+
+    <!-- 6. Technical Specifications -->
+    <h2>6. Technical Specifications</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead><tr><th>Aspect</th><th>Details</th></tr></thead>
+            <tbody>
+                <tr><td>Backend</td><td>Python 3.11+ / FastAPI / SQLAlchemy ORM</td></tr>
+                <tr><td>Database</td><td>SQLite (currently in use) / PostgreSQL (upgrade)</td></tr>
+                <tr><td>Frontend</td><td>Jinja2 templates, Bootstrap 5, JavaScript</td></tr>
+                <tr><td>Authentication</td><td>Session‑based with middleware</td></tr>
+                <tr><td>Deployment</td><td>Render</td></tr>
+                <tr><td>Scalability</td><td>Handles 1000+ SACCOs with proper indexing and connection pooling</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 7. Implementation Timeline -->
+    <h2>7. Implementation Timeline</h2>
+    <div class="table-wrapper">
+        <table>
+            <thead><tr><th>Phase</th><th>Activities</th><th>Duration</th></tr></thead>
+            <tbody>
+                <tr><td>1. Setup</td><td>Deploy system, configure super admin, create your SACCO record</td><td>1 day</td></tr>
+                <tr><td>2. Staff Onboarding</td><td>Create manager, accountant, credit officer accounts if needed otherwise manager would do everything</td><td>1 day</td></tr>
+                <tr><td>3. Member Import</td><td>Bulk import existing members (Excel) or manual entry</td><td>2–7 days depending on records</td></tr>
+                <tr><td>4. Training</td><td>Online session for managers and accountants</td><td>1 day</td></tr>
+                <tr><td>5. Go‑Live</td><td>Start using the system; members receive login credentials</td><td>1 day</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p><strong>Total: 2 weeks maximum</strong> from contract signing.</p>
+
+    <!-- 8. Support & Maintenance -->
+    <h2>8. Support & Maintenance</h2>
+    <ul>
+        <li><strong>Email support</strong> – response within 24 hours (included in all plans)</li>
+        <li><strong>Priority support</strong> – response within 4 hours for platinum only</li>
+        <li><strong>Dedicated account manager</strong> – Platinum only</li>
+        <li><strong>Regular updates</strong> – security patches and new features every quarter</li>
+        <li><strong>Data backup</strong> – daily automated backups</li>
+    </ul>
+
+    <!-- 9. Why Choose Us? -->
+    <h2>9. Why Choose Us?</h2>
+    <ul>
+        <li>Affordable and transparent – no surprise fees</li>
+        <li>Future‑proof – ready to evolve into a full cooperative management system</li>
+        <li>Secure by design – audit logs, role separation, password hashing</li>
+        <li>Customer‑centric – free setup for early adopters, continuous improvement</li>
+    </ul>
+
+    <!-- 10. Next Steps -->
+    <h2>10. Next Steps</h2>
+    <ol>
+        <li><strong>Schedule a demo</strong> – we’ll show you the live system (30 minutes)</li>
+        <li><strong>Request a trial</strong> – test with 10 members for 14 days at no cost</li>
+        <li><strong>Sign up</strong> – choose your tier, complete the onboarding form</li>
+        <li><strong>Go live</strong> – start managing your SACCO digitally</li>
+    </ol>
+
+    <!-- Contact -->
+    <div class="contact">
+        <h3 style="margin-top: 0;">Contact us today to transform your SACCO!</h3>
+        <p> Email: cheontecinnovations@gmail.com<br>
+         Phone: +256 776847186<br>
+         Website: <a href="https://www.api.cheontec.com">https://www.api.cheontec.com</a></p>
+        <p><em>CheonTec – Financial Technology for Community Growth</em></p>
+    </div>
+
+    <div class="footer">
+        © 2026 CheonTec Innovations. All rights reserved. Prospectus version 1.0 (Mobile Optimized).
+    </div>
+</div>
+</body>
+</html>

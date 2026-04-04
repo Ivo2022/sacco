@@ -4,6 +4,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import logging
 from typing import List
 
+from sqlalchemy.orm import Session
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
 from .config import settings
 from .database import get_db_session
 
@@ -64,4 +68,35 @@ class TemplateHelpersMiddleware(BaseHTTPMiddleware):
         request.state.date = format_date
         
         response = await call_next(request)
+        return response
+		
+# backend/core/middleware.py
+class ActivityTrackingMiddleware(BaseHTTPMiddleware):
+    """Middleware to track user activity on each request"""
+    
+    async def dispatch(self, request: Request, call_next):
+        # Process the request first
+        response = await call_next(request)
+        
+        # Update user activity after request (so we don't slow down the response)
+        try:
+            # Get user from session
+            user_id = request.session.get("user_id")
+            if user_id:
+                # Get database session
+                db = request.app.state.db_session() if hasattr(request.app.state, 'db_session') else None
+                
+                if db:
+                    from ..models import User
+                    user = db.query(User).filter(User.id == user_id).first()
+                    if user:
+                        # Update last activity
+                        user.last_activity = datetime.utcnow()
+                        db.commit()
+                        logger.debug(f"Updated last_activity for user {user_id}")
+                    db.close()
+        except Exception as e:
+            # Don't let activity tracking errors affect the response
+            logger.error(f"Error updating last_activity: {e}")
+        
         return response

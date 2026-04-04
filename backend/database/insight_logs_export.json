@@ -1,0 +1,28 @@
+[
+  {
+    "id": 1,
+    "sacco_id": 1,
+    "insight_type": "inactive_savers",
+    "title": "2 Inactive Savers Detected",
+    "description": "Members who haven't saved in the last 30 days",
+    "data": "[{\"user_id\": 3, \"name\": \"Test Manager (Member)\", \"days_inactive\": 0, \"last_saving_date\": null}, {\"user_id\": 6, \"name\": \"Test Member\", \"days_inactive\": 0, \"last_saving_date\": null}]",
+    "severity": "warning",
+    "is_resolved": 0,
+    "resolved_at": null,
+    "resolved_by": null,
+    "generated_at": "2026-04-04 11:40:46.205018"
+  },
+  {
+    "id": 2,
+    "sacco_id": 1,
+    "insight_type": "inactive_savers",
+    "title": "2 Inactive Savers Detected",
+    "description": "Members who haven't saved in the last 30 days",
+    "data": "[{\"user_id\": 3, \"name\": \"Test Manager (Member)\", \"days_inactive\": 0, \"last_saving_date\": null}, {\"user_id\": 6, \"name\": \"Test Member\", \"days_inactive\": 0, \"last_saving_date\": null}]",
+    "severity": "warning",
+    "is_resolved": 0,
+    "resolved_at": null,
+    "resolved_by": null,
+    "generated_at": "2026-04-04 11:40:46.284556"
+  }
+]

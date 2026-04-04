@@ -7,12 +7,12 @@ from pathlib import Path
 import logging
 from typing import Optional, cast
 import re
-
+from datetime import datetime
 from ..core import get_db, get_current_user
 from ..services.user_service import authenticate_user, create_user
 from ..models import RoleEnum, User, Sacco
 from ..services.referral_service import ReferralService
-from ..utils import create_log
+from ..utils import create_log, log_user_action
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -80,21 +80,27 @@ def login_post(
         # SAFE session write
         if not hasattr(request, "session"):
             raise Exception("Session middleware not working")
+        # Update user activity tracking
+        user.last_login = datetime.utcnow()
+        user.last_activity = datetime.utcnow()
+        user.login_count += 1
+        db.commit()
 
         request.session["user_id"] = user.id
+        request.session["user_role"] = user.role
 
         # SAFE logging
         ip = None
         if request.client and hasattr(request.client, "host"):
             ip = request.client.host
 
-        create_log(
-            db,
+        # Log the activity
+        log_user_action(
+            db=db,
+            user=user,
             action="USER_LOGIN",
-            user_id=user.id,
-            sacco_id=user.sacco_id,
-            details=f"User {user.email} logged in",
-            ip_address=ip
+            details=f"User {user.username} logged in",
+            ip_address=request.client.host
         )
 
         role_redirects = {

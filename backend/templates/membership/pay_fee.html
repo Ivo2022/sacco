@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Pay Membership Fee{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Pay Membership Fee</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Membership Fee:</strong> UGX {{ money(membership_fee) }}
+                </div>
+                
+                {% if membership_number %}
+                <div class="alert alert-secondary">
+                    <strong>Membership Number:</strong> <code>{{ membership_number }}</code>
+                </div>
+                {% endif %}
+                
+                <form method="post" action="/membership/fee/pay">
+                    <div class="mb-3">
+                        <label class="form-label">Amount (UGX)</label>
+                        <input type="number" class="form-control" name="amount" value="{{ membership_fee }}" readonly required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select class="form-select" name="payment_method" required>
+                            <option value="">Select payment method</option>
+                            <option value="CASH">Cash</option>
+                            <option value="BANK_TRANSFER">Bank Transfer</option>
+                            <option value="MOBILE_MONEY">Mobile Money</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" name="reference_number" placeholder="Transaction reference number">
+                        <small class="text-muted">Optional, but recommended for tracking</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-credit-card me-1"></i>Submit Payment
+                        </button>
+                        <a href="/membership/status" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

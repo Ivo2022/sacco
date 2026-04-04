@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Insights Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>Smart Insights Engine
+                </h4>
+                <button class="btn btn-light btn-sm" onclick="refreshInsights()">
+                    <i class="bi bi-arrow-repeat me-1"></i>Refresh Insights
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Smart Insights</strong> automatically analyzes your SACCO data to identify trends, risks, and opportunities.
+                </div>
+                
+                <!-- Alert Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body text-center">
+                                <h5>Critical Alerts</h5>
+                                <h2 class="mb-0">{{ alerts|selectattr('severity', 'equalto', 'critical')|list|length }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body text-center">
+                                <h5>Warning Alerts</h5>
+                                <h2 class="mb-0">{{ alerts|selectattr('severity', 'equalto', 'warning')|list|length }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h5>Info Alerts</h5>
+                                <h2 class="mb-0">{{ alerts|selectattr('severity', 'equalto', 'info')|list|length }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Active Alerts -->
+                <h5 class="mb-3">Active Alerts</h5>
+                {% if alerts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Severity</th>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Generated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr>
+                                <td>
+                                    {% if alert.severity == 'critical' %}
+                                        <span class="badge bg-danger">Critical</span>
+                                    {% elif alert.severity == 'warning' %}
+                                        <span class="badge bg-warning">Warning</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Info</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ alert.title }}</strong></td>
+                                <td>{{ alert.description|truncate(100) }}</td>
+                                <td>{{ local_time(alert.generated_at) }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success" onclick="resolveAlert({{ alert.id }})">
+                                        <i class="bi bi-check"></i> Resolve
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewDetails({{ alert.id }})">
+                                        <i class="bi bi-eye"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    No active alerts! Your SACCO is in good health.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weekly Summary Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-week me-2"></i>Weekly Summary
+                </h5>
+            </div>
+            <div class="card-body" id="weekly-summary">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading weekly summary...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load weekly summary on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadWeeklySummary();
+});
+
+function loadWeeklySummary() {
+    fetch('/api/insights/weekly-summary')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayWeeklySummary(data.summary);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading weekly summary:', error);
+            document.getElementById('weekly-summary').innerHTML = `
+                <div class="alert alert-danger">
+                    Failed to load weekly summary. Please try again.
+                </div>
+            `;
+        });
+}
+
+function displayWeeklySummary(summary) {
+    const html = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Period: ${new Date(summary.week_start).toLocaleDateString()} - ${new Date(summary.week_end).toLocaleDateString()}</h6>
+                <div class="row mt-3">
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center">
+                            <small class="text-muted">New Members</small>
+                            <h4 class="mb-0">${summary.metrics.new_members}</h4>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center">
+                            <small class="text-muted">New Loans</small>
+                            <h4 class="mb-0">${summary.metrics.new_loans}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center">
+                            <small class="text-muted">New Savings (UGX)</small>
+                            <h5 class="mb-0">${summary.metrics.total_new_savings.toLocaleString()}</h5>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2 text-center">
+                            <small class="text-muted">Loans Disbursed (UGX)</small>
+                            <h5 class="mb-0">${summary.metrics.total_loans_amount.toLocaleString()}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6>Top Insights This Week</h6>
+                ${summary.top_insights.length > 0 ? 
+                    summary.top_insights.map(insight => `
+                        <div class="alert alert-${insight.severity === 'critical' ? 'danger' : insight.severity === 'warning' ? 'warning' : 'info'} mt-2">
+                            <strong>${insight.title}</strong><br>
+                            <small>${insight.description}</small>
+                        </div>
+                    `).join('') : 
+                    '<p class="text-muted">No major insights this week</p>'
+                }
+            </div>
+        </div>
+    `;
+    document.getElementById('weekly-summary').innerHTML = html;
+}
+
+function refreshInsights() {
+    fetch('/api/insights/generate', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error generating insights:', error);
+            alert('Failed to generate insights. Please try again.');
+        });
+}
+
+function resolveAlert(alertId) {
+    if (confirm('Mark this alert as resolved?')) {
+        fetch(`/api/insights/alerts/${alertId}/resolve`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to resolve alert');
+                }
+            })
+            .catch(error => {
+                console.error('Error resolving alert:', error);
+                alert('Failed to resolve alert');
+            });
+    }
+}
+
+function viewDetails(alertId) {
+    // Implement modal to show detailed alert data
+    alert('Details view coming soon. Alert ID: ' + alertId);
+}
+</script>
+{% endblock %}

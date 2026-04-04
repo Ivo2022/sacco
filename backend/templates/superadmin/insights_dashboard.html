@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Platform Insights - Super Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    {# Page Header #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="bi bi-lightbulb me-2"></i>Platform Insights Dashboard
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mt-2">
+                    <li class="breadcrumb-item"><a href="/superadmin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Insights</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+                <i class="bi bi-arrow-repeat me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    {# Platform Overview Cards #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-3">
+                                <i class="bi bi-building fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total SACCOs</h6>
+                            <h2 class="mb-0 fw-bold">{{ total_saccos }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 text-success rounded-3 p-3">
+                                <i class="bi bi-people fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Members</h6>
+                            <h2 class="mb-0 fw-bold">{{ total_members }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 text-info rounded-3 p-3">
+                                <i class="bi bi-person-badge fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Staff</h6>
+                            <h2 class="mb-0 fw-bold">{{ total_staff }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-3">
+                                <i class="bi bi-graph-up fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Repayment Rate</h6>
+                            <h2 class="mb-0 fw-bold">{{ repayment_rate }}%</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Financial Overview Cards #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-3">
+                                <i class="bi bi-cash-stack fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Disbursed</h6>
+                            <h4 class="mb-0 fw-bold">{{ money(total_loans_disbursed) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 text-success rounded-3 p-3">
+                                <i class="bi bi-percent fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Interest Earned</h6>
+                            <h4 class="mb-0 fw-bold">{{ money(total_interest_earned) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 text-info rounded-3 p-3">
+                                <i class="bi bi-receipt fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Payments Received</h6>
+                            <h4 class="mb-0 fw-bold">{{ money(total_payments_received) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-3">
+                                <i class="bi bi-piggy-bank fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Savings</h6>
+                            <h4 class="mb-0 fw-bold">{{ money(total_savings) }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Loan Status Cards #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Loan Portfolio</h6>
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ (active_loans / (active_loans + pending_loans + overdue_loans + completed_loans) * 100) if (active_loans + pending_loans + overdue_loans + completed_loans) > 0 else 0 }}%"></div>
+                        <div class="progress-bar bg-warning" style="width: {{ (pending_loans / (active_loans + pending_loans + overdue_loans + completed_loans) * 100) if (active_loans + pending_loans + overdue_loans + completed_loans) > 0 else 0 }}%"></div>
+                        <div class="progress-bar bg-danger" style="width: {{ (overdue_loans / (active_loans + pending_loans + overdue_loans + completed_loans) * 100) if (active_loans + pending_loans + overdue_loans + completed_loans) > 0 else 0 }}%"></div>
+                        <div class="progress-bar bg-info" style="width: {{ (completed_loans / (active_loans + pending_loans + overdue_loans + completed_loans) * 100) if (active_loans + pending_loans + overdue_loans + completed_loans) > 0 else 0 }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span><span class="text-success">●</span> Active: {{ active_loans }}</span>
+                        <span><span class="text-warning">●</span> Pending: {{ pending_loans }}</span>
+                        <span><span class="text-danger">●</span> Overdue: {{ overdue_loans }}</span>
+                        <span><span class="text-info">●</span> Completed: {{ completed_loans }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Member Growth</h6>
+                    <div class="text-center">
+                        <h2 class="mb-0">{{ new_members_this_month }}</h2>
+                        <small class="text-muted">New members this month</small>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span>This week: <strong>{{ new_members_this_week }}</strong></span>
+                            <span>Total: <strong>{{ total_members }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="text-muted mb-3">Top Performing SACCOs</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr><th>SACCO</th><th>Loans</th><th>Total Value</th><th>% of Portfolio</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for sacco in top_saccos %}
+                                <tr>
+                                    <td>{{ sacco.name }}</td>
+                                    <td>{{ sacco.loan_count or 0 }}</td>
+                                    <td>{{ money(sacco.total_loans or 0) }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 4px;">
+                                            <div class="progress-bar" style="width: {{ (sacco.total_loans / total_loans_disbursed * 100) if total_loans_disbursed > 0 else 0 }}%"></div>
+                                        </div>
+                                        <small>{{ "%.1f"|format((sacco.total_loans / total_loans_disbursed * 100) if total_loans_disbursed > 0 else 0) }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Recent Activity #}
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Loan Applications</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for loan in recent_loans %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted">{{ local_time(loan.timestamp) if loan.timestamp else 'N/A' }}</small>
+                                    <div class="fw-semibold">UGX {{ money(loan.amount) }}</div>
+                                </div>
+                                <span class="badge bg-warning">Pending</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted">No recent loans</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-person-plus me-2"></i>Recent Member Registrations</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for user in recent_users %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted">{{ local_time(user.created_at) if user.created_at else 'N/A' }}</small>
+                                    <div class="fw-semibold">{{ user.full_name or user.email }}</div>
+                                </div>
+                                <span class="badge bg-success">New Member</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted">No recent registrations</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

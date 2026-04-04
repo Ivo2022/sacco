@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}My Share Portfolio{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">My Share Portfolio</h4>
+                <a href="/shares/subscribe" class="btn btn-light btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Buy More Shares
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5>Total Shares</h5>
+                                <h2 class="text-primary">{{ total_shares }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5>Total Value</h5>
+                                <h2 class="text-success">UGX {{ money(total_value) }}</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h5>Share Holdings</h5>
+                {% if holdings %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Share Type</th>
+                                <th>Class</th>
+                                <th>Quantity</th>
+                                <th>Par Value</th>
+                                <th>Total Value</th>
+                                <th>Voting Rights</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for holding in holdings %}
+                            <tr>
+                                <td><strong>{{ holding.share_type_name }}</strong></td>
+                                <td><span class="badge bg-info">{{ holding.class_type|upper }}</span></td>
+                                <td>{{ holding.quantity }}</td>
+                                <td>UGX {{ money(holding.par_value) }}</td>
+                                <td>UGX {{ money(holding.total_value) }}</td>
+                                <td>
+                                    {% if holding.is_voting %}
+                                        <i class="bi bi-check-circle-fill text-success"></i> Yes
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger"></i> No
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    You don't have any shares yet. 
+                    <a href="/shares/subscribe" class="alert-link">Subscribe to shares</a> to become a shareholder.
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <a href="/shares/history" class="btn btn-outline-primary">
+                        <i class="bi bi-clock-history me-1"></i>View Transaction History
+                    </a>
+                    <a href="/dividends/entitlement" class="btn btn-outline-success ms-2">
+                        <i class="bi bi-calculator me-1"></i>Calculate Dividends
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if transactions %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Transactions</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Quantity</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in transactions[:5] %}
+                            <tr>
+                                <td>{{ local_time(tx.transaction_date) }}</td>
+                                <td>
+                                    <span class="badge {% if tx.transaction_type == 'subscription' %}bg-success{% else %}bg-warning{% endif %}">
+                                        {{ tx.transaction_type|upper }}
+                                    </span>
+                                </td>
+                                <td>{{ tx.quantity }}</td>
+                                <td>UGX {{ money(tx.total_amount) }}</td>
+                                <td>
+                                    {% if tx.approved_at %}
+                                        <span class="badge bg-success">Approved</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="/shares/history" class="btn btn-link">View all transactions →</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -47,8 +47,8 @@ class Settings(BaseSettings):
         if not v and env == "production":
             raise ValueError("DATABASE_URL must be set in production environment")
         
-        if v and v.startswith("sqlite:///"):
-            db_path = v.replace("sqlite:///", "")
+        if v and v.startswith("postgres://"):
+            db_path = v.replace("postgres://", "postgresql://")
             db_dir = Path(db_path).parent
             if db_dir:
                 db_dir.mkdir(parents=True, exist_ok=True)
@@ -56,10 +56,11 @@ class Settings(BaseSettings):
         return v or "sqlite:///./backend/database/cheontec.db"
     
     # PostgreSQL pool settings
-    DB_POOL_SIZE: int = 5
-    DB_MAX_OVERFLOW: int = 10
-    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_SIZE: int = int(os.getenv("DB_POOL_SIZE", "10"))
+    DB_MAX_OVERFLOW: int = int(os.getenv("DB_MAX_OVERFLOW", "20"))
+    DB_POOL_TIMEOUT: int = int(os.getenv("DB_POOL_TIMEOUT", "30"))
     DB_POOL_RECYCLE: int = 3600
+    DB_POOL_PRE_PING: bool = True  # Important for Render's managed PostgreSQ
     
     # Timezone
     LOCAL_OFFSET_HOURS: int = 3

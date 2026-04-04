@@ -1,21 +1,41 @@
 services:
   - type: web
-    name: fastapi-sacco
+    name: sacco-api
     runtime: python
-    plan: free  # or starter, etc.
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    repo: https://github.com/Ivo2022/sacco
+    plan: free  # Upgrade to professional for 5+ SACCOS
+    region: frankfurt  # Choose closest to your users
+    buildCommand: |
+      pip install -r requirements.txt
+      alembic upgrade head
+    startCommand: |
+      uvicorn backend.main:app --host 0.0.0.0 --port $PORT --workers 4
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.12
-      - key: SECRET_KEY
-        sync: false
+      - key: ENVIRONMENT
+        value: production
       - key: DATABASE_URL
         fromDatabase:
-          name: cheontec
+          name: sacco-db
           property: connectionString
+      - key: SECRET_KEY
+        generateValue: true  # Render generates a secure random key
+      - key: SESSION_SECRET_KEY
+        generateValue: true
+      - key: DB_POOL_SIZE
+        value: 20
+      - key: DB_MAX_OVERFLOW
+        value: 40
+      - key: DB_POOL_TIMEOUT
+        value: 60
+      - key: BACKEND_CORS_ORIGINS
+        value: https://www.api.cheontec.com, https://api.cheontec.com
+      - key: ALLOW_SELF_REGISTRATION
+        value: "true"
+      - key: DEBUG
+        value: "false"
 
 databases:
   - name: cheontec
-    databaseName: cheontec
-    user: root
+    plan: starter  
+    region: frankfurt
+    postgresMajorVersion: 15

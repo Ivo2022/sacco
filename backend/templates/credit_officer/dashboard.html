@@ -2,9 +2,69 @@
 {% block title %}Credit Officer Dashboard{% endblock %}
 {% block content %}
 
-<div class="container mt-4">
-    <h2>Credit Officer Dashboard</h2>
-    <p>Welcome, {{ user["full_name"]or user["email"]}}</p>
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Credit Officer Dashboard</h2>
+            <p class="text-muted mb-0">Welcome, {{ user["full_name"]or user["email"]}}</p>
+        </div>
+    </div>
+
+    <!-- Loan Metrics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-success text-white border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Active Loans</small>
+                            <h3 class="mb-0 fw-bold">{{ active_loans_count|default(0) }}</h3>
+                        </div>
+                        <i class="bi bi-check-circle-fill fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-danger text-white border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Overdue Loans</small>
+                            <h3 class="mb-0 fw-bold">{{ overdue_loans_count|default(0) }}</h3>
+                        </div>
+                        <i class="bi bi-exclamation-triangle-fill fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-info text-white border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Interest Earned</small>
+                            <h4 class="mb-0 fw-bold">{{ money(total_interest_earned|default(0)) }}</h4>
+                        </div>
+                        <i class="bi bi-percent fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card text-white border-0 shadow-sm" style="background: linear-gradient(135deg, #00b894, #55efc4);">
+                <div class="card-body py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Total Payments</small>
+                            <h4 class="mb-0 fw-bold">{{ money(total_payments_received|default(0)) }}</h4>
+                        </div>
+                        <i class="bi bi-cash-stack fs-1 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Overdue Loans Alert -->
     {% if overdue_loans_list %}
@@ -103,7 +163,8 @@
                         <tbody>
                             {% for loan in active_loans %}
                             <tr>
-                                <td>{{ loan["user"]["full_name"]or loan["user"]["email"]}}</td>
+                                <td>{{ loan["member"]["full_name"]or loan["member"]["email"]}}</td>
+                                {{ loan.member.full_name or loan.member.email or loan.user.full_name or loan.user.email or 'Unknown' }}
                                 <td>{{ money(loan["amount"]) }}</td>
                                 <td class="text-success">{{ money(loan["total_paid"]) }}</td>
                                 <td class="text-warning">{{ money(loan["outstanding"]) }}</td>

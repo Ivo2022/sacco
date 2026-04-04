@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for Membership{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Membership Application</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Membership Benefits:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Access to affordable loans</li>
+                        <li>Dividend payments on shares</li>
+                        <li>Voting rights in SACCO decisions</li>
+                        <li>Savings with competitive interest</li>
+                    </ul>
+                </div>
+
+                <form method="post" action="/membership/apply">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        By applying for membership, you agree to:
+                        <ul class="mb-0 mt-2">
+                            <li>Pay a one-time membership fee of UGX 50,000 upon approval</li>
+                            <li>Purchase minimum shares as per SACCO policy</li>
+                            <li>Abide by the SACCO bylaws and regulations</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/member/dashboard" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send me-1"></i>Submit Application
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
-from fastapi import Request, HTTPException, Depends
+from fastapi import Request, HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from typing import Optional, TYPE_CHECKING, cast, List, Any
+from typing import Optional, TYPE_CHECKING, cast, List, Any, Union
 
 from ..core.database import get_db
 from ..schemas import RoleEnum
@@ -43,25 +43,39 @@ async def require_auth(
         raise HTTPException(status_code=401, detail="Not authenticated")
     return user
 
-def require_role(role: RoleEnum):
-    """Require a specific role"""
-    async def inner(
-        user: "User" = Depends(get_current_user)
-    ) -> "User":
-        # Check if user exists
+def require_role(allowed_roles: Union[RoleEnum, List[RoleEnum]]):
+    """
+    Dependency to require specific role(s).
+    Can accept a single role or a list of roles.
+    """
+    # Convert single role to list for uniform handling
+    if not isinstance(allowed_roles, list):
+        allowed_roles = [allowed_roles]
+    from ..models import User  # Import inside function to avoid circular import
+    def inner(
+        request: Request,
+        db: Session = Depends(get_db),
+        user: User = Depends(get_current_user)
+    ):
         if not user:
-            raise HTTPException(status_code=401, detail="Not authenticated")
-        
-        # Normalize both roles for comparison
-        user_role = normalize_role(user.role)
-        expected_role = normalize_role(role)
-        
-        if user_role != expected_role:
             raise HTTPException(
-                status_code=403, 
-                detail=f"Role {role.value} required. Your role: {user_role}"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+                headers={"WWW-Authenticate": "Bearer"},
             )
+        
+        # Get user role as string for comparison
+        user_role = str(user.role).replace("RoleEnum.", "")
+        allowed_role_names = [str(role).replace("RoleEnum.", "") for role in allowed_roles]
+        
+        if user_role not in allowed_role_names:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role {', '.join(allowed_role_names)} required. Your role: {user_role}"
+            )
+        
         return user
+    
     return inner
 
 # ============ ROLE-SPECIFIC DEPENDENCIES ============
@@ -332,5 +346,77 @@ async def can_view_all_transactions(
         raise HTTPException(
             status_code=403, 
             detail="You don't have permission to view all transactions"
+        )
+    return user
+	
+# permissions.py
+ROLE_PERMISSIONS = {
+    "MANAGER": [
+        "view_dashboard",
+        "approve_loans",
+        "manage_members",
+        "view_reports",
+        "view_analytics",
+        "manage_staff",
+        "view_transactions",
+        "manage_shares",
+        "declare_dividends",
+        "view_logs"
+    ],
+    "ACCOUNTANT": [
+        "view_dashboard",
+        "manage_transactions",
+        "view_reports",
+        "approve_deposits"
+    ],
+    "CREDIT_OFFICER": [
+        "view_dashboard",
+        "manage_loans",
+        "send_reminders",
+        "view_loan_reports"
+    ],
+    "MEMBER": [
+        "view_own_savings",
+        "view_profile",
+        "view_membership_status"
+    ],
+    "SUPER_ADMIN": ["*"]   # full access
+}
+
+def get_user_permissions(user):
+    """Return list of permission strings for the given user."""
+    if not user:
+        return []
+    role = user.get("role", "").upper().replace("ROLEENUM.", "").replace("_", "")
+    perms = ROLE_PERMISSIONS.get(role, [])
+    if "*" in perms:
+        return ["*"]   # super admin has everything
+    return perms
+
+
+def require_shares_enabled(
+    request: Request = None,
+    user: "User" = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> "User":
+    """Dependency to ensure shares feature is enabled for user's SACCO"""
+    if not user or not user.sacco or not user.sacco.shares_enabled:
+        raise HTTPException(
+            status_code=403,
+            detail="Shares system is not enabled for your SACCO. Please contact your administrator."
+        )
+    return user
+
+
+def require_dividends_enabled(
+    request: Request = None,
+    user: "User" = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> "User":
+    """Dependency to ensure dividends feature is enabled for user's SACCO"""
+    if not user or not user.sacco or not user.sacco.dividends_enabled:
+        raise HTTPException(
+            status_code=403,
+            detail="Dividends system is not enabled for your SACCO. Please contact your administrator."
         )
     return user

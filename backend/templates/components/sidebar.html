@@ -1,0 +1,366 @@
+{% from "components/permissions.html" import can %}
+
+{# Determine if user is MANAGER #}
+{% set user_role = user.get("role", "")|upper|replace("ROLEENUM.", "")|replace("_", "") if user else "" %}
+{% set is_manager = user_role == "MANAGER" %}
+
+{# Desktop Sidebar - Only for Manager Role #}
+{% if is_manager %}
+<div class="sidebar-desktop d-none d-lg-flex flex-column bg-white border-end" id="desktopSidebar" style="width: 260px; height: 100vh; position: fixed; top: 0; left: 0; z-index: 1020; display: flex; flex-direction: column;">
+<div class="p-3 border-bottom bg-white" style="flex-shrink: 0;">
+    <div class="d-flex align-items-center justify-content-between">
+        <div class="sidebar-logo-container d-flex align-items-center gap-2" 
+             id="sidebarLogoContainer" 
+             style="cursor: pointer; transition: all 0.2s ease;">
+            <div class="logo-icon" style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #0052cc, #00b894); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; transition: all 0.3s ease;">
+                <i class="bi bi-bank2 fs-5"></i>
+            </div>
+            <div class="sidebar-branding">
+                <h5 class="fw-bold mb-0" style="font-size: 0.95rem;">CheonTec</h5>
+                <small class="text-muted" style="font-size: 0.75rem;">SACCO Platform</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <div class="user-profile-card p-3 border-bottom" style="background: linear-gradient(135deg, #f0f4ff, #f8fbff); flex-shrink: 0;">
+        <div class="d-flex align-items-center gap-2">
+            <div class="user-avatar" style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white;">
+                <i class="bi bi-person-circle fs-6"></i>
+            </div>
+            <div class="flex-grow-1 sidebar-user-info" style="min-width: 0;">
+                <h6 class="mb-0 fw-semibold" style="font-size: 0.85rem;">{{ user.get("full_name") or user.get("email") }}</h6>
+                <small class="text-muted d-block" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ user.get("role", "").replace("RoleEnum.", "")|title }}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav p-3" id="sidebarNavDesktop" style="flex: 1; overflow-y: auto;">
+        {% for section in menu_config %}
+        <div class="nav-section mb-3">
+            <div class="section-header d-flex align-items-center gap-2 mb-2 ps-1">
+                <div class="section-icon" style="font-size: 0.85rem; color: #667eea;">
+                    <i class="bi bi-{{ section.icon if section.icon else 'grid' }}"></i>
+                </div>
+                <h6 class="section-title mb-0 fw-semibold text-uppercase text-muted" style="font-size: 0.65rem;">{{ section.section }}</h6>
+            </div>
+            <div class="section-content" id="section-desktop-{{ loop.index }}">
+                {% for item in section['items'] %}
+                    {% if can(item.permission, permissions) %}
+                    <a href="{{ item.url }}" class="nav-item d-flex align-items-center gap-2 px-2 py-2 rounded-2 mb-1 text-decoration-none text-dark {% if current_path == item.url %}active-nav{% endif %}" style="font-size: 0.85rem; transition: all 0.2s ease;">
+                        <div class="nav-icon" style="min-width: 24px; text-align: center;">
+                            <i class="bi {{ item.icon if item.icon else 'bi-circle' }}" style="font-size: 0.9rem;"></i>
+                        </div>
+                        <span class="nav-label flex-grow-1" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.name }}</span>
+                        {% if item.badge %}<span class="badge bg-danger rounded-pill" style="font-size: 0.6rem; padding: 2px 4px;">{{ item.badge }}</span>{% endif %}
+                    </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </nav>
+
+    <div class="sidebar-footer p-2 border-top bg-light" style="flex-shrink: 0;">
+        <div class="d-grid gap-1">
+            <a href="/member/profile" class="btn btn-sm btn-outline-primary rounded-2 sidebar-footer-btn" style="font-size: 0.75rem; padding: 0.4rem 0.5rem;">
+                <i class="bi bi-person" style="font-size: 0.7rem;"></i>
+                <span class="btn-label ms-2">Profile</span>
+            </a>
+            <a href="/auth/logout" class="btn btn-sm btn-danger rounded-2 sidebar-footer-btn" style="font-size: 0.75rem; padding: 0.4rem 0.5rem;">
+                <i class="bi bi-box-arrow-right" style="font-size: 0.7rem;"></i>
+                <span class="btn-label ms-2">Logout</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# Mobile Offcanvas Sidebar - Only for Manager Role #}
+{% if is_manager %}
+<div class="offcanvas offcanvas-start modern-sidebar" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+    <div class="offcanvas-header border-bottom bg-white py-3">
+        <div class="d-flex align-items-center gap-2">
+            <div class="sidebar-logo">
+                <div class="logo-icon" style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #0052cc, #00b894); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <i class="bi bi-bank2 fs-5"></i>
+                </div>
+            </div>
+            <div>
+                <h5 class="offcanvas-title fw-bold mb-0" id="sidebarMenuLabel" style="font-size: 1rem;">CheonTec SACCO</h5>
+                <small class="text-muted" style="font-size: 0.7rem;">Management Platform</small>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-dark" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    
+    <div class="offcanvas-body p-0">
+        {# User Profile Section #}
+        <div class="user-profile-card p-3 border-bottom bg-gradient">
+            <div class="d-flex align-items-center gap-3">
+                <div class="user-avatar">
+                    <i class="bi bi-person-circle fs-1"></i>
+                </div>
+                <div class="user-info flex-grow-1">
+                    <h6 class="mb-0 fw-semibold">{{ user.get("full_name") or user.get("email") }}</h6>
+                    <small class="text-muted">
+                        <i class="bi bi-briefcase me-1"></i>
+                        {{ user.get("role", "").replace("RoleEnum.", "")|title }}
+                    </small>
+                    <div class="mt-1">
+                        <span class="badge bg-success-subtle text-success rounded-pill">
+                            <i class="bi bi-check-circle-fill me-1 small"></i>Active
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Modern Search Bar #}
+        <div class="search-wrapper p-3 border-bottom">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control border-start-0 ps-0" 
+                       placeholder="Search menu..." id="sidebarSearch">
+            </div>
+        </div>
+
+        {# Dynamic Navigation Menu #}
+        <nav class="sidebar-nav p-3">
+            {% for section in menu_config %}
+            <div class="nav-section mb-3">
+                <div class="section-header d-flex align-items-center gap-2 mb-2 ps-1">
+                    <div class="section-icon">
+                        <i class="bi bi-{{ section.icon if section.icon else 'grid' }}"></i>
+                    </div>
+                    <h6 class="section-title mb-0 fw-semibold text-uppercase small text-muted">
+                        {{ section.section }}
+                    </h6>
+                </div>
+                
+                <div class="section-content">
+                    {% for item in section['items'] %}
+                        {% if can(item.permission, permissions) %}
+                        <a href="{{ item.url }}" 
+                           class="nav-item d-flex align-items-center gap-3 px-3 py-2 rounded-2 mb-1 text-decoration-none
+                                  {% if current_path == item.url %}active bg-primary bg-opacity-10 text-primary{% else %}text-dark hover-bg-light{% endif %}"
+                           data-bs-dismiss="offcanvas">
+                            <div class="nav-icon">
+                                <i class="bi {{ item.icon if item.icon else 'bi-circle' }} fs-6"></i>
+                            </div>
+                            <span class="nav-label flex-grow-1 small fw-500">{{ item.name }}</span>
+                            {% if item.badge %}
+                            <span class="badge bg-danger rounded-pill small">{{ item.badge }}</span>
+                            {% endif %}
+                            {% if item.coming_soon %}
+                            <span class="badge bg-warning text-dark rounded-pill small">Soon</span>
+                            {% endif %}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </nav>
+
+        {# Bottom Actions #}
+        <div class="sidebar-footer mt-auto p-3 border-top">
+            <div class="d-grid gap-2">
+                <a href="/member/profile" class="btn btn-outline-primary btn-sm rounded-pill" data-bs-dismiss="offcanvas">
+                    <i class="bi bi-person me-2"></i>Profile Settings
+                </a>
+                <a href="/auth/logout" class="btn btn-danger btn-sm rounded-pill">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+/* Only show styles if sidebar exists */
+.active-nav {
+    background: linear-gradient(135deg, #e8ecff, #f0f3ff) !important;
+    color: #667eea !important;
+}
+
+.nav-item:hover {
+    background: #f5f8ff !important;
+    transform: translateX(3px);
+}
+
+/* Sidebar collapsed state */
+.sidebar-desktop.collapsed {
+    width: 64px !important;
+    min-width: 64px !important;
+}
+
+.sidebar-desktop.collapsed .section-title,
+.sidebar-desktop.collapsed .nav-label,
+.sidebar-desktop.collapsed .user-profile-card,
+.sidebar-desktop.collapsed .search-wrapper,
+.sidebar-desktop.collapsed .sidebar-branding {
+    display: none !important;
+}
+
+.sidebar-desktop.collapsed .nav-item {
+    justify-content: center;
+    padding: 0.5rem !important;
+    margin: 0.25rem auto !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 10px !important;
+}
+
+.sidebar-desktop.collapsed .nav-item .nav-icon {
+    margin: 0 !important;
+    min-width: auto !important;
+}
+
+.sidebar-desktop.collapsed .nav-item .nav-icon i {
+    font-size: 1.2rem !important;
+}
+
+.sidebar-desktop.collapsed .section-header {
+    justify-content: center;
+}
+
+.sidebar-desktop.collapsed .section-header .section-icon i {
+    font-size: 1.1rem !important;
+}
+
+.sidebar-desktop.collapsed .section-header .section-title {
+    display: none;
+}
+
+/* ===== FOOTER BUTTONS IN COLLAPSED STATE ===== */
+.sidebar-desktop.collapsed .sidebar-footer {
+    padding: 0.5rem 0.25rem !important;
+}
+
+.sidebar-desktop.collapsed .sidebar-footer .d-grid {
+    gap: 0.5rem !important;
+}
+
+.sidebar-desktop.collapsed .sidebar-footer-btn {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.sidebar-desktop.collapsed .sidebar-footer-btn .btn-label {
+    display: none !important;
+}
+
+.sidebar-desktop.collapsed .sidebar-footer-btn i {
+    margin: 0 !important;
+    font-size: 1.1rem !important;
+}
+
+/* Tooltip on hover for collapsed buttons */
+.sidebar-desktop.collapsed .sidebar-footer-btn {
+    position: relative;
+}
+
+.sidebar-desktop.collapsed .sidebar-footer-btn:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.sidebar-desktop.collapsed .sidebar-footer-btn:first-child {
+    --tooltip-text: "Profile";
+}
+
+.sidebar-desktop.collapsed .sidebar-footer-btn:last-child {
+    --tooltip-text: "Logout";
+}
+
+/* Alternative: Use title attribute for tooltips */
+.sidebar-desktop.collapsed .sidebar-footer-btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 50px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    z-index: 1000;
+}
+
+/* Optional: Add tooltip using pseudo-element */
+.sidebar-desktop.collapsed .sidebar-footer-btn.profile-btn:hover::after {
+    content: "Profile";
+}
+
+.sidebar-desktop.collapsed .sidebar-footer-btn.logout-btn:hover::after {
+    content: "Logout";
+}
+
+/* Smooth transition for all elements */
+.sidebar-desktop,
+.sidebar-desktop .sidebar-footer-btn,
+.sidebar-desktop .btn-label {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effect on collapsed buttons */
+.sidebar-desktop.collapsed .sidebar-footer-btn:hover {
+    transform: scale(1.05);
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: white !important;
+}
+
+.sidebar-desktop.collapsed .sidebar-footer-btn:hover i {
+    color: white !important;
+}
+</style>
+
+<script>
+    // Double-click logo to toggle sidebar
+    document.getElementById('sidebarLogoContainer')?.addEventListener('dblclick', function() {
+        const sidebar = document.getElementById('desktopSidebar');
+        const contentArea = document.querySelector('.content-area-with-sidebar');
+        
+        sidebar.classList.toggle('collapsed');
+        if (contentArea) {
+            contentArea.classList.toggle('sidebar-collapsed');
+        }
+        
+        localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        document.body.classList.toggle('sidebar-collapsed', sidebar.classList.contains('collapsed'));
+    });
+    
+    // Add tooltip titles to buttons for collapsed state
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileBtn = document.querySelector('.sidebar-footer-btn:first-child');
+        const logoutBtn = document.querySelector('.sidebar-footer-btn:last-child');
+        
+        if (profileBtn) profileBtn.setAttribute('title', 'Profile');
+        if (logoutBtn) logoutBtn.setAttribute('title', 'Logout');
+    });
+</script>

@@ -57,8 +57,8 @@
                             <tr>
                                 <td class="ps-3">#{{ deposit.id }}</td>
                                 <td>
-                                    <div class="fw-semibold">{{ deposit.member["full_name"] or deposit.member["email"] }}</div>
-                                    <small class="text-muted">{{ deposit.member["phone"] or 'No phone' }}</small>
+									<div class="fw-semibold">{{ deposit.member_name or deposit.member_email or 'Member' }}</div>
+									<small class="text-muted">{{ deposit.member_phone or 'No phone' }}</small>
                                 </td>
                                 <td class="fw-bold text-primary">{{ money(deposit.amount) }}</td>
                                 <td>
@@ -89,7 +89,7 @@
                                                 <div class="mb-3">
                                                     <label class="form-label">Deposit Details</label>
                                                     <div class="alert alert-info">
-                                                        <strong>Member:</strong> {{ deposit.member["full_name"] or deposit.member["email"] }}<br>
+                                                        <strong>Member:</strong> {{ deposit.member_name or deposit.member_email or 'Member' }}<br>
                                                         <strong>Amount:</strong> {{ money(deposit.amount) }}<br>
                                                         <strong>Method:</strong> {{ deposit.payment_method }}<br>
                                                         <strong>Reference:</strong> {{ deposit.reference_number or 'N/A' }}

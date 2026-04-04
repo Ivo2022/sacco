@@ -73,7 +73,7 @@
                         </div>
                         <div class="mb-2">
                             <strong><i class="bi bi-calendar3"></i> Joined:</strong><br>
-                            {{ local_time(manager.created_at.strftime('%B %d, %Y at %H:%M')) }}
+                            {{ local_time(manager.created_at) }}
                         </div>
                         <div class="mb-2">
                             <strong><i class="bi bi-people"></i> Username:</strong><br>
@@ -221,7 +221,7 @@
                                                 <span class="badge bg-danger">Inactive</span>
                                             {% endif %}
                                         </td>
-                                        <td class="small">{{ local_time(staff_member.created_at.strftime('%Y-%m-%d')) }}</td>
+                                        <td class="small">{{ local_time(staff_member.created_at) }}</td>
                                         <td>
                                             <a href="/superadmin/staff/{{ staff_member.id }}" 
                                                class="btn btn-sm btn-outline-primary">

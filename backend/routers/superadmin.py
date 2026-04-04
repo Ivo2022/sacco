@@ -1,17 +1,19 @@
 # backend/routers/superadmin.py
+from tempfile import template
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from ..core.dependencies import get_db, require_superadmin
-from ..models import RoleEnum, Log, User, Sacco, Saving, Loan
+from ..models import RoleEnum, Log, User, Sacco, Saving, Loan, LoanPayment
 from typing import Optional
 import logging
-from ..utils.helpers import get_template_helpers
+from ..utils.helpers import get_template_helpers, get_active_users_today, get_user_activity_stats
 from ..services.user_service import create_user
 from ..services.sacco_service import create_sacco
-from ..utils import create_log
+from ..utils import create_log, log_user_action, get_recent_activities
 from datetime import datetime, timedelta
+from ..core.context import get_template_context
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -133,7 +135,7 @@ def serialize_loan(loan: Loan) -> dict:
 def dashboard(request: Request, user=Depends(require_superadmin), db: Session = Depends(get_db)):
     """Super admin dashboard with overview of all SACCOs and managers"""
     templates = request.app.state.templates
-
+    activity_stats = get_user_activity_stats(db)
     saccos_orm = db.query(Sacco).order_by(Sacco.name).all()
     saccos = [serialize_sacco(s) for s in saccos_orm]
 
@@ -148,19 +150,45 @@ def dashboard(request: Request, user=Depends(require_superadmin), db: Session = 
             User.role == RoleEnum.MEMBER
         ).count()
 
+    # Get activity stats
+    activity_stats = get_user_activity_stats(db)
+    
+    # Get other stats
+    total_saccos = db.query(Sacco).count()
+    total_users = db.query(User).count()
+    active_saccos = db.query(Sacco).filter(Sacco.status == 'active').count()
+    
+    # Get recent activities
+    recent_activities = get_recent_activities(db, user, limit=10)
+    
+    # Get today's logins
+    today_logins = db.query(Log).filter(
+        Log.action == "USER_LOGIN",
+        Log.timestamp >= datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    ).count()
+
     users_orm = db.query(User).order_by(User.created_at.desc()).all()
     users = [serialize_user_full(u) for u in users_orm]
 
     helpers = get_template_helpers()
-    context = {
+    base_context = get_template_context(request, user)
+    page_context = {
         "request": request,
+        "total_saccos": total_saccos,
+        "total_users": total_users,
+        "active_saccos": active_saccos,
+        "active_users_today": activity_stats["active_today"],
+        "new_users_today": activity_stats["new_users_today"],
+        "today_logins": today_logins,
+        "recent_activities": recent_activities,		
         "user": serialize_user_full(user),
         "saccos": saccos,
         "users": users,
         "show_admin_controls": True,
         **helpers,
     }
-    return templates.TemplateResponse(request, "superadmin/dashboard.html", context)
+    final_context = {**base_context, **page_context}
+    return templates.TemplateResponse(request, "superadmin/dashboard.html", final_context)
 
 
 @router.post("/superadmin/sacco/create")
@@ -215,9 +243,9 @@ def list_managers(
         managers.append(m_dict)
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "managers": managers,
         "show_admin_controls": True,
         **helpers,
@@ -453,9 +481,9 @@ def view_manager(
     ).scalar() or 0
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "manager": manager,
         "sacco": sacco,
         "staff": staff,
@@ -513,9 +541,9 @@ def view_sacco(
     ).scalar() or 0
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "sacco": sacco,
         "manager": manager,
         "staff": staff,
@@ -550,9 +578,9 @@ def manage_saccos(request: Request, user=Depends(require_superadmin), db: Sessio
         s_dict["members_count"] = members_count
         saccos.append(s_dict)
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "saccos": saccos,
         "show_admin_controls": True,
         **helpers
@@ -571,12 +599,14 @@ def manage_staff(request: Request, user=Depends(require_superadmin), db: Session
     credit_officers_orm = db.query(User).filter(User.role == RoleEnum.CREDIT_OFFICER).order_by(User.created_at.desc()).all()
     credit_officers = [serialize_user_full(c) for c in credit_officers_orm]
 
+    helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "accountants": accountants,
         "credit_officers": credit_officers,
         "show_admin_controls": True,
+        **helpers,
     }
     return templates.TemplateResponse(request,"superadmin/staff.html", context)
 
@@ -598,13 +628,15 @@ def edit_sacco_form(
 
     sacco = serialize_sacco(sacco_orm)
 
+    helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "sacco": sacco,
 		"csrf_token": csrf_token,
         "show_admin_controls": True,
-		"errors":{}
+		"errors":{},
+        **helpers,
     }
     return templates.TemplateResponse(request,"superadmin/sacco_edit.html", context)
 
@@ -743,9 +775,9 @@ def superadmin_logs(
         ).scalar()
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "logs": logs,
         "action_filter": action,
         "user_filter": user_id,
@@ -840,3 +872,158 @@ def export_logs(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.get("/superadmin/insights/dashboard", response_class=HTMLResponse)
+def superadmin_insights_dashboard(
+    request: Request,
+    db: Session = Depends(get_db),
+    user=Depends(require_superadmin)
+):
+    """Super Admin Insights Dashboard - Platform-wide analytics."""
+        # Get templates from request state
+    templates = request.app.state.templates  # <-- Add this line
+
+    # Serialize user
+    user_dict = serialize_user_full(user)
+    
+    # Get RBAC context
+    base_context = get_template_context(request, user_dict)
+    
+    # ========== PLATFORM OVERVIEW ==========
+    
+    # Total counts across all SACCOs
+    total_saccos = db.query(Sacco).count()
+    total_members = db.query(User).filter(User.role == RoleEnum.MEMBER).count()
+    total_staff = db.query(User).filter(
+        User.role.in_([RoleEnum.MANAGER, RoleEnum.ACCOUNTANT, RoleEnum.CREDIT_OFFICER])
+    ).count()
+    total_managers = db.query(User).filter(User.role == RoleEnum.MANAGER).count()
+    
+    # ========== FINANCIAL METRICS ==========
+    
+    # Total loan portfolio
+    total_loans_disbursed = db.query(func.sum(Loan.amount)).filter(
+        Loan.status.in_(['active', 'completed', 'approved'])
+    ).scalar() or 0
+    
+    total_interest_earned = db.query(func.sum(Loan.total_interest)).filter(
+        Loan.status.in_(['completed', 'active'])
+    ).scalar() or 0
+    
+    total_payments_received = db.query(func.sum(LoanPayment.amount)).scalar() or 0
+    
+    total_savings = db.query(func.sum(Saving.amount)).scalar() or 0
+    
+    # ========== LOAN PERFORMANCE ==========
+    
+    # Loans by status
+    active_loans = db.query(Loan).filter(Loan.status == 'active').count()
+    pending_loans = db.query(Loan).filter(Loan.status == 'pending').count()
+    overdue_loans = db.query(Loan).filter(Loan.status == 'overdue').count()
+    completed_loans = db.query(Loan).filter(Loan.status == 'completed').count()
+    
+    # Calculate repayment rate
+    if total_loans_disbursed > 0:
+        repayment_rate = (total_payments_received / total_loans_disbursed) * 100
+    else:
+        repayment_rate = 0
+    
+    # ========== GROWTH METRICS ==========
+    
+    # New members this month
+    month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    new_members_this_month = db.query(User).filter(
+        User.role == RoleEnum.MEMBER,
+        User.created_at >= month_start
+    ).count()
+    
+    # New members this week
+    week_start = datetime.utcnow() - timedelta(days=7)
+    new_members_this_week = db.query(User).filter(
+        User.role == RoleEnum.MEMBER,
+        User.created_at >= week_start
+    ).count()
+    
+    # ========== RECENT ACTIVITIES ==========
+    
+    # Recent loan applications
+    recent_loans = db.query(Loan).order_by(desc(Loan.timestamp)).limit(10).all()
+    
+    # Recent user registrations
+    recent_users = db.query(User).filter(
+        User.role == RoleEnum.MEMBER
+    ).order_by(desc(User.created_at)).limit(10).all()
+    
+    # ========== SACCO PERFORMANCE ==========
+    
+    # Top performing SACCOs by loan volume
+    top_saccos = db.query(
+        Sacco.id,
+        Sacco.name,
+        func.count(Loan.id).label('loan_count'),
+        func.sum(Loan.amount).label('total_loans')
+    ).outerjoin(Loan, Sacco.id == Loan.sacco_id).group_by(Sacco.id).order_by(desc('total_loans')).limit(5).all()
+    
+    # ========== CHART DATA ==========
+    
+    # Monthly loan disbursements (last 12 months)
+    monthly_data = []
+    for i in range(11, -1, -1):
+        month_date = datetime.utcnow().replace(day=1) - timedelta(days=30 * i)
+        month_start = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if month_date.month == 12:
+            next_month = month_date.replace(year=month_date.year + 1, month=1, day=1)
+        else:
+            next_month = month_date.replace(month=month_date.month + 1, day=1)
+        
+        monthly_amount = db.query(func.sum(Loan.amount)).filter(
+            Loan.timestamp >= month_start,
+            Loan.timestamp < next_month
+        ).scalar() or 0
+        
+        monthly_data.append({
+            "month": month_date.strftime("%b %Y"),
+            "amount": float(monthly_amount)
+        })
+    helpers = get_template_helpers()
+    page_context = {
+        # Platform overview
+        "total_saccos": total_saccos,
+        "total_members": total_members,
+        "total_staff": total_staff,
+        "total_managers": total_managers,
+        
+        # Financial metrics
+        "total_loans_disbursed": total_loans_disbursed,
+        "total_interest_earned": total_interest_earned,
+        "total_payments_received": total_payments_received,
+        "total_savings": total_savings,
+        
+        # Loan performance
+        "active_loans": active_loans,
+        "pending_loans": pending_loans,
+        "overdue_loans": overdue_loans,
+        "completed_loans": completed_loans,
+        "repayment_rate": round(repayment_rate, 2),
+        
+        # Growth metrics
+        "new_members_this_month": new_members_this_month,
+        "new_members_this_week": new_members_this_week,
+        
+        # Recent items
+        "recent_loans": recent_loans,
+        "recent_users": recent_users,
+        
+        # Top SACCOs
+        "top_saccos": top_saccos,
+        
+        # Chart data
+        "monthly_loan_data": monthly_data,
+        
+        "page_title": "Platform Insights Dashboard",
+        **helpers
+    }
+    
+    final_context = {**base_context, **page_context}
+    
+    return templates.TemplateResponse(request,"superadmin/insights_dashboard.html", final_context)

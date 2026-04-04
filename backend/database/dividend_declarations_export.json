@@ -1,0 +1,15 @@
+[
+  {
+    "id": 1,
+    "sacco_id": 1,
+    "share_type_id": 1,
+    "declared_date": "2026-04-04 11:40:46.026398",
+    "fiscal_year": 2026,
+    "rate": 8.0,
+    "amount_per_share": 800.0,
+    "total_dividend_pool": 8000.0,
+    "payment_date": "2026-05-04 11:40:46.026946",
+    "declared_by": 1,
+    "status": "pending"
+  }
+]

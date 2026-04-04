@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Share Transaction History{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Share Transaction History</h4>
+                <a href="/shares/subscribe" class="btn btn-light btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Buy More Shares
+                </a>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Transaction Type</th>
+                                <th>Quantity</th>
+                                <th>Price/Share</th>
+                                <th>Total Amount</th>
+                                <th>Payment Method</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in transactions %}
+                            <tr>
+                                <td>{{ local_time(tx.transaction_date) }}</td>
+                                <td>
+                                    <span class="badge {% if tx.transaction_type == 'subscription' %}bg-success{% elif tx.transaction_type == 'transfer' %}bg-info{% else %}bg-warning{% endif %}">
+                                        {{ tx.transaction_type|replace('_', ' ')|title }}
+                                    </span>
+                                </td>
+                                <td>{{ tx.quantity }}</td>
+                                <td>UGX {{ money(tx.price_per_share)}}</td>
+                                <td>UGX {{ money(tx.total_amount) }}</td>
+                                <td>{{ tx.payment_method|default('N/A')|replace('_', ' ')|title }}</td>
+                                <td>
+                                    {% if tx.approved_at %}
+                                        <span class="badge bg-success">Approved</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if total_pages > 1 %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page - 1 }}&per_page={{ per_page }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for p in range(1, total_pages + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="?page={{ p }}&per_page={{ per_page }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        
+                        {% if page < total_pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page + 1 }}&per_page={{ per_page }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                    <h5>No transactions found</h5>
+                    <p>You haven't made any share transactions yet.</p>
+                    <a href="/shares/subscribe" class="btn btn-primary">Subscribe to Shares</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Membership Status{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0">Membership Status</h4>
+            </div>
+            <div class="card-body">
+                {% if application %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Application Date:</strong><br>
+                        {{ local_time(application.application_date) }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong><br>
+                        {% if application.status == 'pending' %}
+                            <span class="badge bg-warning">Pending Approval</span>
+                        {% elif application.status == 'active' %}
+                            <span class="badge bg-success">Active Member</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ application.status|upper }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if application.membership_number %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <strong>Membership Number:</strong><br>
+                        <code class="fs-5">{{ application.membership_number }}</code>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if application.approved_at %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <strong>Approved On:</strong><br>
+                        {{ local_time(application.approved_at) }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if fee_payment %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-success">
+                            <strong>✓ Membership Fee Paid</strong><br>
+                            Amount: UGX {{ money(fee_payment.amount) }}<br>
+                            Paid On: {{ local_time(fee_payment.paid_at) }}
+                        </div>
+                    </div>
+                </div>
+                {% elif application.status == 'active' %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <strong>⚠ Membership Fee Not Yet Paid</strong><br>
+                            You need to pay your membership fee to activate your account.
+                            <a href="/membership/fee/pay" class="btn btn-primary btn-sm mt-2">Pay Now</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="alert alert-info">
+                    You have not submitted a membership application yet.
+                    <a href="/membership/apply" class="btn btn-primary btn-sm mt-2">Apply Now</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

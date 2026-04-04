@@ -1,0 +1,59 @@
+{# components/menu_macros.html #}
+{% from "components/permissions.html" import can %}
+
+{% macro render_desktop_menu(menu_config, permissions, current_path) %}
+    {% set total_sections = menu_config|length %}
+    {% set total_items = 0 %}
+    {% for section in menu_config %}
+        {% set total_items = total_items + section['items']|length %}
+    {% endfor %}
+    
+    {# Determine menu style based on content #}
+    {% if total_sections <= 2 and total_items <= 6 %}
+        {# Regular dropdown for few items #}
+        <div class="dropdown-menu dropdown-menu-end p-2 shadow" style="min-width: 250px;">
+            {% for section in menu_config %}
+                <h6 class="dropdown-header text-primary">{{ section.section }}</h6>
+                {% for item in section['items'] %}
+                    {% if can(item.permission, permissions) %}
+                        <a class="dropdown-item {% if current_path == item.url %}active{% endif %}" 
+                           href="{{ item.url }}">
+                            {% if item.icon %}<i class="bi {{ item.icon }} me-2"></i>{% endif %}
+                            {{ item.name }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                {% if not loop.last %}<div class="dropdown-divider"></div>{% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        {# Mega menu for many items #}
+        <div class="dropdown-menu dropdown-menu-end p-3 shadow" style="width: 850px;">
+            <div class="row">
+                {% set cols = 4 if total_sections >= 4 else total_sections %}
+                {% set sections_per_col = ((total_sections + cols - 1) // cols) %}
+                
+                {% for col in range(cols) %}
+                    <div class="col-md-{{ 12 // cols }}">
+                        {% set start = col * sections_per_col %}
+                        {% set end = start + sections_per_col %}
+                        {% for section in menu_config[start:end] %}
+                            <div class="mb-3">
+                                <h6 class="dropdown-header text-primary px-0">{{ section.section }}</h6>
+                                {% for item in section['items'] %}
+                                    {% if can(item.permission, permissions) %}
+                                        <a class="dropdown-item px-0 {% if current_path == item.url %}active{% endif %}" 
+                                           href="{{ item.url }}">
+                                            {% if item.icon %}<i class="bi {{ item.icon }} me-2"></i>{% endif %}
+                                            {{ item.name }}
+                                        </a>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endmacro %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Declare Dividend{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Declare Dividend</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Important:</strong> Dividends are declared annually after the fiscal year ends. The dividend rate is applied to the total share value held by members.
+                </div>
+                
+                <form method="post" action="/admin/dividends/declare">
+                    <div class="mb-3">
+                        <label class="form-label">Fiscal Year</label>
+                        <input type="number" class="form-control" name="fiscal_year" value="{{ now.year - 1 }}" required>
+                        <small class="text-muted">Typically the previous year (e.g., 2025 for the year ending 2025)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Share Type (Optional)</label>
+                        <select class="form-select" name="share_type_id">
+                            <option value="">All Share Types</option>
+                            {% for st in share_types %}
+                            <option value="{{ st.id }}">{{ st.name }} ({{ st.dividend_rate }}% default rate)</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Leave blank to apply to all share types</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Dividend Rate (%)</label>
+                        <input type="number" class="form-control" name="rate" step="0.5" required placeholder="e.g., 5.0 for 5%">
+                        <small class="text-muted">Percentage of share value to be distributed as dividends</small>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> Declaring a dividend will calculate the total payout based on current share holdings. You can review and approve payments afterward.
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/admin/dividends/history" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Confirm dividend declaration? This will create dividend entitlements for all eligible members.')">
+                            <i class="bi bi-megaphone me-1"></i>Declare Dividend
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

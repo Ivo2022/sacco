@@ -24,6 +24,8 @@ from .core import (
     settings,
     init_db,
     SACCOStatusMiddleware,
+	ActivityTrackingMiddleware
+
 )
 from .core.database import engine, get_db_session, SessionLocal
 
@@ -40,7 +42,12 @@ from .routers import (
     accountant,
     credit_officer,
     switch_account,
-    home
+    home,
+	membership,
+	share,
+	dividend,
+	sacco_settings,
+    insights
 )
 
 # Configure logging
@@ -88,7 +95,7 @@ app.add_middleware(
 
 # SACCO status middleware
 app.add_middleware(SACCOStatusMiddleware)
-
+app.add_middleware(ActivityTrackingMiddleware)
 
 # =============================================================================
 # STATIC FILES CONFIGURATION
@@ -139,7 +146,11 @@ app.include_router(accountant.router, prefix="", tags=["Accountant"])
 app.include_router(credit_officer.router, prefix="", tags=["Credit Officer"])
 app.include_router(switch_account.router, prefix="", tags=["Switch Account"])
 app.include_router(home.router, tags=["Home"])
-
+app.include_router(membership.router, prefix="", tags=["Membership"])
+app.include_router(share.router, prefix="", tags=["Share Capital"])
+app.include_router(dividend.router, prefix="", tags=["Dividends"])
+app.include_router(sacco_settings.router, prefix="", tags=["SACCO Settings"])
+app.include_router(insights.router, prefix="", tags=["Insights"])
 
 # =============================================================================
 # APPLICATION LIFECYCLE EVENTS
@@ -257,6 +268,75 @@ async def health_check():
             "error": str(e)
         }
 
+@app.get("/health/detailed")
+async def detailed_health():
+    """Detailed health check with connection pool stats"""
+    from sqlalchemy import inspect
+    from database.session import engine
+    
+    pool = engine.pool
+    return {
+        "status": "healthy",
+        "database": "postgresql",
+        "pool_size": pool.size(),
+        "pool_checked_in": pool.checkedin(),
+        "pool_checked_out": pool.checkedout(),
+        "pool_overflow": pool.overflow(),
+        "pool_total": pool.total()
+    }
+
+@app.get("/download-prospectus")
+async def download_prospectus():
+    """Download the SACCO Management System prospectus PDF"""
+    pdf_path = "SACCO_Prospectus.pdf"
+    
+    # If PDF doesn't exist, generate it on the fly
+    if not os.path.exists(pdf_path):
+        from weasyprint import HTML, CSS
+        from weasyprint.text.fonts import FontConfiguration
+        
+        # Path to HTML template
+        template_path = "prospectus_template.html"
+        
+        if not os.path.exists(template_path):
+            raise HTTPException(status_code=404, detail="Prospectus template not found")
+        
+        # Read HTML template
+        with open(template_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        # Generate PDF
+        print_styles = """
+        @page {
+            size: A4;
+            margin: 2cm;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        body { font-size: 11pt; line-height: 1.4; }
+        h1 { font-size: 24pt; }
+        h2 { font-size: 18pt; page-break-after: avoid; }
+        h3 { font-size: 14pt; }
+        table { page-break-inside: avoid; }
+        """
+        font_config = FontConfiguration()
+        
+        HTML(string=html_content).write_pdf(
+            pdf_path,
+            stylesheets=[CSS(string=print_styles, font_config=font_config)],
+            font_config=font_config
+        )
+    
+    # Return the PDF file
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename="SACCO_Management_System_Prospectus.pdf",
+        headers={"Content-Disposition": "attachment; filename=SACCO_Prospectus.pdf"}
+    )
 
 @app.get("/debug/templates")
 async def debug_templates():

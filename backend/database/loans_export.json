@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "sacco_id": 1,
+    "user_id": 6,
+    "amount": 100000.0,
+    "term": 12,
+    "interest_rate": 12.0,
+    "purpose": "Business",
+    "status": "approved",
+    "timestamp": "2026-04-04 11:40:46.489131",
+    "total_interest": 12000.0,
+    "total_payable": 112000.0,
+    "total_paid": 9333.333333333334,
+    "approved_by": 2,
+    "approved_at": "2026-04-04 11:40:46.510425",
+    "approval_notes": null,
+    "risk_score": 0,
+    "risk_level": "low",
+    "last_risk_assessment": null,
+    "repayment_schedule": null,
+    "eligibility_score": 0
+  }
+]

@@ -75,8 +75,8 @@ def create_db_engine():
             max_overflow=settings.DB_MAX_OVERFLOW,
             pool_timeout=settings.DB_POOL_TIMEOUT,
             pool_recycle=settings.DB_POOL_RECYCLE,
-            pool_pre_ping=True,
-            echo=settings.DEBUG
+            pool_pre_ping=settings.DB_POOL_PRE_PING,
+            echo=False
         )
         logger.info(f"PostgreSQL engine created with pool size {settings.DB_POOL_SIZE}")
         

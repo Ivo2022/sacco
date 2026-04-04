@@ -75,6 +75,62 @@
         </div>
     </div>
 
+    <!-- Loan Metrics Row -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-success text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Active Loans</small>
+                            <h5 class="mb-0 fw-bold">{{ active_loans_count|default(0) }}</h5>
+                        </div>
+                        <i class="bi bi-check-circle-fill fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-danger text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Overdue Loans</small>
+                            <h5 class="mb-0 fw-bold">{{ overdue_loans_count|default(0) }}</h5>
+                        </div>
+                        <i class="bi bi-exclamation-triangle-fill fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card bg-info text-white border-0 shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Interest Earned</small>
+                            <h5 class="mb-0 fw-bold">{{ money(total_interest_earned|default(0)) }}</h5>
+                        </div>
+                        <i class="bi bi-percent fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="card text-white border-0 shadow-sm" style="background-color: #00b894;">
+                <div class="card-body py-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-white-50">Total Payments</small>
+                            <h5 class="mb-0 fw-bold">{{ money(total_payments_received|default(0)) }}</h5>
+                        </div>
+                        <i class="bi bi-cash-stack fs-3 opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-3">
         <!-- Pending Deposits -->
 <!-- Pending Deposits Section - Update the action buttons -->
@@ -101,7 +157,7 @@
                             {% for deposit in pending_deposits[:5] %}
                             <tr>
                                 <td class="ps-3">
-                                    <div class="small fw-semibold">{{ deposit.user["full_name"]or deposit.user.email|truncate(25) }}</div>
+									<div class="small fw-semibold">{{ deposit.member_name or deposit.member_email or 'Member' }}</div>
                                 </td>
                                 <td class="fw-bold text-primary">{{ money(deposit.amount) }}</td>
                                 <td><small>{{ local_time(deposit.timestamp) }}</small></td>
@@ -181,7 +237,7 @@
                                 {% for tx in recent_transactions %}
                                 <tr>
                                     <td class="ps-3"><small>{{ local_time(tx.timestamp) }}</small></td>
-                                    <td><small>{{ tx.user["full_name"]or tx.user.email|truncate(20) }}</small></td>
+                                    <td><small>{{ tx.member_name or tx.member_email or 'Member' }}</small></td>
                                     <td>
                                         {% if tx.type == 'deposit' %}
                                         <span class="badge bg-success">Deposit</span>

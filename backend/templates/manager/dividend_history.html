@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Dividend Declaration History{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Dividend Declaration History</h4>
+                <a href="/admin/dividends/declare" class="btn btn-light btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Declare New Dividend
+                </a>
+            </div>
+            <div class="card-body">
+                {% if declarations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Declaration Date</th>
+                                <th>Fiscal Year</th>
+                                <th>Share Type</th>
+                                <th>Rate</th>
+                                <th>Total Pool</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for decl in declarations %}
+                            <tr>
+                                <td>{{ decl.declared_date|format_date }}</td>
+                                <td>{{ decl.fiscal_year }}</td>
+                                <td>{{ decl.share_type_id or 'All Types' }}</td>
+                                <td>{{ decl.rate }}%</td>
+                                <td>UGX {{ decl.total_dividend_pool|format_money }}</td>
+                                <td>
+                                    {% if decl.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Paid</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if decl.status == 'pending' %}
+                                    <form method="post" action="/admin/dividends/{{ decl.id }}/pay" style="display: inline;">
+                                        <input type="hidden" name="payment_method" value="bank_transfer">
+                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Process dividend payments for this declaration?')">
+                                            <i class="bi bi-credit-card"></i> Process Payments
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted">Paid on {{ decl.payment_date|format_date }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                    <h5>No dividend declarations found</h5>
+                    <p>Click the button above to declare your first dividend.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

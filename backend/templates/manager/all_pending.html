@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+
+{% block title %}All Pending Approvals - Manager Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-0">
+                <i class="bi bi-clock-history text-primary me-2"></i>Pending Approvals
+            </h3>
+            <p class="text-muted mb-0">Review and manage all pending requests in one place</p>
+        </div>
+        <div>
+            <a href="/manager/dashboard" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 bg-primary bg-opacity-10 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Pending Deposits</h6>
+                            <h2 class="mb-0 fw-bold text-primary">{{ pending_deposits_count }}</h2>
+                            <small class="text-muted">UGX {{ money(total_deposits_amount) }}</small>
+                        </div>
+                        <i class="bi bi-cash-stack fs-1 text-primary opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success bg-opacity-10 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Pending Members</h6>
+                            <h2 class="mb-0 fw-bold text-success">{{ pending_members_count }}</h2>
+                            <small class="text-muted">Awaiting approval</small>
+                        </div>
+                        <i class="bi bi-person-plus fs-1 text-success opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-warning bg-opacity-10 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Pending Loans</h6>
+                            <h2 class="mb-0 fw-bold text-warning">{{ pending_loans_count }}</h2>
+                            <small class="text-muted">UGX {{ money(total_loans_amount) }}</small>
+                        </div>
+                        <i class="bi bi-calculator fs-1 text-warning opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-info bg-opacity-10 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Pending</h6>
+                            <h2 class="mb-0 fw-bold text-info">{{ pending_deposits_count + pending_members_count + pending_loans_count }}</h2>
+                            <small class="text-muted">Items to review</small>
+                        </div>
+                        <i class="bi bi-list-check fs-1 text-info opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Deposits Section -->
+    {% if pending_deposits %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-cash-stack text-primary me-2"></i>Pending Deposits
+                </h5>
+                <span class="badge bg-primary">{{ pending_deposits_count }} Pending</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Date</th>
+                            <th>Member</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                            <th>Reference</th>
+                            <th class="pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for deposit in pending_deposits %}
+                        <tr>
+                            <td class="ps-3"><small>{{ local_time(deposit.timestamp) }}</small></td>
+                            <td>
+                                <div class="fw-semibold">{{ deposit.member_name }}</div>
+                                <small class="text-muted">{{ deposit.member_email }}</small>
+                            </td>
+                            <td class="fw-bold text-success">{{ money(deposit.amount) }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ deposit.payment_method|replace('_', ' ')|title }}</span>
+                            </td>
+                            <td><code>{{ deposit.reference_number or 'N/A' }}</code></td>
+                            <td class="pe-3">
+                                <button class="btn btn-sm btn-success me-1" onclick="approveDeposit({{ deposit.id }})">
+                                    <i class="bi bi-check-lg"></i> Approve
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="showRejectDepositModal({{ deposit.id }}, '{{ deposit.member_name }}', {{ deposit.amount }})">
+                                    <i class="bi bi-x-lg"></i> Reject
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pending Members Section -->
+    {% if pending_members %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-plus text-success me-2"></i>Pending Member Approvals
+                </h5>
+                <span class="badge bg-success">{{ pending_members_count }} Pending</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Username</th>
+                            <th>Registered</th>
+                            <th class="pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in pending_members %}
+                        <tr>
+                            <td class="ps-3">
+                                <div class="fw-semibold">{{ member.full_name or 'Not provided' }}</div>
+                            </td>
+                            <td>{{ member.email }}</td>
+                            <td>{{ member.phone or 'Not provided' }}</td>
+                            <td>{{ member.username }}</td>
+                            <td><small>{{ local_time(member.created_at) }}</small></td>
+                            <td class="pe-3">
+                                <form action="/manager/member/{{ member.id }}/approve" method="post" style="display: inline-block;">
+                                    <button type="submit" class="btn btn-sm btn-success me-1" 
+                                            onclick="return confirm('Approve {{ member.full_name or member.email }}?')">
+                                        <i class="bi bi-check-lg"></i> Approve
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#rejectMemberModal{{ member.id }}">
+                                    <i class="bi bi-x-lg"></i> Reject
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Reject Member Modal -->
+                        <div class="modal fade" id="rejectMemberModal{{ member.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form action="/manager/member/{{ member.id }}/reject" method="post">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">Reject Member Registration</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Rejection Reason</label>
+                                                <textarea name="reason" class="form-control" rows="3" required 
+                                                          placeholder="Please provide a reason for rejection..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-danger">Reject Member</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pending Loans Section -->
+    {% if pending_loans %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-calculator text-warning me-2"></i>Pending Loan Approvals
+                </h5>
+                <span class="badge bg-warning">{{ pending_loans_count }} Pending</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Loan ID</th>
+                            <th>Member</th>
+                            <th>Amount</th>
+                            <th>Term</th>
+                            <th>Purpose</th>
+                            <th>Monthly Payment</th>
+                            <th>Date Applied</th>
+                            <th class="pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in pending_loans %}
+                        <tr>
+                            <td class="ps-3">#{{ loan.id }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ loan.member_name }}</div>
+                                <small class="text-muted">{{ loan.member_email }}</small>
+                            </td>
+                            <td class="fw-bold text-primary">{{ money(loan.amount) }}</td>
+                            <td>{{ loan.term }} months</td>
+                            <td>{{ loan.purpose or 'Not specified' }}</td>
+                            <td>{{ money(loan.monthly_payment) }}</td>
+                            <td><small>{{ local_time(loan.timestamp) }}</small></td>
+                            <td class="pe-3">
+                                <button class="btn btn-sm btn-primary me-1" data-bs-toggle="modal" data-bs-target="#reviewLoanModal{{ loan.id }}">
+                                    <i class="bi bi-eye"></i> Review
+                                </button>
+                                <button class="btn btn-sm btn-success me-1" data-bs-toggle="modal" data-bs-target="#approveLoanModal{{ loan.id }}">
+                                    <i class="bi bi-check-lg"></i> Approve
+                                </button>
+                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectLoanModal{{ loan.id }}">
+                                    <i class="bi bi-x-lg"></i> Reject
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Review Loan Modal -->
+                        <div class="modal fade" id="reviewLoanModal{{ loan.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-info text-white">
+                                        <h5 class="modal-title">Loan Application Review</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Member Information</h6>
+                                                <p>
+                                                    <strong>Name:</strong> {{ loan.member_name }}<br>
+                                                    <strong>Email:</strong> {{ loan.member_email }}<br>
+                                                    <strong>Phone:</strong> {{ loan.member_phone or 'Not provided' }}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Loan Details</h6>
+                                                <p>
+                                                    <strong>Amount:</strong> {{ money(loan.amount) }}<br>
+                                                    <strong>Term:</strong> {{ loan.term }} months<br>
+                                                    <strong>Interest Rate:</strong> {{ loan.interest_rate }}%<br>
+                                                    <strong>Total Payable:</strong> {{ money(loan.total_payable) }}<br>
+                                                    <strong>Monthly Payment:</strong> {{ money(loan.monthly_payment) }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <h6>Purpose</h6>
+                                            <p class="alert alert-light">{{ loan.purpose or 'No purpose provided' }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Approve Loan Modal -->
+                        <div class="modal fade" id="approveLoanModal{{ loan.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form action="/manager/loan/{{ loan.id }}/approve" method="post">
+                                        <div class="modal-header bg-success text-white">
+                                            <h5 class="modal-title">Approve Loan</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="alert alert-info">
+                                                <strong>Member:</strong> {{ loan.member_name }}<br>
+                                                <strong>Amount:</strong> {{ money(loan.amount) }}<br>
+                                                <strong>Monthly Payment:</strong> {{ money(loan.monthly_payment) }}
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Approval Notes (Optional)</label>
+                                                <textarea name="approval_notes" class="form-control" rows="3" placeholder="Add any notes about this approval..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-success">Approve Loan</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reject Loan Modal -->
+                        <div class="modal fade" id="rejectLoanModal{{ loan.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form action="/manager/loan/{{ loan.id }}/reject" method="post">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">Reject Loan</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Rejection Reason</label>
+                                                <textarea name="rejection_reason" class="form-control" rows="3" required 
+                                                          placeholder="Please provide a reason for rejection..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-danger">Reject Loan</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Empty State -->
+    {% if not pending_deposits and not pending_members and not pending_loans %}
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-check-circle-fill text-success display-1 mb-3"></i>
+            <h3>All Caught Up!</h3>
+            <p class="text-muted">No pending approvals at the moment.</p>
+            <a href="/manager/dashboard" class="btn btn-primary mt-2">
+                <i class="bi bi-speedometer2"></i> Return to Dashboard
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Deposit Reject Modal -->
+<div class="modal fade" id="rejectDepositModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Reject Deposit</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="rejectDepositForm" method="post">
+                <div class="modal-body">
+                    <p>Are you sure you want to reject this deposit?</p>
+                    <p><strong>Member:</strong> <span id="rejectMemberName"></span></p>
+                    <p><strong>Amount:</strong> <span id="rejectAmount"></span></p>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Rejection</label>
+                        <textarea name="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Deposit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveDeposit(depositId) {
+    if (confirm('Approve this deposit? This will add the funds to the member\'s savings account.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/manager/deposit/${depositId}/approve`;
+        
+        const notesInput = document.createElement('input');
+        notesInput.type = 'hidden';
+        notesInput.name = 'notes';
+        notesInput.value = 'Approved by manager';
+        form.appendChild(notesInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function showRejectDepositModal(depositId, memberName, amount) {
+    const modal = new bootstrap.Modal(document.getElementById('rejectDepositModal'));
+    document.getElementById('rejectMemberName').textContent = memberName;
+    document.getElementById('rejectAmount').textContent = `UGX ${amount.toLocaleString()}`;
+    
+    const form = document.getElementById('rejectDepositForm');
+    form.action = `/manager/deposit/${depositId}/reject`;
+    
+    modal.show();
+}
+</script>
+{% endblock %}

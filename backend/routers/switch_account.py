@@ -1,3 +1,4 @@
+# backend/routers/switch_account.py
 from fastapi import APIRouter, Depends, Request, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -10,7 +11,7 @@ router = APIRouter(prefix="", tags=["account-switching"])
 logger = logging.getLogger(__name__)
 
 
-@router.get("/to-member")
+@router.get("/switch/to-member")
 async def switch_to_member(
     request: Request,
     as_member: int = Query(None, description="Member ID to switch to"),
@@ -58,11 +59,11 @@ async def switch_to_member(
     
     # Store original staff ID before switching
     request.session["original_staff_id"] = current_user.id
-    request.session["original_staff_role"] = current_user.role.value
+    request.session["original_staff_role"] = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
     
     # Switch session to member
     request.session["user_id"] = member.id
-    request.session["user_role"] = member.role.value
+    request.session["user_role"] = member.role.value if hasattr(member.role, 'value') else str(member.role)
     request.session["is_switched"] = True
     
     # Add flash message
@@ -74,7 +75,7 @@ async def switch_to_member(
     return RedirectResponse(url="/member/dashboard", status_code=303)
 
 
-@router.get("/to-staff")
+@router.get("/switch/to-staff")
 async def switch_to_staff(
     request: Request,
     as_staff: int = Query(None, description="Staff ID to switch to"),
@@ -123,7 +124,7 @@ async def switch_to_staff(
     
     # Switch session to staff
     request.session["user_id"] = staff.id
-    request.session["user_role"] = staff.role.value
+    request.session["user_role"] = staff.role.value if hasattr(staff.role, 'value') else str(staff.role)
     
     # Clear the original staff ID if it exists (since we're switching back)
     if "original_staff_id" in request.session:
@@ -134,10 +135,10 @@ async def switch_to_staff(
         del request.session["is_switched"]
     
     # Add flash message
-    request.session["flash_message"] = f"✓ Switched to {staff.role.value} view: {staff.full_name or staff.email}"
+    request.session["flash_message"] = f"✓ Switched to {staff.role.value if hasattr(staff.role, 'value') else str(staff.role)} view: {staff.full_name or staff.email}"
     request.session["flash_type"] = "success"
     
-    logger.info(f"User {current_user.email} switched to staff account {staff.email} ({staff.role.value})")
+    logger.info(f"User {current_user.email} switched to staff account {staff.email} ({staff.role})")
     
     # Redirect based on staff role
     redirect_url = get_dashboard_url(staff.role)
@@ -145,7 +146,7 @@ async def switch_to_staff(
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
-@router.get("/back")
+@router.get("/switch/back")
 async def switch_back(
     request: Request,
     db: Session = Depends(get_db),
@@ -175,7 +176,7 @@ async def switch_back(
     
     # Switch back to staff account
     request.session["user_id"] = original_staff.id
-    request.session["user_role"] = original_staff.role.value
+    request.session["user_role"] = original_staff.role.value if hasattr(original_staff.role, 'value') else str(original_staff.role)
     
     # Clear switched session data
     if "original_staff_id" in request.session:
@@ -186,7 +187,7 @@ async def switch_back(
         del request.session["is_switched"]
     
     # Add flash message
-    request.session["flash_message"] = f"✓ Switched back to {original_staff.role.value} view: {original_staff.full_name or original_staff.email}"
+    request.session["flash_message"] = f"✓ Switched back to {original_staff.role.value if hasattr(original_staff.role, 'value') else str(original_staff.role)} view: {original_staff.full_name or original_staff.email}"
     request.session["flash_type"] = "success"
     
     logger.info(f"User switched back to staff account {original_staff.email}")
@@ -197,13 +198,19 @@ async def switch_back(
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
-def get_dashboard_url(role: RoleEnum) -> str:
+def get_dashboard_url(role) -> str:
     """Get dashboard URL based on user role"""
+    # Handle both enum and string role values
+    if hasattr(role, 'value'):
+        role_value = role.value
+    else:
+        role_value = str(role)
+    
     dashboard_urls = {
-        RoleEnum.SUPER_ADMIN: "/superadmin/dashboard",
-        RoleEnum.MANAGER: "/manager/dashboard",
-        RoleEnum.ACCOUNTANT: "/accountant/dashboard",
-        RoleEnum.CREDIT_OFFICER: "/credit-officer/dashboard",
-        RoleEnum.MEMBER: "/member/dashboard",
+        "SUPER_ADMIN": "/superadmin/dashboard",
+        "MANAGER": "/manager/dashboard",
+        "ACCOUNTANT": "/accountant/dashboard",
+        "CREDIT_OFFICER": "/credit-officer/dashboard",
+        "MEMBER": "/member/dashboard",
     }
-    return dashboard_urls.get(role, "/dashboard")
+    return dashboard_urls.get(role_value, "/dashboard")

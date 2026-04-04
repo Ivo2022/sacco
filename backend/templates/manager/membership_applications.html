@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Membership Applications{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Pending Membership Applications</h4>
+                <div>
+                    <a href="?status=pending" class="btn btn-sm btn-light {% if status_filter == 'pending' %}active{% endif %}">Pending</a>
+                    <a href="?status=active" class="btn btn-sm btn-light {% if status_filter == 'active' %}active{% endif %}">Approved</a>
+                    <a href="?status=terminated" class="btn btn-sm btn-light {% if status_filter == 'terminated' %}active{% endif %}">Rejected</a>
+                    <a href="?" class="btn btn-sm btn-light">All</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if applications %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Application Date</th>
+                                <th>Applicant</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Fee Paid</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in applications %}
+                            <tr>
+                                <td>{{ local_time(app.application_date) }}</td>
+                                <td>{{ app.user_full_name or 'N/A' }}</td>
+                                <td>{{ app.user_email }}</td>
+                                <td>
+                                    {% if app.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% elif app.status == 'active' %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if app.fee_paid %}
+                                        <i class="bi bi-check-circle-fill text-success"></i> Paid
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger"></i> Not Paid
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if app.status == 'pending' %}
+                                    <form method="post" action="/admin/membership/application/{{ app.id }}/approve" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Approve this membership application?')">
+                                            <i class="bi bi-check"></i> Approve
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ app.id }}">
+                                        <i class="bi bi-x"></i> Reject
+                                    </button>
+                                    
+                                    <!-- Reject Modal -->
+                                    <div class="modal fade" id="rejectModal{{ app.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form method="post" action="/admin/membership/application/{{ app.id }}/reject">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Reject Application</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Reason for Rejection</label>
+                                                            <textarea class="form-control" name="reason" rows="3" required></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-danger">Reject</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% elif app.status == 'active' and not app.fee_paid %}
+                                    <span class="badge bg-warning">Awaiting Fee Payment</span>
+                                    {% endif %}
+                                 </td>
+                             </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                    <h5>No applications found</h5>
+                    <p>There are no membership applications to review.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

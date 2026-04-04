@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Activity - CheonTec SACCO{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    {# Page Header #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="bi bi-activity me-2"></i>Staff Activity
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mt-2">
+                    <li class="breadcrumb-item"><a href="/manager/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/manager/staff">Staff Management</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Activity Log</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="refreshBtn">
+                <i class="bi bi-arrow-repeat me-1"></i>Refresh
+            </button>
+            <!--<button type="button" class="btn btn-outline-primary btn-sm" id="exportBtn">
+                <i class="bi bi-download me-1"></i>Export
+            </button>-->
+        </div>
+    </div>
+
+    {# Filters Card #}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="/manager/staff-activity" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Staff Member</label>
+                    <select name="staff_id" class="form-select form-select-sm">
+                        <option value="">All Staff</option>
+                        {% for staff in staff_list %}
+                        <option value="{{ staff.id }}" {% if selected_staff_id == staff.id %}selected{% endif %}>
+                            {{ staff.full_name }} ({{ staff.role|replace('RoleEnum.', '')|title }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Action Type</label>
+                    <select name="action_type" class="form-select form-select-sm">
+                        <option value="">All Actions</option>
+                        <option value="login" {% if action_type == 'login' %}selected{% endif %}>Login</option>
+                        <option value="logout" {% if action_type == 'logout' %}selected{% endif %}>Logout</option>
+                        <option value="create" {% if action_type == 'create' %}selected{% endif %}>Create</option>
+                        <option value="update" {% if action_type == 'update' %}selected{% endif %}>Update</option>
+                        <option value="delete" {% if action_type == 'delete' %}selected{% endif %}>Delete</option>
+                        <option value="approve" {% if action_type == 'approve' %}selected{% endif %}>Approve</option>
+                        <option value="reject" {% if action_type == 'reject' %}selected{% endif %}>Reject</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Date From</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Date To</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-search me-1"></i>Apply Filters
+                        </button>
+                        <a href="/manager/staff-activity" class="btn btn-secondary btn-sm">
+                            <i class="bi bi-x-circle me-1"></i>Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# Statistics Cards #}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Activities
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activities }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-list-check fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-success shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Today's Activities
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ today_activities }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-calendar-day fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-info shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Active Staff Today
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_staff_today }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-warning shadow-sm h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Most Active Staff
+                            </div>
+                            <div class="h6 mb-0 font-weight-bold text-gray-800">
+                                {{ most_active_staff.name|default('N/A') }}
+                                <small class="text-muted">({{ most_active_staff.count|default(0) }})</small>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-trophy fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Activity Table #}
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold text-primary">
+                    <i class="bi bi-clock-history me-2"></i>Activity Log
+                </h6>
+                <div class="text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>Showing last {{ activities|length }} activities
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if activities %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm" id="activityTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Staff Member</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                            <th>Description</th>
+                            <th>IP Address</th>
+                            <th>Timestamp</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-2" style="width: 32px; height: 32px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.8rem;">
+                                        {{ activity.staff_name[0]|upper if activity.staff_name else 'S' }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold small">{{ activity.staff_name }}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">ID: {{ activity.staff_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                    {{ activity["role"]|replace('RoleEnum.', '')|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% set action_icons = {
+                                    'login': 'bi-box-arrow-in-right text-success',
+                                    'logout': 'bi-box-arrow-right text-danger',
+                                    'create': 'bi-plus-circle text-primary',
+                                    'update': 'bi-pencil-square text-warning',
+                                    'delete': 'bi-trash text-danger',
+                                    'approve': 'bi-check-circle text-success',
+                                    'reject': 'bi-x-circle text-danger'
+                                } %}
+                                <i class="{{ action_icons.get(activity.action, 'bi-record-circle') }} me-1"></i>
+                                <span class="text-capitalize">{{ activity.action }}</span>
+                            </td>
+                            <td>
+                                <span class="small">{{ activity.description|truncate(50) }}</span>
+                            </td>
+                            <td>
+                                <code class="small">{{ activity.ip_address or 'N/A' }}</code>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <i class="bi bi-calendar me-1"></i>{{ local_time(activity.timestamp) if activity.timestamp else 'N/A' }}<br>
+                                    <i class="bi bi-clock me-1"></i>{{ local_time(activity.timestamp) if activity.timestamp else 'N/A' }}
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info view-details" data-id="{{ activity.id }}">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {# Pagination #}
+            {% if total_pages > 1 %}
+            <nav aria-label="Activity pagination" class="mt-4">
+                <ul class="pagination pagination-sm justify-content-center">
+                    {% if current_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ current_page - 1 }}{% if selected_staff_id %}&staff_id={{ selected_staff_id }}{% endif %}{% if action_type %}&action_type={{ action_type }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page in range(1, total_pages + 1) %}
+                        {% if page == current_page %}
+                        <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+                        {% elif page <= 5 or page > total_pages - 2 or (page >= current_page - 2 and page <= current_page + 2) %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page }}{% if selected_staff_id %}&staff_id={{ selected_staff_id }}{% endif %}{% if action_type %}&action_type={{ action_type }}{% endif %}">
+                                {{ page }}
+                            </a>
+                        </li>
+                        {% elif page == 6 or page == total_pages - 3 %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if current_page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ current_page + 1 }}{% if selected_staff_id %}&staff_id={{ selected_staff_id }}{% endif %}{% if action_type %}&action_type={{ action_type }}{% endif %}">
+                            Next <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="text-muted mt-3 mb-0">No activity records found</p>
+                <small class="text-muted">Try adjusting your filters</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Refresh button
+        document.getElementById('refreshBtn')?.addEventListener('click', function() {
+            location.reload();
+        });
+        
+        // Export button
+        document.getElementById('exportBtn')?.addEventListener('click', function() {
+            const params = new URLSearchParams(window.location.search);
+            window.location.href = '/manager/staff-activity/export?' + params.toString();
+        });
+        
+        // View details modal
+        const viewButtons = document.querySelectorAll('.view-details');
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const activityId = this.dataset.id;
+                // Fetch and show modal with activity details
+                const response = await fetch(`/manager/staff-activity/${activityId}`);
+                const data = await response.json();
+                // Show modal with data (implement modal as needed)
+                console.log('Activity details:', data);
+            });
+        });
+        
+        // Auto-refresh every 30 seconds (optional)
+        // setInterval(() => { location.reload(); }, 30000);
+    });
+</script>
+{% endblock %}
+{% endblock %}

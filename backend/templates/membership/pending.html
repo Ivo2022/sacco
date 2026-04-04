@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Membership Pending{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">Membership Application Pending</h4>
+            </div>
+            <div class="card-body text-center py-5">
+                <i class="bi bi-hourglass-split display-1 text-warning mb-3"></i>
+                <h3>Your application is being reviewed</h3>
+                <p class="lead">We have received your membership application and it is currently under review.</p>
+                
+                {% if application %}
+                <div class="alert alert-info mt-3">
+                    <strong>Application Details:</strong><br>
+                    Application ID: {{ application.id }}<br>
+                    Submitted: {{ application.application_date|format_date }}<br>
+                    Status: <span class="badge bg-warning">{{ application.status|upper }}</span>
+                </div>
+                {% endif %}
+                
+                <p class="mt-4">You will be notified once your application is approved. This usually takes 1-3 business days.</p>
+                <a href="/member/dashboard" class="btn btn-primary mt-3">Return to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -84,23 +84,29 @@
                 <div class="card-body p-4">
                     <form method="post" action="/member/profile/update" enctype="multipart/form-data">
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted">Full Name</label>
-                                <input type="text" 
-                                       class="form-control" 
-                                       name="full_name" 
-                                       value="{{ user["full_name"]or '' }}"
-                                       placeholder="Enter your full name">
-                            </div>
+							<div class="col-md-6">
+								<label class="form-label small fw-bold text-muted">Full Name</label>
+								<input type="text" 
+									   class="form-control {% if user['role'] in ['SUPER_ADMIN', 'MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] %}bg-light{% endif %}" 
+									   name="full_name" 
+									   value="{{ user['full_name'] or '' }}"
+									   placeholder="Enter your full name"
+									   {% if user['role'] in ['SUPER_ADMIN', 'MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] %}disabled{% endif %}>
+								{% if user['role'] in ['SUPER_ADMIN', 'MANAGER', 'ACCOUNTANT', 'CREDIT_OFFICER'] %}
+								<small class="text-muted">
+									<i class="bi bi-lock me-1"></i>Admin users cannot change their name. Contact super admin for changes.
+								</small>
+								{% endif %}
+							</div>
                             
-                            <div class="col-md-6">
+                            <!--<div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Email Address</label>
                                 <input type="email" 
                                        class="form-control" 
                                        name="email" 
                                        value="{{ user["email"]}}"
                                        required>
-                            </div>
+                            </div>-->
                             
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Phone Number</label>
@@ -119,14 +125,14 @@
                                        value="{{ user["national_id"]or '' }}"
                                        placeholder="National ID Number">
                             </div>
-                            <div class="col-md-6">
+                            <!--<div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Username</label>
                                 <input type="text" 
                                        class="form-control" 
                                        name="username" 
                                        value="{{ user["username"]or '' }}"
                                        placeholder="Username">
-                            </div>
+                            </div>-->
 							
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">Date of Birth</label>

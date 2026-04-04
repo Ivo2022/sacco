@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Member Details - {{ member.full_name or member.email }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="mb-0">
+                <i class="bi bi-person-circle text-primary me-2"></i>
+                Member Details
+            </h3>
+            <p class="text-muted mb-0">View complete member information and activity</p>
+        </div>
+        <div>
+            <a href="/manager/members" class="btn btn-sm btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left me-1"></i> Back to Members
+            </a>
+            <a href="/manager/dashboard" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-speedometer2 me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Member Profile Card -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Member Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="bg-light rounded-circle d-inline-flex p-3 mb-2">
+                            <i class="bi bi-person-circle fs-1 text-primary"></i>
+                        </div>
+                        <h5 class="mb-1">{{ member.full_name or 'Not provided' }}</h5>
+                        <span class="badge bg-success">Member</span>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-2">
+                        <strong><i class="bi bi-envelope me-2"></i>Email:</strong><br>
+                        {{ member.email }}
+                    </div>
+                    <div class="mb-2">
+                        <strong><i class="bi bi-phone me-2"></i>Phone:</strong><br>
+                        {{ member.phone or 'Not provided' }}
+                    </div>
+                    <div class="mb-2">
+                        <strong><i class="bi bi-person me-2"></i>Username:</strong><br>
+                        {{ member.username or 'Not set' }}
+                    </div>
+                    <div class="mb-2">
+                        <strong><i class="bi bi-calendar me-2"></i>Member Since:</strong><br>
+                        {{ local_time(member.created_at) if member.created_at else 'N/A' }}
+                    </div>
+                    <div class="mb-2">
+                        <strong><i class="bi bi-geo-alt me-2"></i>Address:</strong><br>
+                        {{ member.address or 'Not provided' }}
+                    </div>
+                    <div class="mb-2">
+                        <strong><i class="bi bi-card-text me-2"></i>National ID:</strong><br>
+                        {{ member.national_id or 'Not provided' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-piggy-bank me-2"></i>Financial Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center">
+                                <small class="text-muted">Savings Balance</small>
+                                <h4 class="text-success mb-0">{{ money(savings_balance) }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center">
+                                <small class="text-muted">Total Deposits</small>
+                                <h4 class="text-primary mb-0">{{ money(total_deposits) }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center">
+                                <small class="text-muted">Total Withdrawals</small>
+                                <h4 class="text-warning mb-0">{{ money(total_withdrawals) }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 text-center">
+                                <small class="text-muted">Total Loans Taken</small>
+                                <h4 class="text-info mb-0">{{ money(total_loan_amount) }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 text-center">
+                                <small class="text-muted">Total Repaid</small>
+                                <h4 class="text-success mb-0">{{ money(total_paid) }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="border rounded p-3 text-center bg-light">
+                                <small class="text-muted">Active Loans</small>
+                                <h3 class="mb-0">{{ active_loans_count }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Savings Transactions -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Savings Transactions</h5>
+            <span class="badge bg-light text-dark">{{ savings|length }} Transactions</span>
+        </div>
+        <div class="card-body p-0">
+            {% if savings %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                            <th>Reference</th>
+                            <th>Status</th>
+                        </thead>
+                        <tbody>
+                            {% for transaction in savings %}
+                            <tr>
+                                <td><small>{{ local_time(transaction.timestamp) }}</small></td>
+                                <td>
+                                    {% if transaction.type == 'deposit' %}
+                                        <span class="badge bg-success">Deposit</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Withdrawal</span>
+                                    {% endif %}
+                                </td>
+                                <td class="{% if transaction.type == 'deposit' %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    {{ money(transaction.amount) }}
+                                </td>
+                                <td>{{ transaction.payment_method|replace('_', ' ')|title }}</td>
+                                <td><code>{{ transaction.reference_number or 'N/A' }}</code></td>
+                                <td>
+                                    {% if transaction.approved_at %}
+                                        <span class="badge bg-success">Approved</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="mt-2">No savings transactions found</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Loan History -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Loan History</h5>
+            <span class="badge bg-dark text-white">{{ loans|length }} Loans</span>
+        </div>
+        <div class="card-body p-0">
+            {% if loans %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Term</th>
+                            <th>Purpose</th>
+                            <th>Status</th>
+                            <th>Interest Rate</th>
+                            <th>Total Payable</th>
+                            <th>Total Paid</th>
+                            <th>Outstanding</th>
+                        </thead>
+                        <tbody>
+                            {% for loan in loans %}
+                            <tr>
+                                <td><small>{{ local_time(loan.timestamp) }}</small></td>
+                                <td class="fw-bold">{{ money(loan.amount) }}</td>
+                                <td>{{ loan.term }} months</td>
+                                <td>{{ loan.purpose or 'Not specified' }}</td>
+                                <td>
+                                    {% if loan.status == 'approved' %}
+                                        <span class="badge bg-success">Approved</span>
+                                    {% elif loan.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% elif loan.status == 'completed' %}
+                                        <span class="badge bg-info">Completed</span>
+                                    {% elif loan.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ loan.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ loan.interest_rate }}%</td>
+                                <td>{{ money(loan.total_payable) }}</td>
+                                <td class="text-success">{{ money(loan.total_paid or 0) }}</td>
+                                <td class="text-danger fw-bold">{{ money(loan.total_payable - (loan.total_paid or 0)) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="mt-2">No loan history found</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-12 text-end">
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print Details
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn-group, .btn, .navbar, footer, .card-header .badge, .action-buttons {
+        display: none !important;
+    }
+    .card {
+        border: 1px solid #ddd !important;
+        break-inside: avoid;
+    }
+}
+</style>
+{% endblock %}

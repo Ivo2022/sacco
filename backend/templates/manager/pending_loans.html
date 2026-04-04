@@ -64,7 +64,7 @@
                                 <td class="fw-bold text-primary">{{ money(loan["amount"]) }}</td>
                                 <td>{{ loan["term"] }} months</td>
                                 <td>{{ loan["purpose"] or 'Not specified' }}</td>
-                                <td>{{ money(loan["calculate_monthly_payment"]()) }}</td>
+                                <td>{{ money(loan["calculate_monthly_payment"]) }}</td>
                                 <td><small>{{ local_time(loan["timestamp"]) }}</small></td>
                                 <td class="pe-3">
                                     <a href="/manager/loan/{{ loan["id"] }}/review" class="btn btn-sm btn-primary me-1">
@@ -95,7 +95,7 @@
                                                         <strong>Member:</strong> {{ loan["user"]["full_name"]or loan["user"]["email"]}}<br>
                                                         <strong>Amount:</strong> {{ money(loan["amount"]) }}<br>
                                                         <strong>Term:</strong> {{ loan["term"] }} months<br>
-                                                        <strong>Monthly Payment:</strong> {{ money(loan["calculate_monthly_payment"]()) }}
+                                                        <strong>Monthly Payment:</strong> {{ money(loan["calculate_monthly_payment"]) }}
                                                     </div>
                                                 </div>
                                                 <div class="mb-3">

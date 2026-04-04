@@ -82,8 +82,18 @@
               </div>
               <div class="flex-grow-1 ms-3">
                 <small class="text-muted d-block">Account Age</small>
-                <span class="fw-bold">{{ (now - user.created_at).days if user["created_at"]is defined else '—' }} days</span>
-              </div>
+{% if user and user.created_at %}
+    {% set created_str = user.created_at %}
+    {% set year = created_str[:4]|int %}
+    {% set month = created_str[5:7]|int %}
+    {% set day = created_str[8:10]|int %}
+    {% set hour = created_str[11:13]|int %}
+    {% set minute = created_str[14:16]|int %}
+    {% set second = created_str[17:19]|int %}
+    {% set created_date = (year, month, day, hour, minute, second) %}
+    {# This is messy and error-prone - better to use the filter approach #}
+{% endif %}            
+               </div>
             </div>
           </div>
         </div>

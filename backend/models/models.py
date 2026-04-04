@@ -1,6 +1,6 @@
 # backend/models.py
 
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Enum, Boolean, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Float, Enum, Boolean, Text, JSON
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from ..core.database import Base
 import datetime
@@ -43,7 +43,12 @@ class Sacco(Base):
     website = Column(String)
     status = Column(String, default='active')
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
-	
+    membership_fee = Column(Float, default=50000)  # Add membership fee to Sacco model
+    
+    # Shares & Dividends Feature Flags
+    shares_enabled = Column(Boolean, default=False)  # Enable/disable shares system
+    dividends_enabled = Column(Boolean, default=False)  # Enable/disable dividends system
+		
     # Referral fields
     referred_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     referral_commission_paid = Column(Float, default=0.0)
@@ -56,9 +61,12 @@ class Sacco(Base):
     logs = relationship("Log", foreign_keys="[Log.sacco_id]", back_populates="sacco", cascade="all, delete")
     external_loans = relationship("ExternalLoan", foreign_keys="[ExternalLoan.sacco_id]", back_populates="sacco", cascade="all, delete")
     pending_deposits = relationship("PendingDeposit", foreign_keys="[PendingDeposit.sacco_id]", back_populates="sacco", cascade="all, delete")
-    # Referrer relationship
+    share_types = relationship("ShareType", back_populates="sacco", cascade="all, delete-orphan")
+
+	# Referrer relationship
     referrer = relationship("User", foreign_keys=[referred_by_id], overlaps="referred_by")
     referred_by = relationship("User", foreign_keys=[referred_by_id], back_populates=None, overlaps="referrer,referred_saccos")
+    share_types = relationship("ShareType", back_populates="sacco", cascade="all, delete-orphan")
 
 class User(Base):
     __tablename__ = "users"
@@ -72,7 +80,11 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     is_active = Column(Boolean, default=True)
     password_reset_required = Column(Boolean, default=False)
-    
+    # Add these fields for tracking user activity
+    last_login = Column(DateTime, nullable=True)
+    last_activity = Column(DateTime, nullable=True)  # Track last API request
+    login_count = Column(Integer, default=0)  # Track total logins
+	
     # Additional fields
     profile_picture = Column(String, nullable=True)
     date_of_birth = Column(DateTime, nullable=True)
@@ -126,7 +138,9 @@ class User(Base):
 	
     # Relationships - Simplified, no complex backrefs
     sacco = relationship("Sacco", foreign_keys=[sacco_id], back_populates="users")
-    
+    shares = relationship("Share", foreign_keys="[Share.user_id]", cascade="all, delete")
+    dividend_payments = relationship("DividendPayment", foreign_keys="[DividendPayment.user_id]", cascade="all, delete")
+		
     # Simple one-way relationships (no back_populates where not needed)
     savings = relationship("Saving", foreign_keys="[Saving.user_id]", cascade="all, delete", overlaps="user")
     loans = relationship("Loan", foreign_keys="[Loan.user_id]", cascade="all, delete", overlaps="user")
@@ -287,7 +301,12 @@ class Loan(Base):
     approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     approved_at = Column(DateTime, nullable=True)
     approval_notes = Column(String(500), nullable=True)
-    
+    risk_score = Column(Integer, default=0)
+    risk_level = Column(String(20), default='low')  # low, medium, high
+    last_risk_assessment = Column(DateTime, nullable=True)
+    repayment_schedule = Column(JSON, nullable=True)  # Store scheduled payments
+    eligibility_score = Column(Integer, default=0)
+	
     # Relationships - Simple one-way
     sacco = relationship("Sacco", back_populates="loans")
     user = relationship("User", foreign_keys=[user_id], overlaps="loans")

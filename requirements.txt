@@ -12,3 +12,8 @@ pydantic>=2.0
 pydantic-settings
 pydantic[email]
 starlette-csrf
+psycopg2-binary
+alembic
+python-decouple
+httpx
+email-validator

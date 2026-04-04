@@ -83,3 +83,178 @@ input.form-control:focus{ box-shadow: 0 6px 18px rgba(0,82,204,0.12); border-col
 
 /* subtle link hover */
 a.btn-link:hover{ text-decoration: none; opacity:0.9; }
+
+/* Desktop Sidebar Modern redesign */
+.sidebar-desktop {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fd 100%);
+  border-right: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 2px 0 16px rgba(0,0,0,0.08);
+  transition: all 0.25s ease;
+  z-index: 1020;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar-desktop .sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Custom scrollbar for sidebar */
+.sidebar-desktop .sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-desktop .sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-desktop .sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.4);
+  border-radius: 3px;
+}
+
+.sidebar-desktop .sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.6);
+}
+
+.sidebar-desktop .sidebar-footer .btn {
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.sidebar-desktop .nav-item {
+  transition: all 0.3s ease;
+}
+
+.sidebar-desktop .nav-item:hover {
+  background: #f5f8ff !important;
+  transform: translateX(3px);
+}
+
+.sidebar-desktop .nav-item.active-nav {
+  background: linear-gradient(135deg, #e8ecff, #f0f3ff) !important;
+  color: #667eea !important;
+}
+
+.sidebar-desktop .sidebar-logo,
+.sidebar-desktop .user-profile-card,
+.sidebar-desktop .search-wrapper {
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-desktop.collapsed {
+  width: 64px !important;
+  min-width: 64px !important;
+}
+
+.sidebar-desktop.collapsed .section-title,
+.sidebar-desktop.collapsed .nav-label,
+.sidebar-desktop.collapsed .sidebar-footer .btn span,
+.sidebar-desktop.collapsed .user-profile-card,
+.sidebar-desktop.collapsed .search-wrapper {
+  display: none !important;
+}
+
+.sidebar-desktop.collapsed .section-icon,
+.sidebar-desktop.collapsed .nav-icon {
+  margin: 0 !important;
+  text-align: center;
+  width: 100%;
+}
+
+.sidebar-desktop.collapsed .nav-item {
+  justify-content: center;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.sidebar-desktop.collapsed .section-header {
+  justify-content: center;
+}
+
+.sidebar-desktop .collapse-toggle {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.sidebar-desktop .collapse-toggle i {
+  transition: transform 0.25s ease;
+}
+
+.sidebar-desktop.collapsed .collapse-toggle i {
+  transform: rotate(180deg);
+}
+
+/* Mobile Offcanvas improvements */
+.offcanvas {
+  width: 280px !important;
+}
+
+.offcanvas-header {
+  background: white;
+  padding: 1rem;
+}
+
+/* Adjust content area when sidebar collapses */
+.content-area {
+  transition: margin-left 0.25s ease;
+}
+
+.sidebar-collapsed .content-area {
+  margin-left: 64px;
+}
+
+/* Nav item active state */
+.nav-item.hover-bg-light:hover {
+  background-color: #f5f8ff !important;
+}
+
+/* Smooth transitions for all sidebar elements */
+.sidebar-desktop *,
+.offcanvas * {
+  transition: all 0.15s ease;
+}
+
+/* Manager cards aesthetic update */
+.metric-card,
+.status-card,
+.card {
+  border-radius: 1.2rem;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  border: 0;
+}
+.welcome-section {
+  border-radius: 1.2rem;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12);
+}
+.metric-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 0.8rem;
+}
+.status-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.status-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.16);
+}

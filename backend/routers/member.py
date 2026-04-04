@@ -11,11 +11,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from passlib.context import CryptContext
 import logging
-from ..core.dependencies import get_db, get_current_user
-from ..models import User, Saving, Loan, LoanPayment, Log, PendingDeposit, Sacco
+from ..core.dependencies import get_db, require_member, get_current_user
+from ..core.context import get_template_context
+from ..models import User, Saving, Loan, LoanPayment, Log, PendingDeposit, Sacco, Share, ShareType, ShareTransaction, DividendDeclaration, DividendPayment
 from ..utils.helpers import get_template_helpers, check_sacco_status
 from ..services.user_service import create_user
-from ..utils.logger import create_log
+from ..utils.logger import create_log, log_user_action
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -55,8 +56,8 @@ def serialize_user_full(user: User) -> dict:
     """Full user info including computed properties"""
     base = serialize_user_basic(user)
     base.update({
-        "linked_member_account_id": user.linked_member_account_id,
-        "linked_admin_id": user.linked_admin_id,
+        "linked_member_account_id": getattr(user, 'linked_member_account_id', None),
+        "linked_admin_id": getattr(user, 'linked_admin_id', None),
         "dashboard_url": user.get_dashboard_url,
         "is_admin": user.is_admin,
         "can_apply_for_loans": user.can_apply_for_loans,
@@ -155,7 +156,8 @@ def get_user_loans_with_repayment(db: Session, user_id: int):
         repaid = db.query(func.coalesce(func.sum(LoanPayment.amount), 0)).filter(
             LoanPayment.loan_id == loan.id
         ).scalar() or 0.0
-        outstanding = max(0.0, loan.amount - repaid)
+        # Outstanding = total_payable (principal + interest) - repaid
+        outstanding = max(0.0, loan.total_payable - repaid)
         loans.append({
             "id": loan.id,
             "amount": loan.amount,
@@ -178,12 +180,13 @@ def get_user_loans_with_repayment(db: Session, user_id: int):
 @router.get("/member/dashboard", response_class=HTMLResponse)
 def member_dashboard(
     request: Request,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_member),
     db: Session = Depends(get_db)
 ):
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
+    user_dict = serialize_user_full(user)
 
     templates = request.app.state.templates
 
@@ -221,9 +224,10 @@ def member_dashboard(
     sacco = serialize_sacco(user.sacco) if user.sacco else None
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
+        "user": user_dict,
         "sacco": sacco,
         "balance": balance,
         "transactions": transactions,
@@ -250,6 +254,7 @@ def view_profile(
     if status_check:
         return status_check
 
+    user_dict = serialize_user_full(user)
     templates = request.app.state.templates
 
     total_deposits = db.query(func.coalesce(func.sum(Saving.amount), 0)).filter(
@@ -275,9 +280,10 @@ def view_profile(
     member_since = user.created_at.strftime('%B %Y') if user.created_at else 'N/A'
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
+        "user": user_dict,
         "balance": balance,
         "active_loans": active_loans,
         "total_repaid": total_repaid,
@@ -303,7 +309,7 @@ async def update_profile(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-
+    user_dict = serialize_user_full(user)
     templates = request.app.state.templates
 
     def get_balance():
@@ -348,9 +354,10 @@ async def update_profile(
             existing_user = db.query(User).filter(User.email == email).first()
             if existing_user:
                 helpers = get_template_helpers()
+                base_context = get_template_context(request, user)
                 context = {
-                    "request": request,
-                    "user": serialize_user_full(user),
+                    **base_context,
+                    "user": user_dict,
                     "balance": get_balance(),
                     "active_loans": get_active_loans(),
                     "total_repaid": get_total_repaid(),
@@ -368,7 +375,7 @@ async def update_profile(
                 helpers = get_template_helpers()
                 context = {
                     "request": request,
-                    "user": serialize_user_full(user),
+                    "user": user_dict,
                     "balance": get_balance(),
                     "active_loans": get_active_loans(),
                     "total_repaid": get_total_repaid(),
@@ -397,10 +404,11 @@ async def update_profile(
         db.refresh(user)
 
         helpers = get_template_helpers()
+        base_context = get_template_context(request, user)
         context = {
-            "request": request,
-            "user": serialize_user_full(user),
+            **base_context,
             "balance": get_balance(),
+            "user": user_dict,
             "active_loans": get_active_loans(),
             "total_repaid": get_total_repaid(),
             "member_since": user.created_at.strftime('%B %Y') if user.created_at else 'N/A',
@@ -413,9 +421,10 @@ async def update_profile(
     except Exception as e:
         db.rollback()
         helpers = get_template_helpers()
+        base_context = get_template_context(request, user)
         context = {
-            "request": request,
-            "user": serialize_user_full(user),
+            **base_context,
+            "user": user_dict,
             "balance": get_balance(),
             "active_loans": get_active_loans(),
             "total_repaid": get_total_repaid(),
@@ -439,14 +448,41 @@ def change_password(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-
+    
     templates = request.app.state.templates
+
+    # Helper functions to get user data
+    def get_balance():
+        total_deposits = db.query(func.coalesce(func.sum(Saving.amount), 0)).filter(
+            Saving.user_id == user.id,
+            Saving.type == 'deposit'
+        ).scalar() or 0
+        total_withdrawals = db.query(func.coalesce(func.sum(Saving.amount), 0)).filter(
+            Saving.user_id == user.id,
+            Saving.type == 'withdraw'
+        ).scalar() or 0
+        return total_deposits - total_withdrawals
+    
+    def get_active_loans():
+        return db.query(Loan).filter(
+            Loan.user_id == user.id,
+            Loan.status.in_(['approved', 'partial'])
+        ).count()
+    
+    def get_total_repaid():
+        return db.query(func.coalesce(func.sum(LoanPayment.amount), 0)).filter(
+            LoanPayment.user_id == user.id
+        ).scalar() or 0
 
     if not pwd_context.verify(current_password, user.password_hash):
         helpers = get_template_helpers()
+        base_context = get_template_context(request, user)
         context = {
-            "request": request,
-            "user": serialize_user_full(user),
+            **base_context,
+            "balance": get_balance(),
+            "active_loans": get_active_loans(),
+            "total_repaid": get_total_repaid(),
+            "member_since": user.created_at.strftime('%B %Y') if user.created_at else 'N/A',
             "password_error": "Current password is incorrect.",
             "success": None,
             **helpers,
@@ -455,9 +491,13 @@ def change_password(
 
     if len(new_password) < 6:
         helpers = get_template_helpers()
+        base_context = get_template_context(request, user)
         context = {
-            "request": request,
-            "user": serialize_user_full(user),
+            **base_context,
+            "balance": get_balance(),
+            "active_loans": get_active_loans(),
+            "total_repaid": get_total_repaid(),
+            "member_since": user.created_at.strftime('%B %Y') if user.created_at else 'N/A',
             "password_error": "New password must be at least 6 characters long.",
             "success": None,
             **helpers,
@@ -466,23 +506,31 @@ def change_password(
 
     if new_password != confirm_password:
         helpers = get_template_helpers()
+        base_context = get_template_context(request, user)
         context = {
-            "request": request,
-            "user": serialize_user_full(user),
+            **base_context,
+            "balance": get_balance(),
+            "active_loans": get_active_loans(),
+            "total_repaid": get_total_repaid(),
+            "member_since": user.created_at.strftime('%B %Y') if user.created_at else 'N/A',
             "password_error": "New passwords do not match.",
             "success": None,
             **helpers,
         }
         return templates.TemplateResponse(request,"client/profile.html", context)
-
+    # Update password
     user.password_hash = pwd_context.hash(new_password)
     user.password_reset_required = False
     db.commit()
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
+        "balance": get_balance(),
+        "active_loans": get_active_loans(),
+        "total_repaid": get_total_repaid(),
+        "member_since": user.created_at.strftime('%B %Y') if user.created_at else 'N/A',
         "password_success": "Password changed successfully!",
         "success": None,
         **helpers,
@@ -493,13 +541,13 @@ def change_password(
 @router.get("/member/savings", response_class=HTMLResponse)
 def view_savings(
     request: Request,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_member),
     db: Session = Depends(get_db)
 ):
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-
+    user_dict = serialize_user_full(user)
     templates = request.app.state.templates
 
     total_deposits = db.query(func.coalesce(func.sum(Saving.amount), 0)).filter(
@@ -528,9 +576,10 @@ def view_savings(
     transactions = [serialize_saving(t) for t in transactions_orm]
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
+        "user": user_dict,
         "balance": balance,
         "transactions": transactions,
         "pending_deposits": pending_deposits,
@@ -548,7 +597,7 @@ async def initiate_deposit(
     payment_method: str = Form(...),
     reference_number: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_member),
     db: Session = Depends(get_db)
 ):
     status_check = check_sacco_status(request, user, db)
@@ -593,7 +642,7 @@ async def initiate_deposit(
 def cancel_pending_deposit(
     pending_id: int,
     request: Request,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_member),
     db: Session = Depends(get_db)
 ):
     status_check = check_sacco_status(request, user, db)
@@ -623,7 +672,7 @@ def deposit(
     request: Request,
     amount: float = Form(...),
     payment_method: str = Form(...),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_member),
     db: Session = Depends(get_db)
 ):
     status_check = check_sacco_status(request, user, db)
@@ -663,7 +712,7 @@ def deposit(
 def withdraw(
     request: Request,
     amount: float = Form(...),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_member),
     db: Session = Depends(get_db)
 ):
     status_check = check_sacco_status(request, user, db)
@@ -707,13 +756,13 @@ def withdraw(
 @router.get("/member/loans", response_class=HTMLResponse)
 def view_loans(
     request: Request,
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_member),
     db: Session = Depends(get_db)
 ):
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-
+    user_dict = serialize_user_full(user)
     templates = request.app.state.templates
 
     # Get loans with repayment data
@@ -736,7 +785,13 @@ def view_loans(
         })
 
     total_payments = sum(p["amount"] for p in payments_history)
+    # Loans with repayment data
+    loans = get_user_loans_with_repayment(db, user.id)
 
+    # Calculate totals for summary cards
+    total_repaid = sum(loan["repaid"] for loan in loans)
+    total_outstanding = sum(loan["outstanding"] for loan in loans)
+			
     # Savings balance
     total_deposits = db.query(func.coalesce(func.sum(Saving.amount), 0)).filter(
         Saving.user_id == user.id,
@@ -792,9 +847,11 @@ def view_loans(
         })
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
+        "user": user_dict,
+        "total_outstanding": total_outstanding,
         "loans": loans,
         "balance": balance,
         "payments_history": payments_history,
@@ -813,7 +870,7 @@ def request_loan(
     amount: float = Form(...),
     term: int = Form(12),
     purpose: str = Form(None),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_member),
     db: Session = Depends(get_db)
 ):
     status_check = check_sacco_status(request, user, db)
@@ -885,7 +942,7 @@ def repay_loan(
     loan_id: int = Form(...),
     amount: float = Form(...),
     payment_method: str = Form(...),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_member),
     db: Session = Depends(get_db)
 ):
     status_check = check_sacco_status(request, user, db)
@@ -991,30 +1048,293 @@ def repay_loan(
 
 
 @router.get("/member/inactive", response_class=HTMLResponse)
-def inactive_page(request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def inactive_page(request: Request, user: User = Depends(require_member), db: Session = Depends(get_db)):
     templates = request.app.state.templates
     sacco = None
     if user.sacco_id:
         sacco_orm = db.query(Sacco).filter(Sacco.id == user.sacco_id).first()
         sacco = serialize_sacco(sacco_orm) if sacco_orm else None
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "sacco": sacco
     }
     return templates.TemplateResponse(request,"member/inactive.html", context)
 
 
 @router.get("/member/suspended", response_class=HTMLResponse)
-def suspended_page(request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def suspended_page(request: Request, user: User = Depends(require_member), db: Session = Depends(get_db)):
     templates = request.app.state.templates
     sacco = None
     if user.sacco_id:
         sacco_orm = db.query(Sacco).filter(Sacco.id == user.sacco_id).first()
         sacco = serialize_sacco(sacco_orm) if sacco_orm else None
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "sacco": sacco
     }
     return templates.TemplateResponse(request,"member/suspended.html", context)
+
+    # routers/member.py
+
+@router.get("/member/shares", response_class=HTMLResponse)
+async def member_shares(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_member)
+):
+    status_check = check_sacco_status(request, user, db)
+    if status_check:
+        return status_check
+
+    templates = request.app.state.templates
+    """
+    Display the member's share account details.
+    Shows share types, holdings, total value, and transaction history.
+    """
+    # 1. Get the member's share holdings (using Share model)
+    holdings = db.query(Share).filter(
+        Share.user_id == user.id,
+        Share.sacco_id == user.sacco_id,
+        Share.is_active == True  # This exists in Share model
+    ).all()
+
+    # 2. Get all available share types for this SACCO (no is_active filter)
+    share_types = db.query(ShareType).filter(
+        ShareType.sacco_id == user.sacco_id
+    ).all()
+
+    # 3. Calculate total value of shares
+    total_shares_value = 0
+    total_share_units = 0
+    for holding in holdings:
+        total_share_units += holding.quantity
+        total_shares_value += holding.total_value
+
+    # 4. Get recent share transactions
+    share_transactions = db.query(ShareTransaction).filter(
+        ShareTransaction.user_id == user.id,
+        ShareTransaction.sacco_id == user.sacco_id
+    ).order_by(ShareTransaction.transaction_date.desc()).limit(10).all()
+
+    # 5. Prepare the context for the template
+    user_dict = serialize_user_full(user)
+    base_context = get_template_context(request, user_dict)
+    helpers = get_template_helpers()
+    page_context = {
+        "holdings": holdings,
+        "share_types": share_types,
+        "total_shares_value": total_shares_value,
+        "total_share_units": total_share_units,
+        "transactions": share_transactions,
+        "page_title": "My Share Account",
+        **helpers
+    }
+
+    final_context = {**base_context, **page_context}
+    return templates.TemplateResponse(request, "client/shares.html", final_context)
+
+
+@router.post("/member/shares/purchase")
+async def purchase_shares(
+    request: Request,
+    share_type_id: int = Form(...),
+    units: int = Form(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_member)
+):
+    """Purchase shares"""
+    
+    # Get the share type
+    share_type = db.query(ShareType).filter(
+        ShareType.id == share_type_id,
+        ShareType.sacco_id == user.sacco_id
+    ).first()
+    
+    if not share_type:
+        raise HTTPException(status_code=404, detail="Share type not found")
+    
+    # Check minimum shares
+    if units < share_type.minimum_shares:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Minimum purchase is {share_type.minimum_shares} shares"
+        )
+    
+    # Check maximum shares if set
+    if share_type.maximum_shares and units > share_type.maximum_shares:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maximum purchase is {share_type.maximum_shares} shares"
+        )
+    
+    # Calculate total amount (using par_value)
+    total_amount = units * share_type.par_value
+    
+    # Check if user already has shares of this type
+    existing_share = db.query(Share).filter(
+        Share.user_id == user.id,
+        Share.sacco_id == user.sacco_id,
+        Share.share_type_id == share_type_id,
+        Share.is_active == True
+    ).first()
+    
+    if existing_share:
+        # Update existing holding
+        existing_share.quantity += units
+        existing_share.total_value += total_amount
+        existing_share.last_updated = datetime.utcnow()
+        share_id = existing_share.id
+    else:
+        # Create new share holding
+        new_share = Share(
+            user_id=user.id,
+            sacco_id=user.sacco_id,
+            share_type_id=share_type_id,
+            quantity=units,
+            total_value=total_amount,
+            is_active=True,
+            last_updated=datetime.utcnow()
+        )
+        db.add(new_share)
+        db.flush()
+        share_id = new_share.id
+    
+    # Create transaction record
+    transaction = ShareTransaction(
+        share_id=share_id,
+        user_id=user.id,
+        sacco_id=user.sacco_id,
+        transaction_type="subscription",
+        quantity=units,
+        price_per_share=share_type.par_value,
+        total_amount=total_amount,
+        transaction_date=datetime.utcnow(),
+        notes=f"Purchase of {units} {share_type.name} shares"
+    )
+    db.add(transaction)
+    
+    db.commit()
+    
+    # Redirect back to shares page with success message
+    return RedirectResponse(
+        url="/member/shares?message=Shares purchased successfully",
+        status_code=303
+    )
+
+@router.get("/member/dividends", response_class=HTMLResponse)
+async def member_dividends(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_member)
+):
+    status_check = check_sacco_status(request, user, db)
+    if status_check:
+        return status_check
+
+    templates = request.app.state.templates
+    """
+    Display member's dividend earnings and history.
+    Shows declared dividends, payments, and pending dividends.
+    """
+    # 1. Get all dividend payments made to this member
+    dividend_payments = db.query(DividendPayment).filter(
+        DividendPayment.user_id == user.id,
+        DividendPayment.sacco_id == user.sacco_id
+    ).order_by(DividendPayment.paid_at.desc()).all()
+    
+    # 2. Get all dividend declarations for this SACCO
+    dividend_declarations = db.query(DividendDeclaration).filter(
+        DividendDeclaration.sacco_id == user.sacco_id
+    ).order_by(DividendDeclaration.declared_date.desc()).all()
+    
+    # 3. Calculate dividend statistics
+    total_dividends_received = sum(payment.amount for payment in dividend_payments if payment.paid_at)
+    total_dividends_pending = 0
+    last_dividend_date = None
+    
+    # Find pending dividends (declared but not yet paid)
+    pending_declarations = [d for d in dividend_declarations if d.status == 'pending' and d.payment_date > datetime.utcnow()]
+    for declaration in pending_declarations:
+        # Check if member has shares that qualify for this dividend
+        member_shares = db.query(Share).filter(
+            Share.user_id == user.id,
+            Share.sacco_id == user.sacco_id,
+            Share.is_active == True
+        ).all()
+        
+        for share in member_shares:
+            if declaration.share_type_id is None or declaration.share_type_id == share.share_type_id:
+                expected_payment = share.quantity * declaration.amount_per_share
+                total_dividends_pending += expected_payment
+    
+    # Get last dividend payment date
+    if dividend_payments:
+        last_dividend_date = dividend_payments[0].paid_at
+    
+    # 4. Get member's share holdings for dividend calculation
+    holdings = db.query(Share).filter(
+        Share.user_id == user.id,
+        Share.sacco_id == user.sacco_id,
+        Share.is_active == True
+    ).all()
+    
+    # 5. Calculate total shares and potential earnings
+    total_shares = sum(holding.quantity for holding in holdings)
+    total_share_value = sum(holding.total_value for holding in holdings)
+    
+    # 6. Prepare context
+    user_dict = serialize_user_full(user)
+    base_context = get_template_context(request, user_dict)
+    helpers = get_template_helpers()
+    page_context = {
+        "dividend_payments": dividend_payments,
+        "dividend_declarations": dividend_declarations,
+        "total_dividends_received": total_dividends_received,
+        "total_dividends_pending": total_dividends_pending,
+        "last_dividend_date": last_dividend_date,
+        "holdings": holdings,
+        "total_shares": total_shares,
+        "total_share_value": total_share_value,
+        "pending_declarations_count": len(pending_declarations),
+        "page_title": "My Dividends",
+        **helpers
+    }
+    
+    final_context = {**base_context, **page_context}
+    return templates.TemplateResponse(request, "client/dividends.html", final_context)
+
+
+@router.get("/api/member/dividends/summary")
+async def get_dividends_summary(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_member)
+):
+    """API endpoint to get dividend summary for charts"""
+    
+    # Get dividend payments by year
+    from sqlalchemy import func, extract
+    
+    dividends_by_year = db.query(
+        extract('year', DividendPayment.paid_at).label('year'),
+        func.sum(DividendPayment.amount).label('total')
+    ).filter(
+        DividendPayment.user_id == user.id,
+        DividendPayment.sacco_id == user.sacco_id
+    ).group_by('year').order_by('year').all()
+    
+    # Get dividend declarations by year
+    declarations_by_year = db.query(
+        extract('year', DividendDeclaration.declared_date).label('year'),
+        func.count(DividendDeclaration.id).label('count'),
+        func.avg(DividendDeclaration.rate).label('avg_rate')
+    ).filter(
+        DividendDeclaration.sacco_id == user.sacco_id
+    ).group_by('year').order_by('year').all()
+    
+    return {
+        "success": True,
+        "dividends_by_year": [{"year": int(y), "total": float(t)} for y, t in dividends_by_year],
+        "declarations_by_year": [{"year": int(y), "count": c, "avg_rate": float(r) if r else 0} for y, c, r in declarations_by_year]
+    }

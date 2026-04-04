@@ -8,9 +8,9 @@ from datetime import datetime, timedelta
 import logging
 
 from ..core.dependencies import get_db, require_credit_officer_or_manager
+from ..core.context import get_template_context
 from ..models import RoleEnum, Loan, LoanPayment, User, Log, Sacco
-from ..utils import create_log
-from ..utils.helpers import get_template_helpers, check_sacco_status
+from ..utils import create_log, log_user_action, get_template_helpers, check_sacco_status
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -68,6 +68,29 @@ def serialize_loan(loan: Loan) -> dict:
         "sacco_id": loan.sacco_id,
     }
 
+def serialize_loan_with_member(loan, member=None):
+    """Serialize loan with member information"""
+    if member is None:
+        member = loan.user
+    
+    return {
+        "id": loan.id,
+        "amount": float(loan.amount),
+        "status": loan.status,
+        "purpose": loan.purpose,
+        "interest_rate": float(loan.interest_rate) if loan.interest_rate else 0,
+        "term": loan.term,
+        "remaining_balance": float(getattr(loan, 'remaining_balance', loan.amount)),
+        "monthly_payment": float(loan.calculate_monthly_payment()) if hasattr(loan, 'calculate_monthly_payment') else 0,
+        "timestamp": loan.timestamp.isoformat() if loan.timestamp else None,
+        "member": {
+            "id": member.id,
+            "email": member.email,
+            "full_name": member.full_name,
+            "phone": getattr(member, 'phone', 'N/A'),
+            "member_number": getattr(member, 'member_number', 'N/A')
+        } if member else None
+    }
 
 def serialize_loan_payment(payment: LoanPayment) -> dict:
     """Convert LoanPayment ORM object to safe dict"""
@@ -154,9 +177,11 @@ def get_overdue_loans(db: Session, sacco_id: int):
 
 def get_upcoming_loans(db: Session, sacco_id: int):
     """Get loans with upcoming payments in next 7 days"""
+    from backend.models import User
+    
     active_loans_orm = db.query(Loan).filter(
         Loan.sacco_id == sacco_id,
-        Loan.status.in_(["approved", "partial"])
+        Loan.status.in_(["approved", "partial", "active"])
     ).all()
 
     upcoming = []
@@ -165,22 +190,46 @@ def get_upcoming_loans(db: Session, sacco_id: int):
             LoanPayment.loan_id == loan.id
         ).order_by(LoanPayment.timestamp.desc()).first()
 
-        if last_payment_orm:
+        # Calculate next payment date
+        if last_payment_orm and last_payment_orm.timestamp:
             next_payment_date = last_payment_orm.timestamp + timedelta(days=30)
+        elif loan.approved_at:
+            next_payment_date = loan.approved_at + timedelta(days=30)
         else:
-            next_payment_date = loan.approved_at + timedelta(days=30) if loan.approved_at else datetime.utcnow()
+            next_payment_date = datetime.utcnow() + timedelta(days=30)
 
         days_until_due = (next_payment_date - datetime.utcnow()).days
 
         if 0 < days_until_due <= 7:
+            # Get member safely
             member = db.query(User).filter(User.id == loan.user_id).first()
-            loan_dict = serialize_loan(loan)
-            loan_dict.update({
+            
+            # Create a safe serialized member dict
+            member_dict = None
+            if member:
+                member_dict = {
+                    "id": member.id,
+                    "email": member.email,
+                    "full_name": member.full_name,
+                    "role": str(member.role).replace("RoleEnum.", ""),
+                    "phone": getattr(member, 'phone', None),
+                    "member_number": getattr(member, 'member_number', None)
+                }
+            
+            # Serialize loan
+            loan_dict = {
+                "id": loan.id,
+                "amount": float(loan.amount),
+                "status": loan.status,
+                "purpose": loan.purpose,
+                "interest_rate": float(loan.interest_rate) if loan.interest_rate else 0,
+                "term": loan.term,
+                "remaining_balance": float(loan.remaining_balance) if hasattr(loan, 'remaining_balance') else float(loan.amount),
+                "monthly_payment": float(loan.calculate_monthly_payment()) if hasattr(loan, 'calculate_monthly_payment') else 0,
                 "next_payment_date": next_payment_date.isoformat(),
                 "days_until_due": days_until_due,
-                "monthly_payment": loan.calculate_monthly_payment(),
-                "member": serialize_user_basic(member) if member else None,
-            })
+                "member": member_dict
+            }
             upcoming.append(loan_dict)
 
     return upcoming
@@ -342,12 +391,13 @@ def credit_officer_dashboard(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-
+    user_dict = serialize_user_full(user)
     templates = request.app.state.templates
+    sacco_id = user.sacco_id
 
     # Get all active loans
     active_loans_orm = db.query(Loan).filter(
-        Loan.sacco_id == user.sacco_id,
+        Loan.sacco_id == sacco_id,
         Loan.status.in_(["approved", "partial"])
     ).all()
 
@@ -393,10 +443,30 @@ def credit_officer_dashboard(
     total_outstanding = sum(l["outstanding"] for l in active_loans)
     total_overdue_amount = sum(l["outstanding"] for l in overdue_loans)
 
+    # ========== ADDITIONAL LOAN METRICS FOR SYNC ==========
+    active_loans_count = db.query(Loan).filter(
+        Loan.sacco_id == sacco_id, Loan.status == "active"
+    ).count()
+    overdue_loans_count = db.query(Loan).filter(
+        Loan.sacco_id == sacco_id, Loan.status == "overdue"
+    ).count()
+    
+    # Total Interest Earned (from completed loans only)
+    total_interest_earned = db.query(func.coalesce(func.sum(Loan.total_interest), 0)).filter(
+        Loan.sacco_id == sacco_id,
+        Loan.status == 'completed'
+    ).scalar() or 0
+
+    # Total Payments Received (from all loan payments)
+    total_payments_received = db.query(func.coalesce(func.sum(LoanPayment.amount), 0)).filter(
+        LoanPayment.sacco_id == sacco_id
+    ).scalar() or 0
+
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
+        "user": user_dict,
         "overdue_loans": overdue_loans,
         "upcoming_payments": upcoming_payments,
         "current_loans": current_loans,
@@ -405,6 +475,11 @@ def credit_officer_dashboard(
         "total_overdue_amount": total_overdue_amount,
         "overdue_count": len(overdue_loans),
         "upcoming_count": len(upcoming_payments),
+        # Synced loan metrics
+        "active_loans_count": active_loans_count,
+        "overdue_loans_count": overdue_loans_count,
+        "total_interest_earned": total_interest_earned,
+        "total_payments_received": total_payments_received,
         **helpers,
     }
     return templates.TemplateResponse(request, "credit_officer/dashboard.html", context)
@@ -461,9 +536,9 @@ def view_loan(
     member = serialize_user_basic(member_orm) if member_orm else None
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "loan": loan,
         "member": member,
         "payments": payments,
@@ -631,9 +706,9 @@ def list_loans(
         loans.append(loan_dict)
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "loans": loans,
         "status_filter": status,
         **helpers,
@@ -677,9 +752,9 @@ def reminders_page(
         })
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "overdue_loans": overdue_loans,
         "upcoming_loans": upcoming_loans,
         "reminder_history": enhanced_history,
@@ -798,9 +873,9 @@ def loan_reports(
     export_filename = f"loan_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "loans": loans,
         "report_type": report_type,
         "start_date": start.strftime("%Y-%m-%d") if start_date else None,
@@ -829,7 +904,7 @@ def loan_analytics(
     status_check = check_sacco_status(request, user, db)
     if status_check:
         return status_check
-
+    user_dict = serialize_user_full(user)
     templates = request.app.state.templates
 
     all_loans_orm = db.query(Loan).filter(Loan.sacco_id == user.sacco_id).all()
@@ -863,9 +938,10 @@ def loan_analytics(
     payment_methods = get_payment_method_distribution(db, user.sacco_id)
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
+        "user": user_dict,
         "status_counts": status_counts,
         "total_disbursed": total_disbursed,
         "total_received": total_received,

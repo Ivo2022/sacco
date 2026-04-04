@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Subscribe to Shares{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Subscribe to Shares</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Important Information:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Shares represent ownership in the SACCO</li>
+                        <li>Dividends are paid annually based on share holdings</li>
+                        <li>Minimum share requirements apply per share type</li>
+                        <li>Shares can be transferred to other members</li>
+                    </ul>
+                </div>
+                
+                <form method="post" action="/shares/subscribe">
+                    <div class="mb-3">
+                        <label class="form-label">Share Type</label>
+                        <select class="form-select" name="share_type_id" id="share_type" required>
+                            <option value="">Select share type</option>
+                            {% for st in share_types %}
+                            <option value="{{ st.id }}" 
+                                    data-min="{{ st.minimum_shares }}"
+                                    data-max="{{ st.maximum_shares }}"
+                                    data-par="{{ st.par_value }}">
+                                {{ st.name }} (Class {{ st.class_type|upper }}) - UGX {{ st.par_value|format_money }}/share
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Number of Shares</label>
+                        <input type="number" class="form-control" name="quantity" id="quantity" min="1" required>
+                        <small class="text-muted" id="share_limits"></small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Total Amount (UGX)</label>
+                        <input type="text" class="form-control" id="total_amount" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select class="form-select" name="payment_method" required>
+                            <option value="">Select payment method</option>
+                            <option value="CASH">Cash</option>
+                            <option value="BANK_TRANSFER">Bank Transfer</option>
+                            <option value="MOBILE_MONEY">Mobile Money</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" name="reference_number" placeholder="Transaction reference number">
+                        <small class="text-muted">Optional, but recommended for tracking</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/shares/dashboard" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>Subscribe
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const shareTypeSelect = document.getElementById('share_type');
+    const quantityInput = document.getElementById('quantity');
+    const totalAmountInput = document.getElementById('total_amount');
+    const shareLimitsSpan = document.getElementById('share_limits');
+    
+    function updateTotal() {
+        const selectedOption = shareTypeSelect.options[shareTypeSelect.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            const parValue = parseFloat(selectedOption.dataset.par);
+            const quantity = parseInt(quantityInput.value) || 0;
+            const total = parValue * quantity;
+            totalAmountInput.value = total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+    }
+    
+    function updateLimits() {
+        const selectedOption = shareTypeSelect.options[shareTypeSelect.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            const minShares = parseInt(selectedOption.dataset.min);
+            const maxShares = selectedOption.dataset.max ? parseInt(selectedOption.dataset.max) : 'unlimited';
+            shareLimitsSpan.textContent = `Minimum: ${minShares} share${minShares > 1 ? 's' : ''}${maxShares !== 'unlimited' ? `, Maximum: ${maxShares} shares` : ''}`;
+            quantityInput.min = minShares;
+            if (maxShares !== 'unlimited') {
+                quantityInput.max = maxShares;
+            }
+        }
+    }
+    
+    shareTypeSelect.addEventListener('change', function() {
+        updateLimits();
+        updateTotal();
+    });
+    
+    quantityInput.addEventListener('input', updateTotal);
+</script>
+{% endblock %}

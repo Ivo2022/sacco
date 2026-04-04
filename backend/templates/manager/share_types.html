@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Share Types Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Share Types</h4>
+                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#createModal">
+                    <i class="bi bi-plus-circle me-1"></i>Add Share Type
+                </button>
+            </div>
+            <div class="card-body">
+                {% if share_types %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Class</th>
+                                <th>Par Value</th>
+                                <th>Minimum Shares</th>
+                                <th>Maximum Shares</th>
+                                <th>Voting Rights</th>
+                                <th>Dividend Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for st in share_types %}
+                            <tr>
+                                <td><strong>{{ st.name }}</strong></td>
+                                <td><span class="badge bg-info">{{ st.class_type|upper }}</span></td>
+                                <td>UGX {{ st.par_value|format_money }}</td>
+                                <td>{{ st.minimum_shares }}</td>
+                                <td>{{ st.maximum_shares or 'Unlimited' }}</td>
+                                <td>
+                                    {% if st.is_voting %}
+                                        <i class="bi bi-check-circle-fill text-success"></i> Yes
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger"></i> No
+                                    {% endif %}
+                                </td>
+                                <td>{{ st.dividend_rate }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                    <h5>No share types configured</h5>
+                    <p>Click the button above to create your first share type.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Share Type Modal -->
+<div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="/admin/shares/types/create">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Share Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Share Type Name</label>
+                        <input type="text" class="form-control" name="name" required placeholder="e.g., A-Class Shares">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Share Class</label>
+                        <select class="form-select" name="class_type" required>
+                            <option value="class_a">Class A (Voting Shares)</option>
+                            <option value="class_b">Class B (Non-Voting Shares)</option>
+                            <option value="class_c">Class C (Employee Shares)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Par Value (UGX)</label>
+                        <input type="number" class="form-control" name="par_value" required step="1000" placeholder="e.g., 1000">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Minimum Shares Required</label>
+                        <input type="number" class="form-control" name="minimum_shares" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Maximum Shares Allowed (Optional)</label>
+                        <input type="number" class="form-control" name="maximum_shares" placeholder="Leave blank for unlimited">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" name="is_voting" value="true" checked>
+                        <label class="form-check-label">Voting Rights</label>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Default Dividend Rate (%)</label>
+                        <input type="number" class="form-control" name="dividend_rate" step="0.5" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Share Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

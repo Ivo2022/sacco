@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "sacco_id": 1,
+    "user_id": 6,
+    "amount": 50000.0,
+    "payment_method": "CASH",
+    "description": "Test deposit",
+    "reference_number": "REF123456",
+    "status": "approved",
+    "timestamp": "2026-04-04 11:40:46.324029",
+    "approved_by": 4,
+    "approved_at": "2026-04-04 11:40:46.433985",
+    "approval_notes": null,
+    "rejection_reason": null
+  }
+]

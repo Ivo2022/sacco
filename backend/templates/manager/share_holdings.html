@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Share Holdings - All Members{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Member Share Holdings</h4>
+            </div>
+            <div class="card-body">
+                <!-- Search Form -->
+                <form method="get" class="mb-4">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search" placeholder="Search by name or email..." value="{{ search }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-1"></i>Search
+                        </button>
+                        {% if search %}
+                        <a href="?" class="btn btn-secondary">Clear</a>
+                        {% endif %}
+                    </div>
+                </form>
+                
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6>Total Shares Held</h6>
+                                <h3 class="text-primary">{{ total_shares }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h6>Total Share Value</h6>
+                                <h3 class="text-success">UGX {{ total_value|format_money }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if holdings %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Share Type</th>
+                                <th>Quantity</th>
+                                <th>Value</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for holding in holdings %}
+                            <tr>
+                                <td>
+                                    {{ holding.user_full_name or holding.user_email }}<br>
+                                    <small class="text-muted">{{ holding.user_email }}</small>
+                                </td>
+                                <td><strong>{{ holding.share_type.name if holding.share_type else 'N/A' }}</strong></td>
+                                <td>{{ holding.quantity }}</td>
+                                <td>UGX {{ holding.total_value|format_money }}</td>
+                                <td>
+                                    <a href="/admin/member/{{ holding.user_id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-person"></i> View Member
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                    <h5>No share holdings found</h5>
+                    <p>No members have subscribed to shares yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -8,9 +8,10 @@ from datetime import datetime, timedelta
 import logging
 
 from ..core.dependencies import get_db, require_accountant_or_manager
-from ..models import RoleEnum, PendingDeposit, Saving, User, Sacco
+from ..core.context import get_template_context
+from ..models import RoleEnum, PendingDeposit, Saving, User, Sacco, Loan, LoanPayment
 from ..utils.helpers import get_template_helpers, check_sacco_status
-from ..utils import create_log
+from ..utils import create_log, log_user_action
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -112,52 +113,96 @@ def accountant_dashboard(
         return status_check
 
     templates = request.app.state.templates
+    sacco_id = user.sacco_id
 
     # Get pending deposits
     pending_count = db.query(PendingDeposit).filter(
-        PendingDeposit.sacco_id == user.sacco_id,
+        PendingDeposit.sacco_id == sacco_id,
         PendingDeposit.status == "pending"
     ).count()
 
     pending_deposits_orm = db.query(PendingDeposit).filter(
-        PendingDeposit.sacco_id == user.sacco_id,
+        PendingDeposit.sacco_id == sacco_id,
         PendingDeposit.status == "pending"
     ).order_by(PendingDeposit.timestamp.desc()).limit(10).all()
     pending_deposits = [serialize_pending_deposit(d) for d in pending_deposits_orm]
 
     # Get recent transactions
     recent_transactions_orm = db.query(Saving).filter(
-        Saving.sacco_id == user.sacco_id
+        Saving.sacco_id == sacco_id
     ).order_by(Saving.timestamp.desc()).limit(10).all()
     recent_transactions = [serialize_saving(t) for t in recent_transactions_orm]
 
     # Summary statistics
     total_savings = db.query(func.sum(Saving.amount)).filter(
-        Saving.sacco_id == user.sacco_id
+        Saving.sacco_id == sacco_id
     ).scalar() or 0
 
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     today_collections = db.query(func.sum(Saving.amount)).filter(
-        Saving.sacco_id == user.sacco_id,
+        Saving.sacco_id == sacco_id,
         Saving.timestamp >= today_start
     ).scalar() or 0
 
     month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     month_collections = db.query(func.sum(Saving.amount)).filter(
-        Saving.sacco_id == user.sacco_id,
+        Saving.sacco_id == sacco_id,
         Saving.timestamp >= month_start
     ).scalar() or 0
 
+    # ========== LOAN METRICS ==========
+    # Counts by status
+    active_loans_count = db.query(Loan).filter(
+        Loan.sacco_id == sacco_id, Loan.status == "active"
+    ).count()
+    overdue_loans_count = db.query(Loan).filter(
+        Loan.sacco_id == sacco_id, Loan.status == "overdue"
+    ).count()
+    
+    # Total Interest Earned (from completed loans only)
+    total_interest_earned = db.query(func.coalesce(func.sum(Loan.total_interest), 0)).filter(
+        Loan.sacco_id == sacco_id,
+        Loan.status == 'completed'
+    ).scalar() or 0
+
+    # Total Payments Received (from all loan payments)
+    total_payments_received = db.query(func.coalesce(func.sum(LoanPayment.amount), 0)).filter(
+        LoanPayment.sacco_id == sacco_id
+    ).scalar() or 0
+
+    # Get all active and overdue loans (those with outstanding balance)
+    outstanding_loans = db.query(Loan).filter(
+        Loan.sacco_id == sacco_id,
+        Loan.status.in_(['active', 'overdue'])
+    ).all()
+
+    total_outstanding = 0
+    for loan in outstanding_loans:
+        # Get total payments made
+        total_paid = db.query(func.coalesce(func.sum(LoanPayment.amount), 0)).filter(
+            LoanPayment.loan_id == loan.id
+        ).scalar() or 0
+    
+        # Calculate outstanding balance using pre-calculated total_payable
+        outstanding = max(0.0, loan.total_payable - total_paid)
+        total_outstanding += outstanding
+
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "pending_count": pending_count,
         "pending_deposits": pending_deposits,
         "recent_transactions": recent_transactions,
         "total_savings": total_savings,
         "today_collections": today_collections,
         "month_collections": month_collections,
+        # Loan metrics
+        "active_loans_count": active_loans_count,
+        "overdue_loans_count": overdue_loans_count,
+        "total_interest_earned": total_interest_earned,
+        "total_payments_received": total_payments_received,
+        "total_outstanding": total_outstanding,
         **helpers,
     }
     return templates.TemplateResponse(request, "accountant/dashboard.html", context)
@@ -183,9 +228,9 @@ def pending_deposits_page(
     pending_deposits = [serialize_pending_deposit(d) for d in pending_deposits_orm]
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "pending_deposits": pending_deposits,
         "pending_count": len(pending_deposits),
         **helpers,
@@ -356,9 +401,9 @@ def transactions_page(
     ).scalar() or 0
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "transactions": transactions,
         "transaction_type": transaction_type,
         "start_date": start_date,
@@ -443,9 +488,9 @@ def savings_page(
     member_summary.sort(key=lambda x: x["balance"], reverse=True)
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "transactions": transactions,
         "member_summary": member_summary,
         "selected_member": member_id,
@@ -577,9 +622,9 @@ def accountant_reports(
         })
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "report_type": report_type,
         "start_date": start.strftime("%Y-%m-%d"),
         "end_date": (end - timedelta(days=1)).strftime("%Y-%m-%d") if end else "",
@@ -631,9 +676,9 @@ def member_savings_detail(
     current_balance = total_deposits - total_withdrawals
 
     helpers = get_template_helpers()
+    base_context = get_template_context(request, user)
     context = {
-        "request": request,
-        "user": serialize_user_full(user),
+        **base_context,
         "member": member,
         "transactions": transactions,
         "total_deposits": total_deposits,

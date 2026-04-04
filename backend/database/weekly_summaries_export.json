@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "sacco_id": 1,
+    "week_start": "2026-03-28 11:40:46.108356",
+    "week_end": "2026-04-04 11:40:46.212347",
+    "summary_data": "{\"week_start\": \"2026-03-28T11:40:46.108356\", \"week_end\": \"2026-04-04T11:40:46.212347\", \"metrics\": {\"new_members\": 5, \"new_savings_count\": 0, \"total_new_savings\": 0, \"new_loans\": 0, \"total_loans_amount\": 0}, \"top_insights\": [{\"type\": \"inactive_savers\", \"title\": \"2 Inactive Savers Detected\", \"description\": \"Members who haven't saved in the last 30 days\", \"data\": [{\"user_id\": 3, \"name\": \"Test Manager (Member)\", \"days_inactive\": 0, \"last_saving_date\": null}, {\"user_id\": 6, \"name\": \"Test Member\", \"days_inactive\": 0, \"last_saving_date\": null}], \"severity\": \"warning\"}]}",
+    "sent_at": null,
+    "created_at": "2026-04-04 11:40:46.212347"
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "sacco_id": 1,
+    "name": "Class A Shares",
+    "class_type": "CLASS_A",
+    "par_value": 10000.0,
+    "minimum_shares": 1,
+    "maximum_shares": 1000,
+    "is_voting": 1,
+    "dividend_rate": 8.0
+  },
+  {
+    "id": 2,
+    "sacco_id": 1,
+    "name": "Class B Shares",
+    "class_type": "CLASS_B",
+    "par_value": 5000.0,
+    "minimum_shares": 5,
+    "maximum_shares": 500,
+    "is_voting": 0,
+    "dividend_rate": 6.0
+  }
+]

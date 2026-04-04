@@ -1,0 +1,229 @@
+{% from "components/permissions.html" import can %}
+
+<header class="mb-0" style="position: sticky; top: 0; z-index: 100;">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm" style="border-radius: 0; margin-bottom: 0; height: 72px; display: flex; align-items: center;">
+        <div class="container-fluid" style="display: flex; align-items: center;">
+            
+            {# Brand Logo #}
+            {% set current_user_role = user.get("role", "")|upper|replace("ROLEENUM.", "")|replace("_", "") if user else "" %}
+            {% set is_not_manager = current_user_role != "MANAGER" %}
+
+            {% if is_not_manager or not user %}
+                <a class="navbar-brand d-flex align-items-center gap-3" href="/">
+                    <div class="logo-icon" style="width: 40px; height: 40px; border-radius: 8px; background: linear-gradient(135deg, #0052cc, #00b894); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; transition: all 0.3s ease;">
+                        <i class="bi bi-bank2 fs-5"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">CheonTec SACCO</div>
+                        <small class="text-muted">Management Platform</small>
+                    </div>
+                </a>
+            {% endif %}
+            
+            {# Mobile menu button (only for manager) #}
+            {% if current_user_role == 'MANAGER' %}
+            <button class="btn btn-primary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+                <i class="bi bi-list"></i> Menu
+            </button>
+            {% endif %}
+
+            {# Desktop navbar items #}
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav ms-auto mb-0 align-items-lg-center">
+                    {% if not user %}
+                        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                        <li class="nav-item"><a class="btn btn-sm btn-outline-primary" href="/auth/login">Sign in</a></li>
+                        <li class="nav-item d-none d-lg-block"><a class="btn btn-sm btn-success" href="/auth/register">Create account</a></li>
+                    {% endif %}
+
+                    {% if user %}
+                        {# Single Unified User Menu #}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" 
+                               href="#" 
+                               data-bs-toggle="dropdown" 
+                               style="padding: 0.4rem 0.75rem; border-radius: 40px; background: #f8f9fa;">
+                                <div class="user-avatar-mini" style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white;">
+                                    <i class="bi bi-person-fill fs-6"></i>
+                                </div>
+                                <span>{{ user.get("full_name") or user.get("email") }}</span>
+                            </a>
+                            
+                            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0" style="min-width: 280px; margin-top: 8px; border-radius: 12px;">
+                                
+                                {# ========== FOR MANAGER: Only Profile & Logout ========== #}
+                                {% if current_user_role == 'MANAGER' %}
+                                    
+                                    {# Simple header #}
+                                   <!-- <div class="px-3 py-2 border-bottom" style="background: linear-gradient(135deg, #f8f9fa, #ffffff); border-radius: 12px 12px 0 0;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="bi bi-person-fill fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ user.get("full_name") or user.get("email") }}</div>
+                                                <small class="text-muted">Manager</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {# Quick note about sidebar #}
+                                    <div class="px-3 py-2 bg-light">
+                                        <small class="text-muted">
+                                            <i class="bi bi-layout-sidebar me-1"></i>
+                                            Use the sidebar for full navigation
+                                        </small>
+                                    </div>-->
+                                    
+                                    <div class="dropdown-divider"></div>
+                                    
+                                    {# Profile & Settings #}
+                                    <div class="px-2 py-2">
+                                        <a class="dropdown-item d-flex align-items-center gap-3 rounded-2" href="/member/profile" style="padding: 8px 12px;">
+                                            <i class="bi bi-person" style="width: 20px;"></i>
+                                            <span>My Profile</span>
+                                        </a>
+                                        
+                                        {% if user.get('linked_member_account_id') %}
+                                        <a class="dropdown-item d-flex align-items-center gap-3 rounded-2" href="/switch/to-member?as_member={{ user['linked_member_account_id'] }}">
+                                            <i class="bi bi-arrow-repeat" style="width: 20px;"></i>
+                                            <span>Switch to Member View</span>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        {% if user.get('linked_admin_id') %}
+                                        <a class="dropdown-item d-flex align-items-center gap-3 rounded-2" href="/switch/to-staff?as_staff={{ user['linked_admin_id'] }}">
+                                            <i class="bi bi-arrow-repeat" style="width: 20px;"></i>
+                                            <span>Switch to Staff View</span>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="dropdown-divider"></div>
+                                    
+                                    {# Logout #}
+                                    <div class="px-2 py-2">
+                                        <a class="dropdown-item d-flex align-items-center gap-3 rounded-2 text-danger" href="/auth/logout" style="padding: 8px 12px;">
+                                            <i class="bi bi-box-arrow-right" style="width: 20px;"></i>
+                                            <span>Logout</span>
+                                        </a>
+                                    </div>
+                                
+                                {# ========== FOR NON-MANAGERS: Full menu with role items ========== #}
+                                {% else %}
+                                    
+                                    {# User Header #}
+                                    <!--<div class="px-3 py-2 border-bottom" style="background: linear-gradient(135deg, #f8f9fa, #ffffff); border-radius: 12px 12px 0 0;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white;">
+                                                <i class="bi bi-person-fill fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ user.get("full_name") or user.get("email") }}</div>
+                                                <small class="text-muted">{{ current_user_role|title }}</small>
+                                            </div>
+                                        </div>
+                                    </div>-->
+                                    
+                                    {# Role-specific Menu Items #}
+                                    {% if menu_config and menu_config|length > 0 %}
+                                        <div class="px-2 py-2">
+                                            {% for section in menu_config %}
+                                                <div class="mb-2">
+                                                    <div class="small text-muted text-uppercase px-2 mb-1" style="font-size: 0.65rem; font-weight: 600;">
+                                                        {{ section.section }}
+                                                    </div>
+                                                    {% for item in section['items'] %}
+                                                        {% if can(item.permission, permissions) %}
+                                                            <a href="{{ item.url }}" 
+                                                               class="dropdown-item d-flex align-items-center gap-3 rounded-2 {% if current_path == item.url %}active bg-primary bg-opacity-10{% endif %}"
+                                                               style="padding: 8px 12px;">
+                                                                <i class="bi {{ item.icon if item.icon else 'bi-circle' }}" style="width: 20px;"></i>
+                                                                <span>{{ item.name }}</span>
+                                                            </a>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                {% if not loop.last %}<div class="dropdown-divider my-1"></div>{% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <div class="dropdown-divider"></div>
+                                    {% endif %}
+                                    
+                                    {# Profile & Settings #}
+                                    <div class="px-2 py-2">
+                                        <a class="dropdown-item d-flex align-items-center gap-3 rounded-2" href="/member/profile" style="padding: 8px 12px;">
+                                            <i class="bi bi-person" style="width: 20px;"></i>
+                                            <span>My Profile</span>
+                                        </a>
+                                        
+                                        {% if user.get('linked_member_account_id') %}
+                                        <a class="dropdown-item d-flex align-items-center gap-3 rounded-2" href="/switch/to-member?as_member={{ user['linked_member_account_id'] }}">
+                                            <i class="bi bi-arrow-repeat" style="width: 20px;"></i>
+                                            <span>Switch to Member View</span>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        {% if user.get('linked_admin_id') %}
+                                        <a class="dropdown-item d-flex align-items-center gap-3 rounded-2" href="/switch/to-staff?as_staff={{ user['linked_admin_id'] }}">
+                                            <i class="bi bi-arrow-repeat" style="width: 20px;"></i>
+                                            <span>Switch to Staff View</span>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="dropdown-divider"></div>
+                                    
+                                    {# Logout #}
+                                    <div class="px-2 py-2">
+                                        <a class="dropdown-item d-flex align-items-center gap-3 rounded-2 text-danger" href="/auth/logout" style="padding: 8px 12px;">
+                                            <i class="bi bi-box-arrow-right" style="width: 20px;"></i>
+                                            <span>Logout</span>
+                                        </a>
+                                    </div>
+                                
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<style>
+    .dropdown-item {
+        transition: all 0.2s ease;
+    }
+    
+    .dropdown-item:hover {
+        transform: translateX(4px);
+        background-color: #f8f9fa;
+    }
+    
+    .dropdown-item.active {
+        background: linear-gradient(135deg, #e8ecff, #f0f3ff);
+        color: #667eea;
+    }
+    
+    .nav-link.dropdown-toggle:hover .user-avatar-mini {
+        transform: scale(1.05);
+        transition: transform 0.2s ease;
+    }
+    
+    .dropdown-menu {
+        animation: fadeInDown 0.2s ease;
+    }
+    
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>

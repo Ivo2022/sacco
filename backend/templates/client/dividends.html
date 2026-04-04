@@ -1,0 +1,287 @@
+{% extends "base.html" %}
+
+{% block title %}My Dividends{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">
+                <i class="bi bi-gift-fill me-2"></i>My Dividends
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mt-2">
+                    <li class="breadcrumb-item"><a href="/member/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Dividends</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+                <i class="bi bi-arrow-repeat me-1"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Dividend Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 text-success rounded-3 p-3">
+                                <i class="bi bi-cash-stack fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Dividends Received</h6>
+                            <h3 class="mb-0 fw-bold">{{ money(total_dividends_received|default(0)) }}</h3>
+                            {% if last_dividend_date %}
+                            <small class="text-muted">Last: {{ local_time(last_dividend_date)}}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-3">
+                                <i class="bi bi-clock-history fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Pending Dividends</h6>
+                            <h3 class="mb-0 fw-bold">{{ money(total_dividends_pending|default(0)) }}</h3>
+                            {% if pending_declarations_count > 0 %}
+                            <small class="text-warning">{{ pending_declarations_count }} declaration(s) pending</small>
+                            {% else %}
+                            <small class="text-muted">No pending dividends</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 text-info rounded-3 p-3">
+                                <i class="bi bi-pie-chart fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Shares Held</h6>
+                            <h3 class="mb-0 fw-bold">{{ total_shares|default(0) }}</h3>
+                            <small class="text-muted">Value: {{ money(total_share_value|default(0)) }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Holdings Summary -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-semibold"><i class="bi bi-building me-2"></i>My Share Holdings</h5>
+        </div>
+        <div class="card-body">
+            {% if holdings %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Share Type</th>
+                            <th>Class</th>
+                            <th>Units</th>
+                            <th>Value (UGX)</th>
+                            <th>Dividend Rate</th>
+                            <th>Est. Annual Dividend</th>
+                        </thead>
+                    <tbody>
+                        {% for holding in holdings %}
+                        <tr>
+                            <td>{{ holding.share_type.name }}</td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ holding.share_type.class_type|replace('_', ' ')|upper }}
+                                </span>
+                            </td>
+                            <td>{{ holding.quantity }}</td>
+                            <td>{{ money(holding.total_value) }}</td>
+                            <td>{{ holding.share_type.dividend_rate }}%</td>
+                            <td>
+                                {{ money((holding.total_value * holding.share_type.dividend_rate / 100)) }}/year
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="text-muted mt-2 mb-0">You don't have any share holdings yet.</p>
+                <a href="/member/shares" class="btn btn-sm btn-primary mt-3">Purchase Shares</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Dividend Payment History -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-semibold"><i class="bi bi-receipt me-2"></i>Dividend Payment History</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if dividend_payments %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Payment Date</th>
+                            <th>Declaration</th>
+                            <th>Fiscal Year</th>
+                            <th>Shares Held</th>
+                            <th>Rate</th>
+                            <th>Amount (UGX)</th>
+                            <th>Payment Method</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in dividend_payments %}
+                        <tr>
+                            <td>{{ local_time(payment.paid_at) if payment.paid_at else 'N/A' }}</td>
+                            <td>{{ payment.declaration.id if payment.declaration else 'N/A' }}</td>
+                            <td>{{ payment.declaration.fiscal_year if payment.declaration else 'N/A' }}</td>
+                            <td>{{ payment.shares_held }}</td>
+                            <td>{{ payment.declaration.rate if payment.declaration else 'N/A' }}%</td>
+                            <td class="fw-bold text-success">{{ money(payment.amount) }}</td>
+                            <td>
+                                {% if payment.payment_method == 'bank' %}
+                                <i class="bi bi-bank me-1"></i> Bank Transfer
+                                {% elif payment.payment_method == 'mobile' %}
+                                <i class="bi bi-phone me-1"></i> Mobile Money
+                                {% elif payment.is_reinvested %}
+                                <i class="bi bi-arrow-repeat me-1"></i> Reinvested
+                                {% else %}
+                                <i class="bi bi-cash me-1"></i> Cash
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-success">Paid</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="text-muted mt-2 mb-0">No dividend payments received yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upcoming Dividend Declarations -->
+    {% if dividend_declarations %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-semibold"><i class="bi bi-calendar-event me-2"></i>Dividend Declarations</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Declared Date</th>
+                            <th>Fiscal Year</th>
+                            <th>Share Type</th>
+                            <th>Rate</th>
+                            <th>Amount Per Share</th>
+                            <th>Payment Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for declaration in dividend_declarations %}
+                        <tr>
+                            <td>{{ declaration.declared_date.strftime('%b %d, %Y') if declaration.declared_date else 'N/A' }}</td>
+                            <td>{{ declaration.fiscal_year }}</td>
+                            <td>
+                                {% if declaration.share_type %}
+                                    {{ declaration.share_type.name }}
+                                {% else %}
+                                    All Share Types
+                                {% endif %}
+                            </td>
+                            <td>{{ declaration.rate }}%</td>
+                            <td>{{ money(declaration.amount_per_share) }}</td>
+                            <td>
+                                {% if declaration.payment_date %}
+                                    {{ declaration.payment_date.strftime('%b %d, %Y') }}
+                                {% else %}
+                                    To be announced
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if declaration.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending Payment</span>
+                                {% elif declaration.status == 'paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ declaration.status|title }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Dividend Information Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>About Dividends</strong><br>
+                Dividends are paid annually based on the number of shares you hold and the declared dividend rate. 
+                Payments are typically made within 30 days of the declaration date. Dividends can be paid via bank transfer, 
+                mobile money, or automatically reinvested into additional shares.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Optional: Load chart data for dividend trends
+    document.addEventListener('DOMContentLoaded', function() {
+        loadDividendChart();
+    });
+    
+    function loadDividendChart() {
+        fetch('/api/member/dividends/summary')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.dividends_by_year.length > 0) {
+                    // You can add a chart here using Chart.js or similar
+                    console.log('Dividend data:', data);
+                }
+            })
+            .catch(error => console.error('Error loading dividend data:', error));
+    }
+</script>
+{% endblock %}

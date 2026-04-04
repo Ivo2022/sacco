@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">SACCO Settings</h1>
+            
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">SACCO Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">SACCO Name:</dt>
+                        <dd class="col-sm-9">{{ sacco.name }}</dd>
+                        
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge {% if sacco.status == 'active' %}badge-success{% else %}badge-danger{% endif %}">
+                                {{ sacco.status|title }}
+                            </span>
+                        </dd>
+                        
+                        <dt class="col-sm-3">Membership Fee:</dt>
+                        <dd class="col-sm-9">UGX {{ "{:,.2f}".format(sacco.membership_fee) }}</dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <!-- Shares System Toggle -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Shares System</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Enable or disable the shares system for your SACCO. When disabled, members cannot 
+                        subscribe to or manage shares.
+                    </p>
+                    
+                    <form method="post" action="/admin/sacco-settings/toggle-shares" class="mb-3">
+                        <div class="form-group d-flex align-items-center">
+                            <span class="mr-3">
+                                {% if sacco.shares_enabled %}
+                                    <span class="badge badge-success">Currently ENABLED</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Currently DISABLED</span>
+                                {% endif %}
+                            </span>
+                            <button type="submit" name="enabled" value="{% if sacco.shares_enabled %}false{% else %}true{% endif %}" 
+                                    class="btn {% if sacco.shares_enabled %}btn-danger{% else %}btn-success{% endif %}">
+                                {% if sacco.shares_enabled %}Disable Shares{% else %}Enable Shares{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Dividends System Toggle -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Dividends System</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Enable or disable the dividends system for your SACCO. When disabled, managers cannot 
+                        declare dividends and members cannot view or receive dividend payments.
+                    </p>
+                    
+                    <form method="post" action="/admin/sacco-settings/toggle-dividends" class="mb-3">
+                        <div class="form-group d-flex align-items-center">
+                            <span class="mr-3">
+                                {% if sacco.dividends_enabled %}
+                                    <span class="badge badge-success">Currently ENABLED</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Currently DISABLED</span>
+                                {% endif %}
+                            </span>
+                            <button type="submit" name="enabled" value="{% if sacco.dividends_enabled %}false{% else %}true{% endif %}" 
+                                    class="btn {% if sacco.dividends_enabled %}btn-danger{% else %}btn-success{% endif %}">
+                                {% if sacco.dividends_enabled %}Disable Dividends{% else %}Enable Dividends{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <strong>Note:</strong> Changes to these settings take effect immediately. Members will be unable to 
+                access the disabled features.
+            </div>
+            
+            <a href="/admin/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

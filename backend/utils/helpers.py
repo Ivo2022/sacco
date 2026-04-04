@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from ..models import User, Saving, RoleEnum, Loan, Sacco
 from fastapi import Request
+from typing import Optional
 
 # Define your local timezone (UTC+3)
 LOCAL_OFFSET = timedelta(hours=3)
@@ -235,6 +236,9 @@ def get_linked_admin_account(db: Session, member_user: User):
 def check_sacco_status(request: Request, user: User, db: Session):
     """Check if user's SACCO is active. Returns None if OK, or RedirectResponse if inactive."""
     
+    if user is None:
+        return None
+
     # Super admins bypass SACCO status checks
     if user.role == RoleEnum.SUPER_ADMIN:
         return None
@@ -253,3 +257,102 @@ def check_sacco_status(request: Request, user: User, db: Session):
             return RedirectResponse(url="/member/suspended", status_code=303)
     
     return None
+	
+def get_active_users_today(
+    db: Session,
+    sacco_id: Optional[int] = None,
+    role: Optional[RoleEnum] = None
+) -> int:
+    """
+    Get count of active users today (users who have had activity in the last 24 hours)
+    
+    Args:
+        db: Database session
+        sacco_id: Optional filter by SACCO
+        role: Optional filter by role
+    
+    Returns:
+        Count of active users
+    """
+    # Get start of today (00:00:00)
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Query users with activity today
+    query = db.query(User).filter(
+        User.last_activity >= today_start,
+        User.is_active == True
+    )
+    
+    if sacco_id:
+        query = query.filter(User.sacco_id == sacco_id)
+    
+    if role:
+        query = query.filter(User.role == role)
+    
+    count = query.count()
+    logger.debug(f"Active users today: {count}")
+    
+    return count
+
+
+def get_active_users_last_hour(
+    db: Session,
+    sacco_id: Optional[int] = None,
+    role: Optional[RoleEnum] = None
+) -> int:
+    """
+    Get count of active users in the last hour
+    """
+    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+    
+    query = db.query(User).filter(
+        User.last_activity >= one_hour_ago,
+        User.is_active == True
+    )
+    
+    if sacco_id:
+        query = query.filter(User.sacco_id == sacco_id)
+    
+    if role:
+        query = query.filter(User.role == role)
+    
+    return query.count()
+
+
+def get_user_activity_stats(
+    db: Session,
+    sacco_id: Optional[int] = None
+) -> dict:
+    """
+    Get comprehensive user activity statistics
+    """
+    now = datetime.utcnow()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
+    
+    stats = {
+        "active_today": 0,
+        "active_this_week": 0,
+        "active_this_month": 0,
+        "total_users": 0,
+        "new_users_today": 0,
+        "new_users_this_week": 0
+    }
+    
+    # Base query
+    query = db.query(User).filter(User.is_active == True)
+    if sacco_id:
+        query = query.filter(User.sacco_id == sacco_id)
+    
+    # Active users
+    stats["active_today"] = query.filter(User.last_activity >= today_start).count()
+    stats["active_this_week"] = query.filter(User.last_activity >= week_ago).count()
+    stats["active_this_month"] = query.filter(User.last_activity >= month_ago).count()
+    stats["total_users"] = query.count()
+    
+    # New users
+    stats["new_users_today"] = query.filter(User.created_at >= today_start).count()
+    stats["new_users_this_week"] = query.filter(User.created_at >= week_ago).count()
+    
+    return stats

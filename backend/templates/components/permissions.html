@@ -1,0 +1,8 @@
+{# permission macro #}
+{% macro can(permission, permissions) %}
+    {% if "*" in permissions or permission in permissions %}
+        true
+    {% else %}
+        false
+    {% endif %}
+{% endmacro %}

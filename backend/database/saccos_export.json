@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "name": "Test SACCO",
+    "email": "test@sacco.com",
+    "phone": "+256700000000",
+    "address": "Kampala, Uganda",
+    "registration_no": null,
+    "website": null,
+    "status": "active",
+    "created_at": "2026-04-04 11:40:43.452388",
+    "membership_fee": 50000.0,
+    "shares_enabled": 0,
+    "dividends_enabled": 0,
+    "referred_by_id": null,
+    "referral_commission_paid": 0.0
+  }
+]
