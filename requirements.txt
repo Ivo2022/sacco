@@ -17,3 +17,4 @@ alembic
 python-decouple
 httpx
 email-validator
+gunicorn
